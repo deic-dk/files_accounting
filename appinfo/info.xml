@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<info>
+	<id>files_accounting</id>
+	<name>Storage Use</name>
+	<description>Enable users to see their storage statistics</description>
+	<version>0.1</version>
+	<licence>AGPL</licence>
+	<author>Ioanna Psylla</author>
+	<require>4.93</require>
+</info>
