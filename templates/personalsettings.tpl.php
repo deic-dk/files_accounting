@@ -6,16 +6,20 @@
 	var arrayFromPHP = <?php
 			$user=OCP\USER::getUser ();
 			$userStorage  = array();
-			if (file_exists('/tank/data/owncloud/'.$user.'/diskUsageAverage.txt')) {
-                          $average_lines = file('/tank/data/owncloud/'.$user.'/diskUsageAverage.txt');
-                                  foreach ($average_lines as $line_num => $line) {
-                                        $userRows = explode(" ", $line);
-                                        if ($userRows[0] == $user) {
-                                          $month =  $userRows[1];
+			$stmt = OC_DB::prepare ( "SELECT `month`, `average`, `trashbin` FROM `*PREFIX*files_accounting` WHERE `user` = ? " );
+			$result = $stmt->execute ( array ($user));
+			$average_lines = array ();
+			while ( $row = $result->fetchRow () ) {
+				$average_lines [] = array('average' => (int)$row['average'], 'trashbin' => (int)$row['trashbin'], 'month' => (int)$row['month']); 
+			}
+                                  foreach ($average_lines as $line) {
+                                        //$userRows = explode(" ", $line);
+                                        //if ($userRows[0] == $user) {
+                                          $month =  $line['month'];
                                           if ($month != date('m')) {
                                                 $month = (int)$month;
-                                                $averageMonth = (int)$userRows[2];
-                                                $averageMonthTrash = (int)$userRows[3];
+                                                $averageMonth = (int)$line['average'];
+                                                $averageMonthTrash = (int)$line['trashbin'];
                                                 switch ($month) {
                                                         case 01:
                                                                 $userStorage[] = array('Jan', $averageMonth, $averageMonthTrash);
@@ -57,10 +61,7 @@
 
                                           }
 
-                                    }
-
                                   }
-                    }
 
             $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily.txt');
 			$dailyUsage = array();
@@ -82,7 +83,7 @@
 			  $userStorage[] = array(date('M'), $averageToday, $averageTodayTrash);
 			}	
 
-                        echo json_encode($userStorage);
+                       echo json_encode($userStorage);
                         ?>;
       google.load("visualization", "1", {packages:["corechart"]});
       google.setOnLoadCallback(drawChart);
