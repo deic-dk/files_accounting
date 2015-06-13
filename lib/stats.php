@@ -1,6 +1,6 @@
 <?php
 
-//namespace OCA\FilesAccounting\BackgroundJob;
+namespace OCA\Files_Accounting;
 
 class Stats extends \OC\BackgroundJob\QueuedJob {
 	protected function run($argument) {
