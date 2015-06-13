@@ -2,7 +2,7 @@
 OCP\JSON::checkAppEnabled('files_accounting');
 OCP\User::checkLoggedIn();
 
-//OC::$CLASSPATH['Stats'] ='/usr/local/www/owncloud/apps/files_accounting/lib/stats.php';
+OC::$CLASSPATH['Stats'] ='apps/files_accounting/lib/stats.php';
 //Stats::UpdateMonthlyAverage();
 
 OCP\Util::addStyle('files_accounting', 'style');

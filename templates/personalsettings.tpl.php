@@ -17,47 +17,11 @@
                                         //if ($userRows[0] == $user) {
                                           $month =  $line['month'];
                                           if ($month != date('m')) {
-                                                $month = (int)$month;
                                                 $averageMonth = (int)$line['average'];
                                                 $averageMonthTrash = (int)$line['trashbin'];
-                                                switch ($month) {
-                                                        case 01:
-                                                                $userStorage[] = array('Jan', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 02:
-                                                                $userStorage[] = array('Feb', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 03:
-                                                                $userStorage[] = array('Mar', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 04:
-                                                                $userStorage[] = array('Apr', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 05:
-                                                                $userStorage[] = array('May', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 06:
-                                                                $userStorage[] = array('Jun', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 07:
-                                                                $userStorage[] = array('Jul', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 08:
-                                                                $userStorage[] = array('Aug', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 09:
-                                                                $userStorage[] = array('Sep', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 10:
-                                                                $userStorage[] = array('Oct', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 11:
-                                                                $userStorage[] = array('Nov', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                        case 12:
-                                                                $userStorage[] = array('Dec', $averageMonth, $averageMonthTrash);
-                                                                break;
-                                                }
+					 	$fullmonth = date('F', strtotime("2000-$month-01"));	
+						$fullmonth = substr($fullmonth, 0, 3);
+						$userStorage[] = array($fullmonth, $averageMonth, $averageMonthTrash); 
 
                                           }
 
@@ -72,7 +36,7 @@
                     if ($userRows[0] == $user) {
 						$month =  substr($userRows[1], 0, 2);
 						if ($month == date('m')) { 
-				           $month = (int)$month;
+				           		$month = (int)$month;
 						   $dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
 						   $averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
 						   $averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));	
@@ -97,42 +61,33 @@
         	trash.push(parseInt(arrayFromPHP[i][2])/1000);
   	}
 	for (var i=0; i<usage.length; i++) {
+		var data = new google.visualization.DataTable();
+                data.addColumn('string', 'dates');
+                data.addColumn('number', 'usage');
+                data.addColumn('number', 'trash');
 		if (usage[i] < 1000) {
-			 var data = new google.visualization.DataTable();
-		        data.addColumn('string', 'dates');
-       			data.addColumn('number', 'usage');
-       			data.addColumn('number', 'trash');
        			 for(i = 0; i < dates.length; i++){
                 		data.addRow([dates[i], usage[i], trash[i]]);
         		}
  
         		var options = {
-          		title: 'Average Storage History',
-          		hAxis: {title: 'Months',  titleTextStyle: {color: '#333'}},
-          		vAxis: {title: 'MB \n\n',  titleTextStyle: {color: '#333'}},
-          		width: 900 
-        		};
-  			new google.visualization.AreaChart(document.getElementById('chart_div')).
-    			draw(data, options);
-			break;
+          		vAxis: {title: 'MB \n\n',  titleTextStyle: {color: '#333'}}};
 		}else {
-			var data = new google.visualization.DataTable();
-                        data.addColumn('string', 'dates');
-                        data.addColumn('number', 'usage');
-                        data.addColumn('number', 'trash');
                          for(i = 0; i < dates.length; i++){
                                 data.addRow([dates[i], usage[i]/1000, trash[i]/1000]);
                         }
                         var options = {
-                        title: 'Average Storage History',
-                        hAxis: {title: 'Months',  titleTextStyle: {color: '#333'}},
-                        vAxis: {title: 'GB \n\n',  titleTextStyle: {color: '#333'}},
-                        width: 900 
+                        vAxis: {title: 'GB \n\n',  titleTextStyle: {color: '#333'}}};
+		}
+        	var options = {
+                	title: 'Average Storage History',
+                	hAxis: {title: 'Months',  titleTextStyle: {color: '#333'}},
+                	width: 900
                         };
                         new google.visualization.AreaChart(document.getElementById('chart_div')).
                         draw(data, options);
                         break;
-		}
+
 	}
 	function resizeHandler () {
         	new google.visualization.AreaChart(document.getElementById('chart_div')).draw(data, options);
