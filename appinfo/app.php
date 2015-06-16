@@ -1,4 +1,5 @@
 <?php
 OCP\App::checkAppEnabled('files_accounting');
-OCP\App::registerPersonal('files_accounting', 'personalsettings');
-//OCP\Backgroundjob::registerJob('OCA\FilesAccounting\BackgroundJob\Stats');
+OCP\App::registerAdmin('files_accounting', 'settings');
+OCP\Backgroundjob::registerJob('\OCA\Files_Accounting\Stats');
+
