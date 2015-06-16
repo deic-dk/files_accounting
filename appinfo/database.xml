@@ -63,7 +63,20 @@
                                 <length>255</length>
                         </field>
 
-		</declaration>
+			<field>
+                                <name>invoice_link</name>
+                                <type>text</type>
+                                <notnull>true</notnull>
+                                <length>255</length>
+                        </field>
+
+			 <field>
+                                <name>reference_id</name>
+                                <type>text</type>
+                                <notnull>true</notnull>
+                                <length>255</length>
+                        </field>
+
 
 	</table>	
 
