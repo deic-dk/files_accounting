@@ -2,6 +2,13 @@
 
 namespace OCA\Files_Accounting;
 
+use \OCP\DB;
+use \OCP\User;
+use \OCP\Util;
+use \OCP\Config;
+
+//require('invoice.php');
+
 class Stats extends \OC\BackgroundJob\QueuedJob {
 	protected function run($argument) {
 		if (\OC::$CLI) {
@@ -10,7 +17,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	}
 
 	public function updateMonthlyAverage() {
-		$user= OCP\USER::getUser();
+		$user= User::getUser();
 		$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage.txt", "a") or die("Unable to open file!");
 		$file = "/tank/data/owncloud/".$user."/diskUsageAverage.txt";
                 $file = escapeshellarg($file);
@@ -48,7 +55,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	}
 	public function addToDb($user, $month, $average, $averageTrash) {
 	// Check for existence
-                $stmt = OC_DB::prepare ( "SELECT `month` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
+                $stmt = DB::prepare ( "SELECT `month` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
                 $result = $stmt->execute ( array (
                                 $user,
 				$month
@@ -56,9 +63,10 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 if ($result->fetchRow ()) {
                         return false;
                 }else {	
-			$bill = ((int)$average/1000000)*2;
+			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
+			$bill = ((float)$average/1000000)*$charge;
 			$bill = (string)$bill;
-			$stmt = OC_DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill` ) VALUES( ? , ? , ? , ? , ?, ?  )" );
+			$stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill` ) VALUES( ? , ? , ? , ? , ?, ?  )" );
 			$result = $stmt->execute ( array (
 				$user,
 				'0',
@@ -79,14 +87,17 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$sender = 'cloud@data.deic.dk';
 		$subject = 'Bill for '.$fullmonth;
 		$message = 'The bill for '.$fullmonth.' is '.$bill.' krones.
-		Go to '.url.' to complete payment'; 
+		Go to '.$url.' to complete payment'; 
 		
 		$headers = 'From: '.$sender . "\r\n" . 'Reply-To: ' .$sender. "\r\n" . 'X-Mailer: PHP/' . phpversion ();
 		try {
 			mail ( $user, $subject, $message, $headers, "-r " . $user );
 		} catch (\Exception $e) {
-			\OCP\Util::writeLog('FilesAccounting', 'A problem occurred while sending the e-mail. Please revisit your settings.', \OCP\Util::ERROR);
+			Util::writeLog('FilesAccounting', 'A problem occurred while sending the e-mail. Please revisit your settings.', Util::ERROR);
 		}
+	}
+	public function createInvoice(){
+
 	}
 }
 

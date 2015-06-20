@@ -3,3 +3,14 @@
     height: 200px;
 }
 
+.empty {
+	height: 34px;
+	padding-left: 15px;
+	font-style: italic;
+}
+
+td.centertr {
+	height:50px; 
+	text-align:center;
+}
+

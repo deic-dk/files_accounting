@@ -1,5 +1,4 @@
-<fieldset id='storageSettings' class='section'>
-
+<fieldset id='storageSettings' class='section' style="border-top-style: none;">
   <h2>Storage Use</h2>
   <div id="chart_div"><script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
@@ -69,21 +68,23 @@
        			 for(i = 0; i < dates.length; i++){
                 		data.addRow([dates[i], usage[i], trash[i]]);
         		}
- 
-        		var options = {
-          		vAxis: {title: 'MB \n\n',  titleTextStyle: {color: '#333'}}};
+			var options = {
+                        title: 'Average Storage History',
+                        hAxis: {title: 'Months',  titleTextStyle: {color: '#333'}},
+			vAxis: {title: 'MB \n\n',  titleTextStyle: {color: '#333'}},
+                        width: 900
+                        }; 
 		}else {
                          for(i = 0; i < dates.length; i++){
                                 data.addRow([dates[i], usage[i]/1000, trash[i]/1000]);
                         }
-                        var options = {
-                        vAxis: {title: 'GB \n\n',  titleTextStyle: {color: '#333'}}};
-		}
-        	var options = {
-                	title: 'Average Storage History',
-                	hAxis: {title: 'Months',  titleTextStyle: {color: '#333'}},
-                	width: 900
+			var options = {
+                        title: 'Average Storage History',
+                        hAxis: {title: 'Months',  titleTextStyle: {color: '#333'}},
+			vAxis: {title: 'GB \n\n',  titleTextStyle: {color: '#333'}},
+                        width: 900
                         };
+		}
                         new google.visualization.AreaChart(document.getElementById('chart_div')).
                         draw(data, options);
                         break;
@@ -101,5 +102,11 @@
 }
     </script>
 </div>
+<div style="padding-top:25px;"><select><option value="0" selected="selected" ><?php echo date("Y"); ?></option></select></div>
+<div><?php
+        $form = include "billinghistory.php";
+           ?>
+</div>
+
 </fieldset>
 
