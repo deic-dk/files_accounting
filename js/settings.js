@@ -1,8 +1,8 @@
-function add_charge_settings(charges, taxes){
+function add_charge_settings(charges, taxes, url){
 	$.ajax(OC.linkTo('files_accounting','ajax/settingsactions.php'), {
 		 type:'POST',
 		  data:{
-			 'action': 'addcharge', 'charges': charges, 'taxes': taxes
+			 'action': 'addcharge', 'charges': charges, 'taxes': taxes, 'url': url
 		 },
 		 dataType:'json',
 		 success: function(data){
@@ -20,7 +20,8 @@ $(document).ready(function() {
  	$('#billsubmit').click(function() {
 		charges = $('#charges').val();
 		taxes = $('#taxes').val(); 
-		add_charge_settings(charges, taxes);
+		url = $('#url').val();
+		add_charge_settings(charges, taxes, url);
 	});
 });
 

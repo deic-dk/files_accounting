@@ -76,7 +76,13 @@
                                 <notnull>true</notnull>
                                 <length>255</length>
                         </field>
-
+			
+			<field>
+                                <name>year</name>
+                                <type>text</type>
+                                <notnull>true</notnull>
+                                <length>255</length>
+                        </field>
 
 	</table>	
 

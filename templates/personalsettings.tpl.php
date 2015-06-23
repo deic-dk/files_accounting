@@ -26,7 +26,7 @@
 
                                   }
 
-            $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily.txt');
+            $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.date("Y").'.txt');
 			$dailyUsage = array();
 			$averageToday = 0 ;
 			$averageTodayTrash = 0;
@@ -102,11 +102,21 @@
 }
     </script>
 </div>
-<div style="padding-top:25px;"><select><option value="0" selected="selected" ><?php echo date("Y"); ?></option></select></div>
+
+
+<div style="padding-top:25px;"><select id="list" name="yearList" method=post><option name=<?php echo date("Y"); ?> value=<?php echo date("Y"); ?> ><?php echo date("Y"); ?></option>
+<?php $years = \OCA\Files_Accounting\Util::billYear(OCP\USER::getUser ());
+	foreach ($years as $year) {
+                echo "<option name=$year value=$year>$year</option>";
+        }
+?>
+</option> 
+</select></div>
 <div><?php
-        $form = include "billinghistory.php";
+        $form = include "billing.php";
            ?>
 </div>
+
 
 </fieldset>
 

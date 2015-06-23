@@ -14,3 +14,7 @@ td.centertr {
 	text-align:center;
 }
 
+tr.unpaid {
+	display: none;
+} 
+

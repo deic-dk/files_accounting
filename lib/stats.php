@@ -11,19 +11,18 @@ use \OCP\Config;
 
 class Stats extends \OC\BackgroundJob\QueuedJob {
 	protected function run($argument) {
-		if (\OC::$CLI) {
-				$file_update = $this->updateMonthlyAverage();
-		}
+		$file_update = $this->updateMonthlyAverage();
 	}
 
 	public function updateMonthlyAverage() {
+		$year = date('Y');
 		$user= User::getUser();
-		$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage.txt", "a") or die("Unable to open file!");
-		$file = "/tank/data/owncloud/".$user."/diskUsageAverage.txt";
+		$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt", "a") or die("Unable to open file!");
+		$file = "/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt";
                 $file = escapeshellarg($file);
                 $line = `tail -n 1 $file`;
 		if (date("d") == "01") {
-		       $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily.txt');
+		        $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
                 	$dailyUsage = array();
                 	$averageToday = 0 ;
                 	$averageTodayTrash = 0;
@@ -32,7 +31,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                     		if ($userRows[0] == $user) {
                                 	$month =  (int)substr($userRows[1], 0, 2);
 					if ($month == ((int)date("m") - 01)) {
-						$dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
+						$dailyUsage[] = array('usage' => (float)$userRows[2], 'trash' => (float)$userRows[3], 'month' => $month);
                                    		$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
                                    		$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
 	
@@ -83,7 +82,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	} 
 	public function sendNotificationMail($user, $month, $bill) {
 		$fullmonth = date('F', strtotime("2000-$month-01"));
-		$url = 	'https://test.data.deic.dk/index.php/settings/personal';
+		$url = 	Config::getAppValue('files_accounting', 'url', '');
 		$sender = 'cloud@data.deic.dk';
 		$subject = 'Bill for '.$fullmonth;
 		$message = 'The bill for '.$fullmonth.' is '.$bill.' krones.
