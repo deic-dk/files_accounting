@@ -8,7 +8,7 @@
 <input type="hidden" name="tax" value="25">
 <input type="hidden" name="notify_url" value="https://test.data.deic.dk/index.php/settings/personal">
 <input type="hidden" name="env" value="www.sandbox"><input type="hidden" name="cmd" value="_xclick">
-<input type="hidden" name="business" value="s141277@student.dtu.dk">
+<input type="hidden" name="business" value=<?php echo \OCP\User::getUser(); ?>>
 <input type="hidden" name="bn" value="JavaScriptButton_buynow">
 <button type="submit" class="paypal-button large">Pay Now</button>
 </form>
