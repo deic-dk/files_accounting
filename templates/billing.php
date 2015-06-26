@@ -48,15 +48,16 @@
                         $invoice = $bill['link'];
 	  		if ($status == '1') {
 	   	   		$status = '<div style="color:#9E9E9E"><strong>Paid</strong><div>';
-		   		$button = '<div><i class="icon-ok"></i></div>';
+				$button = '<div><i class="icon-ok"></i></div>';
       			}else {
 	      			$status = '<div style="color:#CDDC39"><strong>Pending</strong></div>';
-				$button = '<div class="inlineblock button">Pay now</div>';
 				echo "<tr><td style='height:34px; padding-left:6px;' ><div class='row'><div class='col-xs-1 text-right '></div>
                         <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
                        <span class='nametext'>$status</span></a></div>
                            </td><td>$fullmonth</td><td style='padding-left:2px;'>$monthbill</td>
-                           <td>$invoice</td><td>$button</td></tr>";
+                           <td>$invoice</td><td>";
+				$form = include "paypal.php";
+                                echo "</td></tr>";
       			}
 		}
 	  echo "<tr><td colspan='5' class='centertr'><div id='history' class='btn btn-primary btn-flat'>Load history</div></td></tr>";

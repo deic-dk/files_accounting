@@ -18,3 +18,19 @@ tr.unpaid {
 	display: none;
 } 
 
+.paypal-button button {
+	white-space: nowrap;
+	overflow: hidden;
+	border-radius: 13px;
+	font-family: "Arial", bold, italic;
+	font-weight: bold;
+	font-style: italic;
+	border: 1px solid #ffa823;
+	color: #0E3168;
+	background:  #ffa823;
+	position: relative;
+	text-shadow: 0 1px 0 rgba(255,255,255,.5);
+	cursor: pointer;
+	z-index: 0;
+}
+

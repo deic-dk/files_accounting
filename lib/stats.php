@@ -13,43 +13,46 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	protected function run($argument) {
 		$file_update = $this->updateMonthlyAverage();
 	}
-
 	public function updateMonthlyAverage() {
 		$year = date('Y');
-		$user= User::getUser();
-		$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt", "a") or die("Unable to open file!");
-		$file = "/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt";
-                $file = escapeshellarg($file);
-                $line = `tail -n 1 $file`;
-		if (date("d") == "01") {
-		        $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
-                	$dailyUsage = array();
-                	$averageToday = 0 ;
-                	$averageTodayTrash = 0;
-                	foreach ($lines as $line_num => $line) {
-                    		$userRows = explode(" ", $line);
-                    		if ($userRows[0] == $user) {
-                                	$month =  (int)substr($userRows[1], 0, 2);
-					if ($month == ((int)date("m") - 01)) {
-						$dailyUsage[] = array('usage' => (float)$userRows[2], 'trash' => (float)$userRows[3], 'month' => $month);
-                                   		$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
-                                   		$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
+		$users= User::getUsers();
+		foreach ($users as $user) { 
+			if (User::userExists($user)) {
+				$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt", "a") or die("Unable to open file!");
+				$file = "/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt";
+                		$file = escapeshellarg($file);
+                		$line = `tail -n 1 $file`;
+				if (date("d") == "01") {
+		        		$lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
+                			$dailyUsage = array();
+                			$averageToday = 0 ;
+                			$averageTodayTrash = 0;
+                			foreach ($lines as $line_num => $line) {
+                    				$userRows = explode(" ", $line);
+                    				if ($userRows[0] == $user) {
+                                			$month =  (int)substr($userRows[1], 0, 2);
+							if ($month == ((int)date("m") - 01)) {
+								$dailyUsage[] = array('usage' => (float)$userRows[2], 'trash' => (float)$userRows[3], 'month' => $month);
+                                   				$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
+                                   				$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
 	
+							}
+						}		 
 					}
-				}		 
-			}
-			$monthToSave = (string)((int)date("m") - 01);
-			$averageToday = (string)$averageToday;
-			$averageTodayTrash = (string)$averageTodayTrash;
-			$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash."\n";	
-			if ($averageToday != '0' && $line != $txt) {
-                        	$rv = fwrite($monthlyAverageFile, $txt);
-				if ( ! $rv ){
-        				die("unable to write to file");
+					$monthToSave = (string)((int)date("m") - 01);
+					$averageToday = (string)$averageToday;
+					$averageTodayTrash = (string)$averageTodayTrash;
+					$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash."\n";	
+					if ($averageToday != '0' && $line != $txt) {
+                        			$rv = fwrite($monthlyAverageFile, $txt);
+						if ( ! $rv ){
+        						die("unable to write to file");
+						}
+                        			fclose($monthlyAverageFile);
+                			}
+					$updateDb = Stats::addToDb($user, $monthToSave, $averageToday, $averageTodayTrash); 
 				}
-                        	fclose($monthlyAverageFile);
-                	}
-			$updateDb = Stats::addToDb($user, $monthToSave, $averageToday, $averageTodayTrash); 
+			}
 		}
 	}
 	public function addToDb($user, $month, $average, $averageTrash) {
