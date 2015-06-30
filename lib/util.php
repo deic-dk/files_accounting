@@ -32,5 +32,42 @@ class Util {
 		
 		return array_reverse(array_unique($years));	
 	} 
+
+	public static function updateStatus($user, $ref_id) {
+		$query = DB::prepare ( "UPDATE `*PREFIX*files_accounting` SET `status` = true WHERE `user` = ? AND `reference_id` = ?" );
+		$result = $query->execute ( array (
+				$user,
+				$ref_id
+		) );
+		return $result;
+	} 
+
+	public static function checkTnxId($tnxid) {
+		$query = DB::prepare("SELECT * FROM `*PREFIX*files_accounting_payments` WHERE `txnid` = '$tnxid'");
+		$result = $query->execute( array ($tnxid));
+
+		return $result->fetchRow () ? true:false;
+	}
+
+	public static function checkPrice($price, $id) {
+		$query = DB::prepare("SELECT `amount` FROM `*PREFIX*files_accounting_payments` WHERE `id` = '$id'");
+		$result = $query->execute(array($id));
+	 	return true;	 	
+	}
+
+	public static function updatePayments($data) {
+		if(is_array($data)){
+			$query = DB::prepare("INSERT INTO `*PREFIX*files_accounting_payments` ( `txnid`, `payment_amount`, `payment_status`, `createdtime`) VALUES (	?, ?, ?, ?)");
+			$query->execute( array(
+					$data['txn_id'],
+					$data['payment_amount'],
+					$data['payment_status'],
+				 	date("Y-m-d H:i:s")
+			));	
+			return true;
+		}else {
+			return false;
+		}
+	}
 }
 
