@@ -18,16 +18,13 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$users= User::getUsers();
 		foreach ($users as $user) { 
 			if (User::userExists($user)) {
-				$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt", "a") or die("Unable to open file!");
-				$file = "/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt";
-                		$file = escapeshellarg($file);
-                		$line = `tail -n 1 $file`;
+				$file = file_get_contents("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt");
 				if (date("d") == "01") {
 		        		$lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
                 			$dailyUsage = array();
                 			$averageToday = 0 ;
                 			$averageTodayTrash = 0;
-                			foreach ($lines as $line_num => $line) {
+                			foreach ($lines as $line) {
                     				$userRows = explode(" ", $line);
                     				if ($userRows[0] == $user) {
                                 			$month =  (int)substr($userRows[1], 0, 2);
@@ -42,9 +39,11 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 					$monthToSave = (string)((int)date("m") - 01);
 					$averageToday = (string)$averageToday;
 					$averageTodayTrash = (string)$averageTodayTrash;
-					$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash."\n";	
-					if ($averageToday != '0' && $line != $txt) {
-                        			$rv = fwrite($monthlyAverageFile, $txt);
+					$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash;	
+					if ($averageToday != '0' && strpos($file, $txt) === false ) {
+						$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt", "a") or die("Unable to open file!");
+						$stringData = $txt . "\n";
+                        			$rv = fwrite($monthlyAverageFile, $stringData);
 						if ( ! $rv ){
         						die("unable to write to file");
 						}
@@ -67,18 +66,20 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 }else {	
 			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
 			$bill = ((float)$average/1000000)*$charge;
+			$bill = round($bill, 2);
 			$bill = (string)$bill;
-			$stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill` ) VALUES( ? , ? , ? , ? , ?, ?  )" );
+			$stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `year` ) VALUES( ? , ? , ? , ? , ?, ?,?  )" );
 			$result = $stmt->execute ( array (
 				$user,
 				'0',
 				$month,
 				$average,
 				$averageTrash,
-				$bill 
+				$bill,
+				date("Y") 
 			) );
 
-			$notifyUser = Stats::sendNotificationMail($user, $month, $bill);
+			//$notifyUser = Stats::sendNotificationMail($user, $month, $bill);
 
 			return $result ? true : false;	
 		}
