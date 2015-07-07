@@ -86,12 +86,12 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	} 
 	public function sendNotificationMail($user, $month, $bill) {
 		$fullmonth = date('F', strtotime("2000-$month-01"));
+		$username = User::getDisplayName($user);
+		
 		$url = 	Config::getAppValue('files_accounting', 'url', '');
 		$sender = 'cloud@data.deic.dk';
-		$subject = 'Bill for '.$fullmonth;
-		$message = 'The bill for '.$fullmonth.' is '.$bill.' krones.
-		Go to '.$url.' to complete payment'; 
-		
+		$subject = 'Data DeIC: Invoice Payment for '.$fullmonth;
+		$message = 'Dear '.$username.','."\n \n".'The bill for '.$fullmonth.' is '.$bill.' DKK. Please find in the attachments an invoice.'."\n".'To complete payment click the following link:'."\n \n".$url."\n \n".'Thank you for choosing our services'."\n \n".'Data DeIC';
 		$headers = 'From: '.$sender . "\r\n" . 'Reply-To: ' .$sender. "\r\n" . 'X-Mailer: PHP/' . phpversion ();
 		try {
 			mail ( $user, $subject, $message, $headers, "-r " . $user );
@@ -103,4 +103,5 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 
 	}
 }
+	
 
