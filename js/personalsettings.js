@@ -49,9 +49,11 @@ $(document).ready(function() {
                         }else{
                                 OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
                         }
-         });
+         	});
 
 
 	});
+	
+	$('.activitysettings tr').eq(5).css('display','none');
 })
 

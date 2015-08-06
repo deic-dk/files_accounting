@@ -105,7 +105,7 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
 		$data['receiver_email'] = $_POST['receiver_email'];
 		$data['payer_email'] = $_POST['payer_email'];
 		$data['custom'] = $_POST['custom'];
-	
+
 		$valid_txnid = \OCA\Files_Accounting\Util::checkTxnId($data['txn_id']);
 		$valid_price = 	\OCA\Files_Accounting\Util::checkPrice($data['payment_amount'], $data['item_number']);
 
@@ -113,11 +113,14 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
         	$mail_To = "ioanna.psylla@gmail.com";
         	$mail_Subject = "Error during payment";
 
+		$user = \OCP\User::getUser();
+
 		if ( $valid_price && $data['receiver_email'] === 'ioanna.psylla-facilitator@gmail.com') {
 			if ($data['payment_status'] === 'Completed' && $valid_txnid) {
 				$orderid = \OCA\Files_Accounting\Util::updatePayments($data);
 				if ($orderid) {
 					\OCA\Files_Accounting\Util::updateStatus($data['item_number']);	
+					\OCA\Files_Accounting\ActivityHooks::paymentComplete($data['custom'], $data['item_name']); 
 					\OCP\Util::writeLog('IPN Testing', "Payment inserted into DB ", 3);
 				//error_log("Payment inserted into DB", 3, LOG_FILE);
 				} else {

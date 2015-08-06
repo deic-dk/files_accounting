@@ -69,6 +69,7 @@
 					<input type="hidden" name="no_shipping" value="2">
 					<input type="hidden" name="tax_rate" value="25.000">
 					<input type="hidden" name="shipping" value="0.00">
+					<input type="hidden" name="custom" value="'.OC_User::getUser().'">
 					<input type="hidden" name="bn" value="PP-BuyNowBF:btn_paynow_SM.gif:NonHosted">
 					<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_paynow_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
 					<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
