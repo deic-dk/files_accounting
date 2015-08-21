@@ -74,9 +74,9 @@ class Bill_Activity implements IExtension {
 		}
 		switch ($text) {
 			case 'created_self':
-				return (string) $this->l->t('You have a new invoice: <strong>%1$s</strong>', $params);
+				return (string) $this->l->t('You have a new invoice for: <strong>%1$s</strong>', $params);
 			case 'completed_self':
-				return (string) $this->l->t('You completed a payment: <strong>%1$s</strong>', $params);
+				return (string) $this->l->t('You have successfully completed a payment: <strong>%1$s</strong>', $params);
 			default:
 				return false;
 		}

@@ -78,14 +78,15 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				$bill,
 				date("Y") 
 			) );
-
-			//$notifyUser = Stats::sendNotificationMail($user, $month, $bill);
+			
+			$fullmonth = date('F', strtotime("2000-$month-01"));
+			$notifyUser = Stats::sendNotificationMail($user, $fullmonth, $bill);
+			$notification = ActivityHooks::invoiceCreate($fullmonth);
 
 			return $result ? true : false;	
 		}
 	} 
-	public function sendNotificationMail($user, $month, $bill) {
-		$fullmonth = date('F', strtotime("2000-$month-01"));
+	public function sendNotificationMail($user, $fullmonth, $bill) {
 		$username = User::getDisplayName($user);
 		
 		$url = 	Config::getAppValue('files_accounting', 'url', '');
@@ -103,5 +104,4 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 
 	}
 }
-	
 
