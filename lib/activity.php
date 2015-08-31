@@ -39,7 +39,7 @@ class Bill_Activity implements IExtension {
 	 */
 	public function getNotificationTypes($languageCode) {
 		$l = $this->getL10N($languageCode);
-		return [self::TYPE_INVOICE => (string) $l->t(),];
+		return [self::TYPE_INVOICE => (string) $l->t('Notifications from <strong>Billing</strong> app'),];
 	}
 	/**
 	 * For a given method additional types to be displayed in the settings can be returned.
