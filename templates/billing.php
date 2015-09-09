@@ -54,7 +54,7 @@
                         <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
                        <span class='nametext'>$status</span></a></div>
                            </td><td class='month'>$fullmonth</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
-                           <td>$invoice</td><td class='paypal_btn'>";
+                           <td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
 				echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
 					<input type="hidden" name="cmd" value="_xclick">
 					<input type="hidden" name="business" value="ioanna.psylla-facilitator@gmail.com">

@@ -15,14 +15,14 @@
                 <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
                        <span class='nametext'>$status</span></a></div>
                            </td><td>$fullmonth</td><td style='padding-left:2px;'>$monthbill</td>
-                           <td>$invoice</td><td>$button</td></tr>";
+                           <td class='invoice'><a class='invoice-link'>$invoice</a></td><td>$button</td></tr>";
       		}else {
 			$status = '<div style="color:#CDDC39"><strong>Pending</strong></div>';
 			echo "<tr class='unpaid'><td style='height:34px; padding-left:6px;' ><div class='row'><div class='col-xs-1 text-right '></div>
                         <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
                        <span class='nametext'>$status</span></a></div>
                            </td><td class='month'>$fullmonth</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
-                           <td>$invoice</td><td class='paypal_btn'>";
+                           <td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
 
 			echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
 					 <input type="hidden" name="cmd" value="_xclick">

@@ -1,4 +1,4 @@
-<fieldset id='storageSettings' class='section' style="border-top-style: none;">
+<fieldset id='storageSettings' class='section'>
   <h2>Storage Use</h2>
   <div id="chart_div"><?php $plot = include "storageplot.php"; ?>
 </div>
@@ -9,9 +9,14 @@
 	foreach ($years as $year) {
                 echo "<option name='year' value=$year>$year</option>";
         }
+
 ?>
 </option> 
-</select></div>
+</select>
+<label class="load_history button" href=# data-action="downloadhistory" 
+ >Daily History</label>
+</div>
+
 <div><?php
         $form = include "billing.php";
            ?>

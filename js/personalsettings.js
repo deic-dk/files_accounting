@@ -1,17 +1,17 @@
-function update_graph(year){
-	$.post(OC.filePath('files_accounting', 'ajax', 'actions.php'), {year : year, action : "loadgraph" },
-                function ( jsondata ){
-                        if(jsondata.status == 'success' ) {
+//function update_graph(year){
+//	$.post(OC.filePath('files_accounting', 'ajax', 'actions.php'), {year : year, action : "loadgraph" },
+  //              function ( jsondata ){
+    //                    if(jsondata.status == 'success' ) {
 
-                                $('#chart_div').append(jsondata.data.page);
-                        }else{
-                                OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
-                        }
-         });	
-}
+      //                          $('#chart_div').append(jsondata.data.page);
+        //                }else{
+          //                      OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
+            //            }
+         //});	
+//}
 $(document).ready(function() {
-	var year = $("#list").val();
-        update_graph(year);
+//	var year = $("#list").val();
+  //  update_graph(year);
 
 	$("#history").on ("click", function () {
 		var d = new Date();
@@ -42,16 +42,18 @@ $(document).ready(function() {
                                 OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
                         }
                 });
-		$.post(OC.filePath('files_accounting', 'ajax', 'actions.php'), {year : '2014', action : "loadgraph" },
-                function ( jsondata ){
-                        if(jsondata.status == 'success' ) {
-                                $('#chart_div').append(jsondata.data.page);
-                        }else{
-                                OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
-                        }
-         	});
 
 
+	});
+
+	$('.load_history').on('click', function () {
+		var action = 'downloadhistory';
+		document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?action=' + action;
+	});
+
+	$('#billingtable').find('a.invoice-link').on('click', function () {
+		var link = $(this).text();
+		document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
 	});
 	
 	$('.activitysettings tr').eq(5).css('display','none');
