@@ -15,8 +15,8 @@ class ActivityHooks {
 			return new Consumer();
 		});
 	}
-	public static function invoiceCreate($params) {
-		ActivityHooks::addNotificationsForAction($params, 'invoice', 'created_self', 'created_by');		
+	public static function invoiceCreate($user, $params) {
+		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'created_self', 'created_by');		
 	}
 	public static function paymentComplete($user, $params) {
 		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'completed_self', 'completed_by');
@@ -26,20 +26,12 @@ class ActivityHooks {
 		ActivityHooks::addNotificationsForUser(
                                 $user, $userSubject,
                                 $bill, 
-				true,
-				true,
                                 40, $activityType
                 );
 	}
-	protected static function addNotificationsForUser($user, $subject, $path, $streamSetting, $emailSetting, $priority , $type ) {
+	protected static function addNotificationsForUser($user, $subject, $path, $priority , $type ) {
 	        $app = 'files_accounting';	
-		if ($streamSetting) {
-			ActivityHooks::send($app, $subject, array($path), '', array(), '', '', $user, $type, 40);
-		}
-		if ($emailSetting) {
-			$latestSend = time() + $emailSetting;
-			//Data::storeMail($app, $subject, array($path), $user, $type, $latestSend);
-		}		 
+		ActivityHooks::send($app, $subject, array($path), '', array(), '', '', $user, $type, $priority);
 	}
 	
 	public static function send($app, $subject, $subjectparams = array(), $message = '', $messageparams = array(), $file = '', $link = '', $affecteduser = '', $type = '', $prio) {

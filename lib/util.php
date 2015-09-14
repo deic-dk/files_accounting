@@ -3,17 +3,32 @@
 namespace OCA\Files_Accounting;
 
 use \OCP\DB; 
+use \OCP\Config;
 
 class Util {
 
 	public static function userBill($user,$year) {
-		$stmt = DB::prepare ( "SELECT `fa_id`, `status`, `month`, `bill`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `year` = ?" );
-			$result = $stmt->execute ( array ($user, $year ));
-			$monthly_bill = array ();
-			while ( $row = $result->fetchRow () ) {
-				$monthly_bill[] = array('id' => $row['fa_id'], 'status' => (int)$row['status'], 'month' => (int)$row['month'], 'bill' => (float)$row['bill'], 'link' => $row['reference_id'].'.pdf'); 
+		$stmt = DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `year` = ?" );
+		$result = $stmt->execute ( array ($user, $year ));
+		$monthly_bill = array ();
+		while ( $row = $result->fetchRow () ) {
+			$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$row['month'], 'bill' => (float)$row['bill'], 'average' => (float)$row['average'], 'link' => $row['reference_id']); 
 			}
-	return $monthly_bill;
+		return $monthly_bill;
+	}
+
+	public static function userBalance($average) {
+		$average = $average/1000000;
+		$gift_card = (float) Config::getAppValue('files_accounting', 'gift', '');
+                if ($gift_card > $average){
+                        $balance = $gift_card - $average;
+			$balance = round($balance, 3);
+                }else {
+                        $balance = 0;
+                }
+
+		return $balance;
+
 	}
 
 
@@ -34,21 +49,19 @@ class Util {
 	} 
 
 	public static function getId($user, $month) {
-		$stmt = DB::prepare ( "SELECT `fa_id`  FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
+		$stmt = DB::prepare ( "SELECT `reference_id`  FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
 		$result = $stmt->execute ( array (
 				$user,
 				$month
 		));	
 		$row = $stmt->fetch (); 
-                $id  = $row["fa_id"];
+                $id  = $row["reference_id"];
 		return $id;
 	}
 
 	public static function updateStatus($id) {
-		$query = DB::prepare ( "UPDATE `*PREFIX*files_accounting` SET `status` = true WHERE `fa_id` = ?" );
-		$result = $query->execute ( array (
-				(int)$id
-		) );
+		$query = DB::prepare ( "UPDATE `*PREFIX*files_accounting` SET `status` = true WHERE `reference_id` = ?" );
+		$result = $query->execute ( array ($id) );
 		return $result;
 	} 
 
@@ -61,7 +74,7 @@ class Util {
 
 	public static function checkPrice($price, $id) {
 		$valid_price = false;
-		$query = DB::prepare("SELECT `bill` FROM `*PREFIX*files_accounting` WHERE `fa_id` = '$id'");
+		$query = DB::prepare("SELECT `bill` FROM `*PREFIX*files_accounting` WHERE `reference_id` = '$id'");
 		$result = $query->execute(array($id));
 		while ( $row = $result->fetchRow () ) {
 			$bill = (float)$row["bill"]*1.25;
@@ -88,5 +101,6 @@ class Util {
 			return false;
 		}
 	}
+
 }
 

@@ -19,7 +19,8 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$users= User::getUsers();
 		foreach ($users as $user) { 
 			if (User::userExists($user)) {
-				if (date("d") == "01") {
+				if (date("d") == "1") {
+					$file = file_get_contents("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt");
 		        		$lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
                 			$dailyUsage = array();
                 			$averageToday = 0 ;
@@ -64,36 +65,57 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 if ($result->fetchRow ()) {
                         return false;
                 }else {	
+			$gift_card = (float) Config::getAppValue('files_accounting', 'gift', '');
 			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
 			$quantity = ((float)$average/1000000);
-			$bill = $quantity*$charge;
-			$bill = round($bill, 2);
-			$fullmonth = date('F', strtotime("2000-$month-01"));
-			$invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
-			$reference_id = $invoice;
-			$bill = (string)$bill;
+			if (isset($gift_card)){
+				if ($quantity > $gift_card) {
+				
+					$bill = ($quantity - $gift_card)*$charge;
+					$bill = round($bill, 2);
+					$fullmonth = date('F', strtotime("2000-$month-01"));
+					$invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
+					$reference_id = $invoice;
 
-			$stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`, `year` ) VALUES( ? , ? , ? , ? , ?, ?, ?, ?  )" );
-			$result = $stmt->execute ( array (
-				$user,
-				'0',
-				$month,
-				$average,
-				$averageTrash,
-				$bill,
-				$reference_id,
-				date("Y") 
-			) );
-			
-	//		$notifyUser = Stats::sendNotificationMail($user, $fullmonth, $bill);
-			$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
+					$result = Stats::updateMonth($user, '0', $month, $average, $averageTrash, $bill, $reference_id);	
+					$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 
-			return $result ? true : false;	
+				}else {
+					$result = Stats::updateMonth($user, '1', $month, $average, $averageTrash, '', '');
+				}
+			}else{
+				$bill = $quantity*$charge;
+				$bill = round($bill, 2);
+				$fullmonth = date('F', strtotime("2000-$month-01"));
+                                $invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
+                                $reference_id = $invoice;
+				$result = Stats::updateMonth($user, '0', $month, $average, $averageTrash, $bill, $reference_id);
+				$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
+			}
+			return $result ? true : false;
 		}
 	} 
+
+	public static function updateMonth($user, $status, $month, $average, $averageTrash, $bill, $reference_id){
+                $stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`, `year` ) VALUES( ? , ? , ?
+, ? , ?, ?, ?, ?  )" );
+                $result = $stmt->execute ( array (
+                                                  $user,
+                                                  $status,
+                                                  $month,
+                                                  $average,
+                                                  $averageTrash,
+                                                  $bill,
+                                                  $reference_id,
+                                                  date("Y")
+                                             ) );
+         
+                return $result;
+        }
+
 	public function sendNotificationMail($user, $fullmonth, $bill, $filename) {
 		$username = User::getDisplayName($user);
-		$path = '/tank/data/owncloud/'.$user;	
+		$path = '/tank/data/owncloud/'.$user.'/invoices';	
 		$file = $path . "/" . $filename;
 		$file_size = filesize($file);
 		$url =  Config::getAppValue('files_accounting', 'url', '');
@@ -158,7 +180,6 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		for ($i=0; $i<count($articles); $i++){
 			$total += $articles[$i][3];
 		}
-		$path = $user.'/'.$reference.'.pdf';
 		$filename = $reference.'.pdf';
 		Stats::writeInvoice(	User::getDisplayName($user), // Name
 								$user,		// eMail
@@ -173,7 +194,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 								"",
 								$filename);
 
-		$notifyUser = Stats::sendNotificationMail($user, $monthname, $bill, $filename);	
+		//$notifyUser = Stats::sendNotificationMail($user, $monthname, $bill, $filename);	
 
 		return $reference;
 	}
@@ -246,7 +267,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		if($comment){
 			$pdf->CommentsTable($width,$borders,$header,$data);
 		}
-		$pdf->Output('/tank/data/owncloud/'.$email.'/'.$filename, 'F');
+		$pdf->Output('/tank/data/owncloud/'.$email.'/invoices/'.$filename, 'F');
 	}
 }
 
