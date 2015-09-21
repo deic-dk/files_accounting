@@ -67,7 +67,7 @@ class PDF extends FPDF
     	$this->Ln();
     	// Render Products
     	$this->SetFont('Helvetica','',12);
-    	$e = array(" ", "GB ", "DKK/GB ", "DKK ");
+    	$e = array(" ", "Gigabyte ", "DKK/Gigabyte ", "DKK ");
     	for($i=0;$i<count($d);$i++){
 	    	for($j=0;$j<count($d[0]);$j++){
 	    		$this->Cell($w[0][$j],7,$e[$j].$d[$i][$j],$b[1][$j],0,$a[1][$j]);

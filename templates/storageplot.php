@@ -61,33 +61,33 @@
   	var trash = [];
   	for (var i=0; i<arrayFromPHP.length; i++) {
         	dates.push(arrayFromPHP[i][0]);
-        	usage.push(parseInt(arrayFromPHP[i][1])/1000);
-        	trash.push(parseInt(arrayFromPHP[i][2])/1000);
+        	usage.push(parseInt(arrayFromPHP[i][1])/1024);
+        	trash.push(parseInt(arrayFromPHP[i][2])/1024);
   	}
 	for (var i=0; i<usage.length; i++) {
 		var data = new google.visualization.DataTable();
                 data.addColumn('string', 'dates');
-                data.addColumn('number', 'total use');
+                data.addColumn('number', 'files');
                 data.addColumn('number', 'trashbin');
 		if (usage[i] < 1000) {
        			 for(i = 0; i < dates.length; i++){
-                		data.addRow([dates[i], usage[i], trash[i]]);
+                		data.addRow([dates[i], Math.round(usage[i]*100)/100, Math.round(trash[i]*100)/100]);
         		}
 			var options = {
                         title: 'Average Storage History',
                         hAxis: {title: year,  titleTextStyle: {color: '#333'}},
 			vAxis: {title: 'MB \n\n',  titleTextStyle: {color: '#333'}},
-                        width: 900
+			width: 900 
                         }; 
 		}else {
                          for(i = 0; i < dates.length; i++){
-                                data.addRow([dates[i], usage[i]/1000, trash[i]/1000]);
+                                data.addRow([dates[i], (Math.round(usage[i]*100)/100)/1024, (Math.round(trash[i]*100)/100)/1024]);
                         }
 			var options = {
                         title: 'Average Storage History',
                         hAxis: {title: year,  titleTextStyle: {color: '#333'}},
 			vAxis: {title: 'GB \n\n',  titleTextStyle: {color: '#333'}},
-                        width: 900
+			width: 900 
                         };
 		}
                         new google.visualization.AreaChart(document.getElementById('chart_div')).
@@ -95,16 +95,12 @@
                         break;
 
 	}
-	function resizeHandler () {
-        	new google.visualization.AreaChart(document.getElementById('chart_div')).draw(data, options);
-       }
-       if (window.addEventListener) {
-           window.addEventListener('resize', resizeHandler);
-       }
-       else if (window.attachEvent) {
-           window.attachEvent('onresize', resizeHandler);
-       }
+//        	new google.visualization.AreaChart(document.getElementById('chart_div')).draw(data, options);
+	//$(window).resize(function(){
+  		//drawChart();
+	//});
 }
+//drawChart();
     </script>
 </div>
 
