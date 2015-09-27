@@ -17,11 +17,17 @@ class Util {
 		return $monthly_bill;
 	}
 
-	public static function userBalance($average) {
-		$average = $average/1000000;
-		$gift_card = (float) Config::getAppValue('files_accounting', 'gift', '');
-                if ($gift_card > $average){
-                        $balance = $gift_card - $average;
+	public static function userBalance($user, $average) {
+		$average = $average/1048576;
+		$gift_card = Util::freeSpace($user);
+		$str_to_ar = explode(" ", $gift_card);
+		$amount = (float) $str_to_ar[0];
+		$size = $str_to_ar[1];
+		if ($size == 'MB'){
+			$amount = $amount/1024;
+		} 
+                if ($amount > $average){
+                        $balance = $amount - $average;
 			$balance = round($balance, 3);
                 }else {
                         $balance = 0;
@@ -31,6 +37,50 @@ class Util {
 
 	}
 
+	public static function updatePreferences($user, $gift_card) {
+		$config_key = 'freequota';
+		$app_id = 'files_accounting';
+
+		$stmt = DB::prepare ( "SELECT `configkey` FROM `*PREFIX*preferences` WHERE `userid` = ? AND `configkey` = ?" );
+                $value = $stmt->execute ( array (
+                                $user,
+                                $config_key 
+                ) );
+                if ($value->fetchRow ()) {
+                        $stmt = DB::prepare ( "UPDATE `*PREFIX*preferences` SET `configvalue` = '$gift_card' WHERE `userid` = ? AND `appid` = ? AND `configkey` = ?" );
+                        $result = $stmt->execute ( array (
+                                        $user,
+                                        $app_id,
+                                        $config_key 
+                                  ) );
+                } else {
+                	$stmt = DB::prepare("INSERT INTO `*PREFIX*preferences` ( `userid`, `appid`, `configkey`, `configvalue`) VALUES (?, ?, ?, ?)");
+                	$result = $stmt->execute( array(
+                        	$user,
+                        	$app_id,
+                        	$config_key,
+                        	$gift_card
+                	));
+                }
+
+		return $result;
+				
+	}
+	
+	public static function freeSpace($user) {
+		$app_id = 'files_accounting';
+		$config_key = 'freequota';
+		$stmt = DB::prepare ( "SELECT `configvalue` FROM `*PREFIX*preferences` WHERE `userid` = ? AND `appid` = ? AND `configkey` = ? " );
+		$result = $stmt->execute ( array (
+				$user,
+				$app_id,
+				$config_key 
+		) );
+		$row = $stmt->fetch (); 
+                $config_value  = $row["configvalue"];
+
+		return $config_value;
+	}
 
 	public static function billYear($user) {
 		$year = date('Y');

@@ -53,8 +53,13 @@
 			$month = $bill['month'];
                         $fullmonth = date('F', strtotime("2000-$month-01"));
                         $monthbill = (float)$bill['bill'];
-                        $invoice = $bill['link'];
-			$balance = \OCA\Files_Accounting\Util::userBalance( $bill['average'] ) ;
+			if (isset($bill['link'])) {
+                        	$invoice = $bill['link'].'.pdf';
+			}else {
+				$invoice = "";
+			}
+			$average = $bill['average'];
+			$balance = \OCA\Files_Accounting\Util::userBalance(OC_User::getUser (), $average) ;
 			$vat = (float) \OCP\Config::getAppValue('files_accounting', 'tax', '');
 	  		if ($status == '0') {
       				$i ++;
@@ -63,7 +68,7 @@
                         <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
                        <span class='nametext'>$status</span></a></div>
                            </td><td class='month'>$fullmonth</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
-                           <td class='balance'>$balance</td><td class='invoice'><a class='invoice-link'>$invoice.pdf</a></td><td class='paypal_btn'>";
+                           <td class='balance'>$balance</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
 				echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
 					<input type="hidden" name="cmd" value="_xclick">
 					<input type="hidden" name="business" value="ioanna.psylla-facilitator@gmail.com">

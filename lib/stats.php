@@ -4,7 +4,6 @@ namespace OCA\Files_Accounting;
 
 use \OCP\DB;
 use \OCP\User;
-use \OCP\Util;
 use \OCP\Config;
 use \OCA\Files_Accounting\ActivityHooks;
 
@@ -19,7 +18,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$users= User::getUsers();
 		foreach ($users as $user) { 
 			if (User::userExists($user)) {
-				if (date("d") == "1") {
+				if (date("d") == "01") {
 					$file = file_get_contents("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt");
 		        		$lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
                 			$dailyUsage = array();
@@ -65,9 +64,16 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 if ($result->fetchRow ()) {
                         return false;
                 }else {	
-			$gift_card = (float) Config::getAppValue('files_accounting', 'gift', '');
+			$gift_card = Util::freeSpace($user);
+                	$str_to_ar = explode(" ", $gift_card);
+                	$gift_card = (float) $str_to_ar[0];
+                	$size = $str_to_ar[1];
+                	if ($size == 'MB'){
+                        	$gift_card = $gift_card/1024;
+                	}
+
 			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
-			$quantity = ((float)$average/1000000);
+			$quantity = ((float)$average/1048576);
 			if (isset($gift_card)){
 				if ($quantity > $gift_card) {
 				
@@ -159,7 +165,6 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		try {
 			mail ( $user, $subject, "", $headers, "-r " . $user );
 		} catch (\Exception $e) {
-			Util::writeLog('FilesAccounting', 'A problem occurred while sending the e-mail. Please revisit your settings.', Util::ERROR);
 		}
 	}
 
