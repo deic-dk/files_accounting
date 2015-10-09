@@ -6,7 +6,7 @@ use \OCP\DB;
 use \OCP\User;
 use \OCP\Config;
 use \OCA\Files_Accounting\ActivityHooks;
-
+use \OC_Preferences;
 require('deicfpdf.php');
 
 class Stats extends \OC\BackgroundJob\QueuedJob {
@@ -64,17 +64,16 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 if ($result->fetchRow ()) {
                         return false;
                 }else {	
-			$gift_card = Util::freeSpace($user);
-                	$str_to_ar = explode(" ", $gift_card);
-                	$gift_card = (float) $str_to_ar[0];
-                	$size = $str_to_ar[1];
-                	if ($size == 'MB'){
-                        	$gift_card = $gift_card/1024;
-                	}
-
+			$gift_card = OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceed');
 			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
 			$quantity = ((float)$average/1048576);
 			if (isset($gift_card)){
+				$str_to_ar = explode(" ", $gift_card);
+                		$gift_card = (float) $str_to_ar[0];
+                		$size = $str_to_ar[1];
+                		if ($size == 'MB'){
+                        		$gift_card = $gift_card/1024;
+                		}
 				if ($quantity > $gift_card) {
 				
 					$bill = ($quantity - $gift_card)*$charge;
@@ -87,7 +86,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 					$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 
 				}else {
-					$result = Stats::updateMonth($user, '1', $month, $average, $averageTrash, '', '');
+					$result = Stats::updateMonth($user, '2', $month, $average, $averageTrash, '', '');
 				}
 			}else{
 				$bill = $quantity*$charge;
@@ -121,14 +120,14 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 
 	public function sendNotificationMail($user, $fullmonth, $bill, $filename) {
 		$username = User::getDisplayName($user);
-		$path = '/tank/data/owncloud/'.$user.'/invoices';	
+		$path = '/tank/data/owncloud/'.$user;	
 		$file = $path . "/" . $filename;
 		$file_size = filesize($file);
 		$url =  Config::getAppValue('files_accounting', 'url', '');
                 $sender = 'cloud@data.deic.dk';
-                $subject = 'Data DeIC: Invoice Payment for '.$fullmonth;
+                $subject = 'DeIC Data: Invoice Payment for '.$fullmonth;
                 $message = 'Dear '.$username.','."\n \n".'The bill for '.$fullmonth.' is '.$bill.' DKK. Please find an invoice in the attachments.'."\n".'To complete payment click the following link:'."\n
-\n".$url."\n \n".'Thank you for choosing our services'."\n \n".'Data DeIC';
+\n".$url."\n \n".'Thank you for choosing our services.'."\n \n".'DeIC Data';
     		$handle = fopen($file, "r");
     		$content = fread($handle, $file_size);
     		fclose($handle);
@@ -141,7 +140,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
     		$eol = PHP_EOL;
 
     		// main header (multipart mandatory)
-    		$headers = "From: Data DeIC <".$sender.">" . $eol;
+    		$headers = "From: DeIC Data <".$sender.">" . $eol;
     		$headers .= "MIME-Version: 1.0" . $eol;
     		$headers .= "Content-Type: multipart/mixed; boundary=\"" . $separator . "\"" . $eol . $eol;
     		$headers .= "Content-Transfer-Encoding: 7bit" . $eol;
@@ -272,7 +271,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		if($comment){
 			$pdf->CommentsTable($width,$borders,$header,$data);
 		}
-		$pdf->Output('/tank/data/owncloud/'.$email.'/invoices/'.$filename, 'F');
+		$pdf->Output('/tank/data/owncloud/'.$email.'/'.$filename, 'F');
 	}
 }
 

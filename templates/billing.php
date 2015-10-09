@@ -15,13 +15,13 @@
 
   <th id="headerDisplay" class="column-display" style="width:14%">
     <div class="size sort columntitle" data-sort="size">
-      <span>Bill (DKK)</span>
+      <span>Amount (DKK)</span>
     </div>
   </th>
 
   <th id="headerDisplay" class="column-display" style="width:17%">
         <div class="size sort columntitle" data-sort="size">
-         <span>Balance (GB)</span>
+         <span>Due</span>
         </div>
   </th>	
 
@@ -34,7 +34,7 @@
 
   <th id="headerDisplay" class="">
     <div class="size sort columntitle" data-sort="size">
-      <span>Status</span>
+      <span>Payment</span>
     </div>
   </th>
   
@@ -53,13 +53,15 @@
 			$month = $bill['month'];
                         $fullmonth = date('F', strtotime("2000-$month-01"));
                         $monthbill = (float)$bill['bill'];
-			if (isset($bill['link'])) {
+			if ($bill['link'] != "") {
                         	$invoice = $bill['link'].'.pdf';
 			}else {
 				$invoice = "";
 			}
 			$average = $bill['average'];
-			$balance = \OCA\Files_Accounting\Util::userBalance(OC_User::getUser (), $average) ;
+			$duemonth = (int)$month + 02;
+			$duemonthname = date('F', strtotime("2000-$duemonth-01"));
+			$due_date =  $duemonthname." 1, 23:59 PM";
 			$vat = (float) \OCP\Config::getAppValue('files_accounting', 'tax', '');
 	  		if ($status == '0') {
       				$i ++;
@@ -68,7 +70,7 @@
                         <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
                        <span class='nametext'>$status</span></a></div>
                            </td><td class='month'>$fullmonth</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
-                           <td class='balance'>$balance</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
+                           <td class='duedate'>$due_date</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
 				echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
 					<input type="hidden" name="cmd" value="_xclick">
 					<input type="hidden" name="business" value="ioanna.psylla-facilitator@gmail.com">

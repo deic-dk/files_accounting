@@ -41,11 +41,11 @@ OC.Users = {
     }
 };
 
-function add_charge_settings(charges, taxes, url){
+function add_charge_settings(charges, taxes, url, gift){
 	$.ajax(OC.linkTo('files_accounting','ajax/settingsactions.php'), {
 		 type:'POST',
 		  data:{
-			 'action': 'addcharge', 'charges': charges, 'taxes': taxes, 'url': url
+			 'action': 'addcharge', 'charges': charges, 'taxes': taxes, 'url': url, 'gift': gift
 		 },
 		 dataType:'json',
 		 success: function(data){
@@ -63,7 +63,28 @@ $(document).ready(function() {
 		charges = $('#charges').val();
 		taxes = $('#taxes').val(); 
 		url = $('#url').val();
-		add_charge_settings(charges, taxes, url);
+		gift = $('#gift').val();
+		add_charge_settings(charges, taxes, url, gift);
+	});
+	$('#filesAccountingSettings .gift-all:checkbox').click(function() {
+    		var $this = $(this);
+		var gift = $('#gift').val();
+    		if ($this.is(':checked')) {
+			 $.ajax(OC.linkTo('files_accounting','ajax/settingsactions.php'), {
+                 		type:'POST',
+                  		data:{
+                         		'action': 'selectall', 'gift': gift 
+                 		},
+                 		dataType:'json',
+                 		success: function(data){
+					window.alert('ok');
+                 		},
+                		error:function(data){
+                        		alert("Unexpected error!");
+                		}
+        		});
+
+    		} 
 	});
 	OC.Users.initDropDown() ;
 });

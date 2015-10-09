@@ -12,28 +12,31 @@ class Util {
 		$result = $stmt->execute ( array ($user, $year ));
 		$monthly_bill = array ();
 		while ( $row = $result->fetchRow () ) {
-			$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$row['month'], 'bill' => (float)$row['bill'], 'average' => (float)$row['average'], 'link' => $row['reference_id']); 
+			if ((int)$row['status'] != 2) {
+				$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$row['month'], 'bill' => (float)$row['bill'], 'average' => (float)$row['average'], 'link' => $row['reference_id']); 
 			}
+		}
 		return $monthly_bill;
 	}
 
 	public static function userBalance($user, $average) {
 		$average = $average/1048576;
 		$gift_card = Util::freeSpace($user);
-		$str_to_ar = explode(" ", $gift_card);
-		$amount = (float) $str_to_ar[0];
-		$size = $str_to_ar[1];
-		if ($size == 'MB'){
-			$amount = $amount/1024;
-		} 
-                if ($amount > $average){
-                        $balance = $amount - $average;
-			$balance = round($balance, 3);
-                }else {
-                        $balance = 0;
-                }
-
-		return $balance;
+		if (isset($gift_card)) {
+			$str_to_ar = explode(" ", $gift_card);
+			$amount = (float) $str_to_ar[0];
+			$size = $str_to_ar[1];
+			if ($size == 'MB'){
+				$amount = $amount/1024;
+			} 
+                	if ($amount > $average){
+                        	$balance = $amount - $average;
+				$balance = round($balance, 3);
+                	}else {
+                        	$balance = 0;
+                	}
+			return $balance;
+		}
 
 	}
 
@@ -69,7 +72,7 @@ class Util {
 	
 	public static function freeSpace($user) {
 		$app_id = 'files_accounting';
-		$config_key = 'freequota';
+		$config_key = 'freequotaexceed';
 		$stmt = DB::prepare ( "SELECT `configvalue` FROM `*PREFIX*preferences` WHERE `userid` = ? AND `appid` = ? AND `configkey` = ? " );
 		$result = $stmt->execute ( array (
 				$user,
@@ -150,6 +153,18 @@ class Util {
 		}else {
 			return false;
 		}
+	}
+
+	public static function getDefaultGroups($search,$limit = null, $offset = null ) {
+		$query = DB::prepare('SELECT `gid` FROM `*PREFIX*groups` WHERE `gid` LIKE ?', $limit, $offset );
+		$result = $query->execute ( array ($search . '%',
+		) );
+		$groups = array ();
+		while ( $row = $result->fetchRow () ) {
+			$groups [] = $row ['gid'];
+		}
+		return $groups;
+		
 	}
 
 }
