@@ -4,7 +4,9 @@
 	foreach (array_reverse($bills) as $bill) {
   		$status = $bill['status'];
 		$month = $bill['month'];
-                $fullmonth = date('F', strtotime("2000-$month-01"));
+		$datemonth = $bill['month'] + 01;
+                $fullmonth = date('F', strtotime("2000-$datemonth-01"));
+                $date = $fullmonth." 1, ".$bill['year'];
 		$monthbill = (float)$bill['bill'];
 		$duemonth = (int)$month + 02;
                 $duemonthname = date('F', strtotime("2000-$duemonth-01"));
@@ -22,14 +24,14 @@
 			echo "<tr><td style='height:34px; padding-left:6px;' ><div class='row'><div class='col-xs-1 text-right '></div>
                 <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
                        <span class='nametext'>$status</span></a></div>
-                           </td><td class='month'>$fullmonth</td><td style='padding-left:2px;'>$monthbill</td>
+                           </td><td class='month'>$date</td><td style='padding-left:2px;'>$monthbill</td>
                            <td class='duedate'>$due_date</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td>$button</td></tr>";
       		}else {
 			$status = '<div style="color:#CDDC39"><strong>Pending</strong></div>';
 			echo "<tr class='unpaid'><td style='height:34px; padding-left:6px;' ><div class='row'><div class='col-xs-1 text-right '></div>
                         <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
                        <span class='nametext'>$status</span></a></div>
-                           </td><td class='month'>$fullmonth</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
+                           </td><td class='month'>$date</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
                            <td class='duedate'>$due_date</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
 
 			echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">

@@ -8,12 +8,12 @@ use \OCP\Config;
 class Util {
 
 	public static function userBill($user,$year) {
-		$stmt = DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `year` = ?" );
+		$stmt = DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `reference_id`, `year` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `year` = ?" );
 		$result = $stmt->execute ( array ($user, $year ));
 		$monthly_bill = array ();
 		while ( $row = $result->fetchRow () ) {
 			if ((int)$row['status'] != 2) {
-				$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$row['month'], 'bill' => (float)$row['bill'], 'average' => (float)$row['average'], 'link' => $row['reference_id']); 
+				$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$row['month'], 'bill' => (float)$row['bill'], 'average' => (float)$row['average'], 'link' => $row['reference_id'], 'year' => $row['year']); 
 			}
 		}
 		return $monthly_bill;
@@ -68,6 +68,21 @@ class Util {
 
 		return $result;
 				
+	}
+
+	public static function usersInGroup($gid, $search = '', $limit = null, $offset = null) {
+	  		$stmt = DB::prepare ( 'SELECT `uid` FROM `*PREFIX*user_group_admin_group_user` WHERE `gid` = ? AND `uid` LIKE ?', $limit, $offset );
+			$result = $stmt->execute ( array (
+				  				$gid,
+								$search . '%',
+					//			OC_User_Group_Admin_Util::$HIDDEN_GROUP_OWNER 
+								) );
+			$users = array ();
+			while ( $row = $result->fetchRow () ) {
+		  			$users [] = $row ['uid'];
+			}
+					
+			return $users;
 	}
 	
 	public static function freeSpace($user) {
