@@ -67,13 +67,16 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 			$gift_card = OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceed');
 			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
 			$quantity = ((float)$average/1048576);
+			//new
 			if (isset($gift_card)){
 				$str_to_ar = explode(" ", $gift_card);
                 		$gift_card = (float) $str_to_ar[0];
                 		$size = $str_to_ar[1];
                 		if ($size == 'MB'){
                         		$gift_card = $gift_card/1024;
-                		}
+                		}else if ($size == 'TB') {
+					$gift_card = $gift_card * 1024;
+				}
 				if ($quantity > $gift_card) {
 				
 					$bill = ($quantity - $gift_card)*$charge;
@@ -102,17 +105,15 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	} 
 
 	public static function updateMonth($user, $status, $month, $average, $averageTrash, $bill, $reference_id){
-                $stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`, `year` ) VALUES( ? , ? , ?
-, ? , ?, ?, ?, ?  )" );
+                $stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`) VALUES( ? , ? , ?, ? , ?, ?, ?  )" );
                 $result = $stmt->execute ( array (
                                                   $user,
                                                   $status,
-                                                  $month,
+                                                  date("Y-$month"),
                                                   $average,
                                                   $averageTrash,
                                                   $bill,
-                                                  $reference_id,
-                                                  date("Y")
+                                                  $reference_id
                                              ) );
          
                 return $result;

@@ -79,7 +79,7 @@
 					<input type="hidden" name="lc" value="DK">
 					<input type="hidden" name="item_name" value="Storage Use for '.$fullmonth.'">
 					<input type="hidden" name="amount" value="'.$monthbill.'">
-					<input type="hidden" name="item_number" value="'.$invoice.'">
+					<input type="hidden" name="item_number" value="'.substr($invoice, 0, -4).'">
 					<input type="hidden" name="currency_code" value="DKK">
 					<input type="hidden" name="button_subtype" value="services">
 					<input type="hidden" name="no_note" value="0">

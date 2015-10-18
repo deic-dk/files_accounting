@@ -10,6 +10,7 @@
 			}else {
 				$year = date('Y');
 			}
+			//todo
 			$stmt = OC_DB::prepare ( "SELECT `month`, `average`, `trashbin` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `year` = ?" );
 			$result = $stmt->execute ( array ($user, $year));
 			$average_lines = array ();

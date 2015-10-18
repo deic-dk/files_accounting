@@ -6,7 +6,7 @@ use \OCP\DB;
 use \OCP\Config;
 
 class Util {
-
+	//tdoo
 	public static function userBill($user,$year) {
 		$stmt = DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `reference_id`, `year` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `year` = ?" );
 		$result = $stmt->execute ( array ($user, $year ));
@@ -18,7 +18,7 @@ class Util {
 		}
 		return $monthly_bill;
 	}
-
+	//to remove
 	public static function userBalance($user, $average) {
 		$average = $average/1048576;
 		$gift_card = Util::freeSpace($user);
@@ -39,7 +39,7 @@ class Util {
 		}
 
 	}
-
+	//to remove
 	public static function updatePreferences($user, $gift_card) {
 		$config_key = 'freequota';
 		$app_id = 'files_accounting';
@@ -84,7 +84,7 @@ class Util {
 					
 			return $users;
 	}
-	
+	//to remove	
 	public static function freeSpace($user) {
 		$app_id = 'files_accounting';
 		$config_key = 'freequotaexceed';
@@ -99,7 +99,7 @@ class Util {
 
 		return $config_value;
 	}
-
+	//todo
 	public static function billYear($user) {
 		$year = date('Y');
 		$stmt = DB::prepare ( "SELECT `year`  FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `year` != ?" );
@@ -115,7 +115,7 @@ class Util {
 		
 		return array_reverse(array_unique($years));	
 	} 
-
+	//todo
 	public static function getId($user, $month) {
 		$stmt = DB::prepare ( "SELECT `reference_id`  FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
 		$result = $stmt->execute ( array (
