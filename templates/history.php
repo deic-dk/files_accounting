@@ -4,9 +4,16 @@
 	foreach (array_reverse($bills) as $bill) {
   		$status = $bill['status'];
 		$month = $bill['month'];
-		$datemonth = $bill['month'] + 01;
-                $fullmonth = date('F', strtotime("2000-$datemonth-01"));
-                $date = $fullmonth." 1, ".$bill['year'];
+		if ($month != 12) {
+                        $datemonth = $bill['month'] + 01;
+                        $fullmonth = date('F', strtotime("2000-$datemonth-01"));
+                        $date = $fullmonth." 1, ".$bill['year'];
+                }else {
+                        $datemonth = 01;
+                        $fullmonth = date('F', strtotime("2000-$datemonth-01"));
+                        $date = $fullmonth." 1, ".($bill['year']+1);
+                }
+
 		$monthbill = (float)$bill['bill'];
 		$duemonth = (int)$month + 02;
                 $duemonthname = date('F', strtotime("2000-$duemonth-01"));
