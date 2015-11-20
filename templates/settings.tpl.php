@@ -5,6 +5,7 @@
 		$charge = OCP\Config::getAppValue('files_accounting', 'dkr_perGb', '');
 		$taxes = OCP\Config::getAppValue('files_accounting', 'tax', '');
 		$url = OCP\Config::getAppValue('files_accounting', 'url', '');
+		$gift = OCP\Config::getAppValue('files_accounting', 'gift', '');
 		echo "
 			<table style='width:50%'>
   				<tr>
@@ -25,7 +26,7 @@
                         			<br>
 						<input type='text' name='url' id = 'url'  value=\"".$url."\"  >
                         			<br>
-						<input type='text' name='gift' id='gift' placeholder='Enter quota (ex: 2 GB)'>
+						<input type='text' name='gift' id='gift' value=\"".$gift."\" placeholder='Enter quota (ex: 2 GB)'>
 						<br>
 					</td> 
   				</tr>

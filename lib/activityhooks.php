@@ -16,22 +16,25 @@ class ActivityHooks {
 		});
 	}
 	public static function invoiceCreate($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'created_self', 'created_by');		
+		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'created_self');		
 	}
 	public static function paymentComplete($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'completed_self', 'completed_by');
+		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'completed_self');
 	}
-	public static function addNotificationsForAction($user, $bill, $activityType, $subject, $subjectBy) {
-		$userSubject = $subject;
+	public static function spaceExceed($user, $params) {
+		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'exceeded_space'); 
+	}
+	public static function addNotificationsForAction($user, $bill, $activityType, $subject) {
 		ActivityHooks::addNotificationsForUser(
-                                $user, $userSubject,
+                                $user, $subject,
                                 $bill, 
                                 40, $activityType
                 );
 	}
 	protected static function addNotificationsForUser($user, $subject, $path, $priority , $type ) {
 	        $app = 'files_accounting';	
-		ActivityHooks::send($app, $subject, array($path), '', array(), '', '', $user, $type, $priority);
+		$link = '/index.php/settings/personal';
+		ActivityHooks::send($app, $subject, array($path), '', array(), '', $link, $user, $type, $priority);
 	}
 	
 	public static function send($app, $subject, $subjectparams = array(), $message = '', $messageparams = array(), $file = '', $link = '', $affecteduser = '', $type = '', $prio) {

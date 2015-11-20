@@ -31,10 +31,10 @@ class PDF extends FPDF
 	function AddressTable($a, $name)
 	{     
     	$this->SetFont('Helvetica','',12);
-    	$this->MultiCell(90,6,$name);
+    	$this->MultiCell(90,6,utf8_decode($name));
     	$this->Ln();
     	$this->SetFont('Helvetica','',10);
-    	$this->MultiCell(100,5,$a,'','L');
+    	$this->MultiCell(100,5,utf8_decode($a),'','L');
     	$this->Ln();
 	}
 

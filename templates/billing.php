@@ -51,9 +51,15 @@
 		foreach (array_reverse($bills) as $bill) {
 	  		$status = $bill['status'];
 			$month = $bill['month'];
-			$datemonth = $bill['month'] + 01;
-                        $fullmonth = date('F', strtotime("2000-$datemonth-01"));
-			$date = $fullmonth." 1, ".$bill['year'];
+			if ($month != 12) { 
+				$datemonth = $bill['month'] + 01;
+                        	$fullmonth = date('F', strtotime("2000-$datemonth-01"));
+				$date = $fullmonth." 1, ".$bill['year'];
+			}else {
+				$datemonth = 01;
+				$fullmonth = date('F', strtotime("2000-$datemonth-01"));
+                                $date = $fullmonth." 1, ".($bill['year']+1);
+			}
                         $monthbill = (float)$bill['bill'];
 			if ($bill['link'] != "") {
                         	$invoice = $bill['link'].'.pdf';
@@ -69,10 +75,10 @@
       				$i ++;
 	      			$status = '<div style="color:#CDDC39"><strong>Pending</strong></div>';
 				echo "<tr><td style='height:34px; padding-left:6px;' ><div class='row'><div class='col-xs-1 text-right '></div>
-                        <div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
-                       <span class='nametext'>$status</span></a></div>
-                           </td><td class='month'>$date</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
-                           <td class='duedate'>$due_date</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
+                        	<div class='col-xs-8 filelink-wrap' style='padding-left:4px;'>
+                       		<span class='nametext'>$status</span></a></div>
+                           	</td><td class='month'>$date</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
+                           	<td class='duedate'>$due_date</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
 				echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
 					<input type="hidden" name="cmd" value="_xclick">
 					<input type="hidden" name="business" value="ioanna.psylla-facilitator@gmail.com">

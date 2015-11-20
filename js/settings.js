@@ -65,6 +65,26 @@ $(document).ready(function() {
 		gift = $('#gift').val();
 		add_charge_settings(charges, taxes, url, gift);
 	});
+//	$('#filesAccountingSettings .gift-all:checkbox').click(function() {
+  //  		var $this = $(this);
+	//	var gift = $('#gift').val();
+    //		if ($this.is(':checked')) {
+	//		 $.ajax(OC.linkTo('files_accounting','ajax/settingsactions.php'), {
+      //           		type:'POST',
+        //          		data:{
+          //               		'action': 'selectall', 'gift': gift 
+            //     		},
+              //   		dataType:'json',
+                // 		success: function(data){
+				//	window.alert('ok');
+                 //		},
+                //		error:function(data){
+                  //      		alert("Unexpected error!");
+ //               		}
+        	//	});
+
+    	//	} 
+	//});
 	OC.Groups.initDropDown() ;
 });
 

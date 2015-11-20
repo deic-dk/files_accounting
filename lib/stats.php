@@ -15,43 +15,57 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	}
 	public function updateMonthlyAverage() {
 		$year = date('Y');
-		$users= User::getUsers();
-		foreach ($users as $user) { 
-			if (User::userExists($user)) {
-				if (date("d") == "01") {
+		if (date("d") == "01") {
+			$users= User::getUsers();
+	    		$totalAverageUsers = array();
+			$monthToSave = (string)((int)date("m") - 01);
+                        $fullmonth = date('F', strtotime("2000-$monthToSave-01"));
+		  	$monthlyUsage = array("Storage use for ".$fullmonth."\n"."\n".str_pad('User',30,' ')."Usage(KB)"."\n");
+			foreach ($users as $user) { 
+				if (User::userExists($user)) {
 					$file = file_get_contents("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt");
-		        		$lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
-                			$dailyUsage = array();
-                			$averageToday = 0 ;
-                			$averageTodayTrash = 0;
-                			foreach ($lines as $line) {
-                    				$userRows = explode(" ", $line);
-                    				if ($userRows[0] == $user) {
-                                			$month =  (int)substr($userRows[1], 0, 2);
+		       			$lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
+               				$dailyUsage = array();
+               				$averageToday = 0 ;
+               				$averageTodayTrash = 0;
+               				foreach ($lines as $line) {
+                 				$userRows = explode(" ", $line);
+                   				if ($userRows[0] == $user) {
+                         				$month =  (int)substr($userRows[1], 0, 2);
 							if ($month == ((int)date("m") - 01)) {
 								$dailyUsage[] = array('usage' => (float)$userRows[2], 'trash' => (float)$userRows[3], 'month' => $month);
-                                   				$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
-                                   				$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
+                               					$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
+                               					$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
 	
 							}
 						}		 
 					}
-					$monthToSave = (string)((int)date("m") - 01);
+					$totalAverage = $averageToday + $averageTodayTrash;
+					array_push($totalAverageUsers, $totalAverage);
 					$averageToday = (string)$averageToday;
 					$averageTodayTrash = (string)$averageTodayTrash;
 					$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash;	
 					if ($averageToday != '0' && strpos($file, $txt) === false ) {
 						$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt", "a") or die("Unable to open file!");
 						$stringData = $txt . "\n";
-                        			$rv = fwrite($monthlyAverageFile, $stringData);
+                      				$rv = fwrite($monthlyAverageFile, $stringData);
 						if ( ! $rv ){
         						die("unable to write to file");
 						}
-                        			fclose($monthlyAverageFile);
-                			}
-					$updateDb = Stats::addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash); 
+                       				fclose($monthlyAverageFile);
+              				}
+					$updateDb = Stats::addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash);
+					$result = Util::inGroup($user);
+					if ($result) {
+						$saveText = "\n".str_pad($user,30," ").$totalAverage;	
+						array_push($monthlyUsage, $saveText);
+					}
 				}
 			}
+			$saveText = "\n"."Total usage: ".array_sum($totalAverageUsers)." KB";
+			array_push($monthlyUsage, $saveText);
+			$info = implode(" ",$monthlyUsage);
+//		   	file_put_contents("/tank/data/owncloud/s141277@student.dtu.dk/useAverageDtu".$fullmonth.".txt", $info);
 		}
 	}
 	public function addToDb($user, $month, $year, $average, $averageTrash) {
@@ -59,7 +73,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 $stmt = DB::prepare ( "SELECT `month` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
                 $result = $stmt->execute ( array (
                                 $user,
-				$month
+				$year."-".$month
                 ) );
                 if ($result->fetchRow ()) {
                         return false;
@@ -67,16 +81,16 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 			$gift_card = OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceed');
 			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
 			$quantity = ((float)$average/1048576);
-			//new
 			if (isset($gift_card)){
 				$str_to_ar = explode(" ", $gift_card);
                 		$gift_card = (float) $str_to_ar[0];
                 		$size = $str_to_ar[1];
                 		if ($size == 'MB'){
                         		$gift_card = $gift_card/1024;
-                		}else if ($size == 'TB') {
+				}else if ($size == 'TB') {
 					$gift_card = $gift_card * 1024;
 				}
+
 				if ($quantity > $gift_card) {
 				
 					$bill = ($quantity - $gift_card)*$charge;
@@ -95,8 +109,8 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				$bill = $quantity*$charge;
 				$bill = round($bill, 2);
 				$fullmonth = date('F', strtotime("2000-$month-01"));
-                                $invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
-                                $reference_id = $invoice;
+                $invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
+                $reference_id = $invoice;
 				$result = Stats::updateMonth($user, '0', $month, $average, $averageTrash, $bill, $reference_id);
 				$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 			}
@@ -105,7 +119,8 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	} 
 
 	public static function updateMonth($user, $status, $month, $average, $averageTrash, $bill, $reference_id){
-                $stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`) VALUES( ? , ? , ?, ? , ?, ?, ?  )" );
+                $stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`) VALUES( ? , ? , ?
+, ? , ?, ?, ? )" );
                 $result = $stmt->execute ( array (
                                                   $user,
                                                   $status,

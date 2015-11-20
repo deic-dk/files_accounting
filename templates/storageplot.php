@@ -10,12 +10,12 @@
 			}else {
 				$year = date('Y');
 			}
-			//todo
-			$stmt = OC_DB::prepare ( "SELECT `month`, `average`, `trashbin` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `year` = ?" );
+			$stmt = OC_DB::prepare ( "SELECT `month`, `average`, `trashbin` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND  YEAR(STR_TO_DATE(`month`, '%Y-%m')) = ?" );
 			$result = $stmt->execute ( array ($user, $year));
 			$average_lines = array ();
 			while ( $row = $result->fetchRow () ) {
-				$average_lines [] = array('average' => (int)$row['average'], 'trashbin' => (int)$row['trashbin'], 'month' => (int)$row['month']); 
+				$date = explode("-", $row['month']);
+				$average_lines [] = array('average' => (int)$row['average'], 'trashbin' => (int)$row['trashbin'], 'month' => (int)$date[1]); 
 			}
                         foreach ($average_lines as $line) {
                                 //$userRows = explode(" ", $line);

@@ -62,29 +62,70 @@
                                 <notnull>true</notnull>
                                 <length>255</length>
                         </field>
-
-			<field>
-                                <name>invoice_link</name>
-                                <type>text</type>
-                                <notnull>true</notnull>
-                                <length>255</length>
-                        </field>
-
+	
 			 <field>
                                 <name>reference_id</name>
                                 <type>text</type>
                                 <notnull>true</notnull>
                                 <length>255</length>
                         </field>
-			
-			<field>
-                                <name>year</name>
-                                <type>text</type>
-                                <notnull>true</notnull>
-                                <length>255</length>
-                        </field>
+
+		</declaration>
 
 	</table>	
+	
+	<table>
+
+                <name>*dbprefix*files_accounting_payments</name>
+
+                <declaration>
+
+                        <field>
+				<name>id</name>
+                                <type>integer</type>
+                                <default>0</default>
+                                <notnull>true</notnull>
+                                <autoincrement>1</autoincrement>
+                                <length>6</length>				
+			</field>
+
+			<field>
+				<name>txnid</name>
+				<type>text</type>
+				<notnull>true</notnull>
+				<length>20</length>
+			</field>
+	
+			<field>
+				<name>itemid</name>
+				<type>text</type>
+				<notnull>true</notnull>
+				<length>25</length>
+			</field>
+
+			<field>
+				<name>payment_amount</name>
+				<type>text</type>
+				<notnull>true</notnull>
+				<length>255</length>
+			</field>
+
+			<field>
+				<name>payment_status</name>
+				<type>text</type>
+				<notnull>true</notnull>					
+			</field>
+	
+			<field>
+				<name>created_time</name>
+				<type>text</type>
+				<notnull>true</notnull>
+			</field>
+			
+
+		</declaration>
+
+	</table>
 
 </database>
 

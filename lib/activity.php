@@ -77,6 +77,8 @@ class Bill_Activity implements IExtension {
 				return (string) $this->l->t('You have a new invoice for: <strong>%1$s</strong>', $params);
 			case 'completed_self':
 				return (string) $this->l->t('You have successfully completed a payment: <strong>%1$s</strong>', $params);
+			case 'exceeded_space':
+				return (string) $this->l->t('You exceeded your available free space');
 			default:
 				return false;
 		}
@@ -161,11 +163,6 @@ class Bill_Activity implements IExtension {
 	 * @return array|false
 	 */
 	public function getQueryForFilter($filter) {
-		$user = $this->activityManager->getCurrentUserId();
-		return ['`app` = ?', ['files_accounting']];
-		if (!$user) {
-			return false;
-		}
 		return false;
 	}
 }
