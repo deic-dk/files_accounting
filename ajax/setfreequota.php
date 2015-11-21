@@ -30,4 +30,3 @@ if($username) {
 }
 OC_JSON::success(array("data" => array( "username" => $username , 'freequota' => $freeQuota)));
 
-

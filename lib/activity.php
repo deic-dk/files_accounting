@@ -166,4 +166,3 @@ class Bill_Activity implements IExtension {
 		return false;
 	}
 }
-

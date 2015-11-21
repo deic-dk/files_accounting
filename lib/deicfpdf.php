@@ -99,4 +99,3 @@ class PDF extends FPDF
 	}
 
 }
-

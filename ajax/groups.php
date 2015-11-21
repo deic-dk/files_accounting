@@ -23,4 +23,3 @@ if (isset($_GET['search'])) {
     }
     OC_JSON::success(array('data' => $shareWith));
 }
-

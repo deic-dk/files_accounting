@@ -38,4 +38,3 @@ if($_POST['action'] == "addcharge") {
 		//OC_Preferences::setValue($user, 'files_accounting', 'freequota', $gift);
 		//OCP\JSON::success();
 	//}
-

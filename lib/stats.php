@@ -290,4 +290,4 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$pdf->Output('/tank/data/owncloud/'.$email.'/'.$filename, 'F');
 	}
 }
-
+	

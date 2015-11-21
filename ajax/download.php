@@ -30,4 +30,3 @@
   }elseif (isset($link)) { 	
 	downloadFile($link, $username);
    }
-

@@ -65,4 +65,3 @@
 	}
 //	echo "<tr><td colspan='5'><div>Hide history</div></td></tr>";
 ?>
-
