@@ -8,14 +8,15 @@
                         $datemonth = $bill['month'] + 01;
                         $fullmonth = date('F', strtotime("2000-$datemonth-01"));
                         $date = $fullmonth." 1, ".$bill['year'];
+			$duemonth = (int)$month + 02;
                 }else {
                         $datemonth = 01;
                         $fullmonth = date('F', strtotime("2000-$datemonth-01"));
                         $date = $fullmonth." 1, ".($bill['year']+1);
+			$duemonth = 02;
                 }
 
 		$monthbill = (float)$bill['bill'];
-		$duemonth = (int)$month + 02;
                 $duemonthname = date('F', strtotime("2000-$duemonth-01"));
                 $due_date =  $duemonthname." 1, 23:59 PM";
 		$vat = (float) \OCP\Config::getAppValue('files_accounting', 'tax', '');

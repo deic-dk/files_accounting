@@ -188,7 +188,13 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$vat = (float) Config::getAppValue('files_accounting', 'tax', '');
 		// from DB
 	 	$monthname = date('F', strtotime("2000-$month-01"));
-		$duemonth = (int)date("m") + 01;
+		if (date("m") != '12') {
+			$duemonth = (int)date("m") + 01;
+			$dueyear = (int)date("Y");
+		} else {
+			$duemonth = 01;
+			$dueyear = (int)date("Y") + 1;
+		}
 		$duemonthname = date('F', strtotime("2000-$duemonth-01"));
 		$articles = array(
 				array('Cloud storage '.$monthname.' '.$year, $quantity, $charge, $bill),
@@ -205,7 +211,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 								$user,		// eMail
 								"Institute address:\n7200 DeIC\nDTU\nBygning 305\n2800 Kongens Lyngby\n+45 3588 8200", // deic address
 								date("F j, Y"),	// date
-								$duemonthname." ".date("j, Y"),	// due date
+								$duemonthname." ".date("j").", ".$dueyear,	// due date
 								$reference,			// reference #
 								$articles,
 								$vat,
