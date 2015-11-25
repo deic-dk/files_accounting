@@ -26,27 +26,8 @@
 
                         }
 
-//            $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.date("Y").'.txt');
-	//		$dailyUsage = array();
-		//	$averageToday = 0 ;
-			//$averageTodayTrash = 0;
-            //foreach ($lines as $line_num => $line) {
-              //      $userRows = explode(" ", $line);
-                //    if ($userRows[0] == $user) {
-			//			$month =  substr($userRows[1], 0, 2);
-				//		if ($month == date('m')) { 
-				  //         		$month = (int)$month;
-					//	   $dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
-						//   $averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
-						//   $averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));	
-					//	}
-			//		}
-          // }
-		//	if ($averageToday != 0 && $year == date('Y')) {
-			//  $userStorage[] = array(date('M'), $averageToday, $averageTodayTrash);
-		//	}	
 			$userStorage[] = OCA\Files_Accounting\Util::dailyUsage($user, $year);
-                       echo json_encode($userStorage);
+                        echo json_encode($userStorage);
                         ?>;
       google.load("visualization", "1", {packages:["corechart"]});
       google.setOnLoadCallback(drawChart);

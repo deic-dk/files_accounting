@@ -109,20 +109,42 @@ class Util {
 
 	}
 
-	public static function updateStatus($id) {
+	public static function dbUpdateStatus($id) {
 		$query = DB::prepare ( "UPDATE `*PREFIX*files_accounting` SET `status` = true WHERE `reference_id` = ?" );
 		$result = $query->execute ( array ($id) );
 		return $result;
 	} 
 
-	public static function checkTxnId($tnxid) {
+	public static function updateStatus($id) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbUpdateStatus($id);
+                }
+                else{
+                        $result = \OCA\FilesSharding\Lib::ws('updateStatus', array('id'=>$id),
+                                 false, true, null, 'files_accounting');
+                }
+                return $result;
+
+	}
+	public static function dbCheckTxnId($tnxid) {
 		$query = DB::prepare("SELECT * FROM `*PREFIX*files_accounting_payments` WHERE `txnid` = '$tnxid'");
 		$result = $query->execute( array ($tnxid));
 
 		return $result->fetchRow () ? false:true;
 	}
 
-	public static function checkPrice($price, $id) {
+	public static function checkTxnId($txnid) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbCheckTxnId($txnid);
+                }
+                else{
+                        $result = \OCA\FilesSharding\Lib::ws('checkTxnId', array('txnid'=>$txnid),
+                                 false, true, null, 'files_accounting');
+                }
+                return $result;
+	}
+
+	public static function dbCheckPrice($price, $id) {
 		$valid_price = false;
 		$query = DB::prepare("SELECT `bill` FROM `*PREFIX*files_accounting` WHERE `reference_id` = '$id'");
 		$result = $query->execute(array($id));
@@ -136,7 +158,20 @@ class Util {
 	 	return $valid_price;	 	
 	}
 
-	public static function updatePayments($data) {
+	public static function checkPrice($price, $id) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbCheckPrice($price, $id);
+                }
+                else{
+                          $result = \OCA\FilesSharding\Lib::ws('checkPrice', array('price'=>$price, 'id'=>$id),
+                                 false, true, null, 'files_accounting');
+                }
+                return $result;
+
+	}
+	
+	
+	public static function dbUpdatePayments($data) {
 		if(is_array($data)){
 			$query = DB::prepare("INSERT INTO `*PREFIX*files_accounting_payments` ( `txnid`, `itemid`, `payment_amount`, `payment_status`, `created_time`) VALUES (?, ?, ?, ?, ?)");
 			$query->execute( array(
@@ -152,6 +187,18 @@ class Util {
 		}
 	}
 
+	public static function updatePayments($data) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbUpdatePayments($data);
+                }
+                else{
+                        $result = \OCA\FilesSharding\Lib::ws('updatePayments', array('txn_id'=>$data['txn_id'], 
+				'item_number'=>$data['item_number'], 'payment_amount'=>$data['payment_amount'],
+				'payment_status'=>$data['payment_status']),
+                                 false, true, null, 'files_accounting');
+                }
+                return $result;
+	}
 	public static function getDefaultGroups($search,$limit = null, $offset = null ) {
 		$query = DB::prepare('SELECT `gid` FROM `*PREFIX*groups` WHERE `gid` LIKE ?', $limit, $offset );
 		$result = $query->execute ( array ($search . '%',
@@ -174,4 +221,28 @@ class Util {
 		return $result->fetchRow () ? true : false;	
 	}
 
+	public static function dbDownloadInvoice($filename, $user) {
+		$format = str_replace(array('/', '\\'), '', $filename);
+		$file = "/tank/data/owncloud/" . $user . "/" . $format;
+		if(!file_exists($file)) die("I'm sorry, the file doesn't seem to exist.");
+
+    		$type = filetype($file);
+    		header("Content-type: $type");
+    		header("Content-Disposition: attachment;filename=$filename");
+    		readfile($file);
+		
+		return true;
+ 	}
+
+	public static function downloadInvoice($filename, $user) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbDownloadInvoice($filename, $user);
+                }
+                else{
+                          $result = \OCA\FilesSharding\Lib::ws('getInvoice', array('filename'=>$filename, 'user'=>$user),
+                                 false, true, null, 'files_accounting');
+                }
+                return $result;
+		
+	}	
 }

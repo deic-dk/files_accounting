@@ -68,6 +68,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 //		   	file_put_contents("/tank/data/owncloud/s141277@student.dtu.dk/useAverageDtu".$fullmonth.".txt", $info);
 		}
 	}
+
 	public function addToDb($user, $month, $year, $average, $averageTrash) {
 	// Check for existence
                 $stmt = DB::prepare ( "SELECT `month` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
