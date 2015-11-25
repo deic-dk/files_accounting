@@ -10,13 +10,7 @@
 			}else {
 				$year = date('Y');
 			}
-			$stmt = OC_DB::prepare ( "SELECT `month`, `average`, `trashbin` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND  YEAR(STR_TO_DATE(`month`, '%Y-%m')) = ?" );
-			$result = $stmt->execute ( array ($user, $year));
-			$average_lines = array ();
-			while ( $row = $result->fetchRow () ) {
-				$date = explode("-", $row['month']);
-				$average_lines [] = array('average' => (int)$row['average'], 'trashbin' => (int)$row['trashbin'], 'month' => (int)$date[1]); 
-			}
+			$average_lines = \OCA\Files_Accounting\Util::userBill($user, $year);
                         foreach ($average_lines as $line) {
                                 //$userRows = explode(" ", $line);
                                 //if ($userRows[0] == $user) {
@@ -32,26 +26,26 @@
 
                         }
 
-            $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.date("Y").'.txt');
-			$dailyUsage = array();
-			$averageToday = 0 ;
-			$averageTodayTrash = 0;
-            foreach ($lines as $line_num => $line) {
-                    $userRows = explode(" ", $line);
-                    if ($userRows[0] == $user) {
-						$month =  substr($userRows[1], 0, 2);
-						if ($month == date('m')) { 
-				           		$month = (int)$month;
-						   $dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
-						   $averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
-						   $averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));	
-						}
-					}
-           }
-			if ($averageToday != 0 && $year == date('Y')) {
-			  $userStorage[] = array(date('M'), $averageToday, $averageTodayTrash);
-			}	
-
+//            $lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.date("Y").'.txt');
+	//		$dailyUsage = array();
+		//	$averageToday = 0 ;
+			//$averageTodayTrash = 0;
+            //foreach ($lines as $line_num => $line) {
+              //      $userRows = explode(" ", $line);
+                //    if ($userRows[0] == $user) {
+			//			$month =  substr($userRows[1], 0, 2);
+				//		if ($month == date('m')) { 
+				  //         		$month = (int)$month;
+					//	   $dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
+						//   $averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
+						//   $averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));	
+					//	}
+			//		}
+          // }
+		//	if ($averageToday != 0 && $year == date('Y')) {
+			//  $userStorage[] = array(date('M'), $averageToday, $averageTodayTrash);
+		//	}	
+			$userStorage[] = OCA\Files_Accounting\Util::dailyUsage($user, $year);
                        echo json_encode($userStorage);
                         ?>;
       google.load("visualization", "1", {packages:["corechart"]});
