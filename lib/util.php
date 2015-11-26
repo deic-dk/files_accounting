@@ -225,13 +225,8 @@ class Util {
 		$format = str_replace(array('/', '\\'), '', $filename);
 		$file = "/tank/data/owncloud/" . $user . "/" . $format;
 		if(!file_exists($file)) die("I'm sorry, the file doesn't seem to exist.");
-
-    		$type = filetype($file);
-    		header("Content-type: $type");
-    		header("Content-Disposition: attachment;filename=$filename");
-    		readfile($file);
 		
-		return true;
+		return $file;
  	}
 
 	public static function downloadInvoice($filename, $user) {
@@ -239,10 +234,18 @@ class Util {
                         $result = self::dbDownloadInvoice($filename, $user);
                 }
                 else{
-                          $result = \OCA\FilesSharding\Lib::ws('getInvoice', array('filename'=>$filename, 'user'=>$user),
+                          $result = \OCA\FilesSharding\Lib::ws('getInvoice', array('filename'=>urlencode($filename), 'user'=>$user),
                                  false, true, null, 'files_accounting');
                 }
                 return $result;
 		
 	}	
+
+	public static function readFile($file, $link) {
+        	$type = filetype($file);
+        	header("Content-type: $type");
+        	header("Content-Disposition: attachment;filename=$link");
+        	readfile($file);
+  	}
+
 }

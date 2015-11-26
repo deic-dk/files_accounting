@@ -7,6 +7,10 @@ use \OCP\User;
 use \OCP\Config;
 use \OCA\Files_Accounting\ActivityHooks;
 use \OC_Preferences;
+use Mail;
+use \OCP\Util;
+use \OCP\Defaults;
+
 require('deicfpdf.php');
 
 class Stats extends \OC\BackgroundJob\QueuedJob {
@@ -110,8 +114,8 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				$bill = $quantity*$charge;
 				$bill = round($bill, 2);
 				$fullmonth = date('F', strtotime("2000-$month-01"));
-                $invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
-                $reference_id = $invoice;
+                		$invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
+                		$reference_id = $invoice;
 				$result = Stats::updateMonth($user, '0', $month, $average, $averageTrash, $bill, $reference_id);
 				$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 			}
@@ -135,54 +139,21 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 return $result;
         }
 
-	public function sendNotificationMail($user, $fullmonth, $bill, $filename) {
-		$username = User::getDisplayName($user);
-		$path = '/tank/data/owncloud/'.$user;	
-		$file = $path . "/" . $filename;
-		$file_size = filesize($file);
-		$url =  Config::getAppValue('files_accounting', 'url', '');
+	public static function sendNotificationMail($user, $fullmonth, $bill, $filename) {
+                $username = User::getDisplayName($user);
+                $path = '/tank/data/owncloud/'.$user;
+                $file = $path . "/" . $filename;
+		//TODO
+                $senderAddress = 'cloud@data.deic.dk';
+                $defaults = new \OCP\Defaults();
+                $senderName = $defaults->getName();
+                $url =  Config::getAppValue('files_accounting', 'url', '');
                 $sender = 'cloud@data.deic.dk';
                 $subject = 'DeIC Data: Invoice Payment for '.$fullmonth;
                 $message = 'Dear '.$username.','."\n \n".'The bill for '.$fullmonth.' is '.$bill.' DKK. Please find an invoice in the attachments.'."\n".'To complete payment click the following link:'."\n
-\n".$url."\n \n".'Thank you for choosing our services.'."\n \n".'DeIC Data';
-    		$handle = fopen($file, "r");
-    		$content = fread($handle, $file_size);
-    		fclose($handle);
-    		$content = chunk_split(base64_encode($content));
-
-    		// a random hash will be necessary to send mixed content
-    		$separator = md5(time());
-
-    		// carriage return type (we use a PHP end of line constant)
-    		$eol = PHP_EOL;
-
-    		// main header (multipart mandatory)
-    		$headers = "From: DeIC Data <".$sender.">" . $eol;
-    		$headers .= "MIME-Version: 1.0" . $eol;
-    		$headers .= "Content-Type: multipart/mixed; boundary=\"" . $separator . "\"" . $eol . $eol;
-    		$headers .= "Content-Transfer-Encoding: 7bit" . $eol;
-   		$headers .= "This is a MIME encoded message." . $eol . $eol;
-
-    		// message
-    		$headers .= "--" . $separator . $eol;
-    		$headers .= "Content-Type: text/plain; charset=\"iso-8859-1\"" . $eol;
-    		$headers .= "Content-Transfer-Encoding: 8bit" . $eol . $eol;
-    		$headers .= $message . $eol . $eol;
-
-    		// attachment
-    		$headers .= "--" . $separator . $eol;
-    		$headers .= "Content-Type: application/octet-stream; name=\"" . $filename . "\"" . $eol;
-    		$headers .= "Content-Transfer-Encoding: base64" . $eol;
-    		$headers .= "Content-Disposition: attachment" . $eol . $eol;
-    		$headers .= $content . $eol . $eol;
-    		$headers .= "--" . $separator . "--";
-
-
-		try {
-			mail ( $user, $subject, "", $headers, "-r " . $user );
-		} catch (\Exception $e) {
-		}
-	}
+\n".$url."\n \n".'Thank you for choosing our services.';
+                Mail::send($user, $username, $subject, $message, $senderAddress, $senderName, $file);
+        }
 
 
 	public function createInvoice($month, $year, $user, $quantity, $bill, $charge){	
@@ -221,7 +192,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 								"",
 								$filename);
 
-		//$notifyUser = Stats::sendNotificationMail($user, $monthname, $bill, $filename);	
+		//Stats::sendNotificationMail($user, $monthname, $bill, $filename);	
 
 		return $reference;
 	}
