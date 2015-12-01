@@ -225,19 +225,21 @@ class Util {
 		$format = str_replace(array('/', '\\'), '', $filename);
 		$file = "/tank/data/owncloud/" . $user . "/" . $format;
 		if(!file_exists($file)) die("I'm sorry, the file doesn't seem to exist.");
+		$type = filetype($file);
+                header("Content-type: $type");
+                header("Content-Disposition: attachment;filename=$filename");
+                readfile($file);
 		
-		return $file;
  	}
 
 	public static function downloadInvoice($filename, $user) {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-                        $result = self::dbDownloadInvoice($filename, $user);
+                        self::dbDownloadInvoice($filename, $user);
                 }
                 else{
-                          $result = \OCA\FilesSharding\Lib::ws('getInvoice', array('filename'=>urlencode($filename), 'user'=>$user),
+                           \OCA\FilesSharding\Lib::ws('getInvoice', array('filename'=>urlencode($filename), 'user'=>$user),
                                  false, true, null, 'files_accounting');
                 }
-                return $result;
 		
 	}	
 
@@ -247,5 +249,22 @@ class Util {
         	header("Content-Disposition: attachment;filename=$link");
         	readfile($file);
   	}
+ 	
+	public static function dbGetServerUrl($link) {
+		$query = \OC_DB::prepare('SELECT `internal_url` FROM `*PREFIX*files_sharding_servers` WHERE `url` = ?');
+        	$result = $query->execute(array($link));
+        	$server = $result->fetchAll();
+		return $server;
+	}
+	public static function getServerUrl($link) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbGetServerUrl($link);
+                }
+                else{
 
+			$result = \OCA\FilesSharding\Lib::ws('getServerUrl', array('link'=>urlencode($link)),
+                                 false, true, null, 'files_accounting');	
+		}
+		return $result;
+	}
 }

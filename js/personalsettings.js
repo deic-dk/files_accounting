@@ -12,11 +12,40 @@
 
 function download_invoice() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
-               var link = $(this).text();
-               document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
+		var link = $(this).text();
+		var owner = 's141277@student.dtu.dk';
+		getServerUrl('https://test.data.deic.dk', function(serverUrl){
+		url = encodeURIComponent(serverUrl+'/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner);
+	 	proxy_url = OC.webroot+'/apps/files_sharding/download_proxy.php?url='+url+'&mode=native';
+                OC.redirect(proxy_url)});
+              // document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
         });	
 }
 
+function getServerUrl(url, callback){
+			$.ajax(OC.linkTo('files_accounting','ajax/actions.php'), {
+				 type:'GET',
+				  data:{
+				          action: 'getserver', 	
+					  server_url: url
+				 },
+				 dataType:'json',
+				 success: function(s){
+					 if(s.error){
+						 alert(s.error);
+					 }
+					 if(s.same){
+						 // If we're already on the same server as the home server of the owner of the file,
+						 // just fall through.
+						 //return true;
+					 }
+					callback(s.url);
+				 },
+				error:function(s){
+					alert("Unexpected error!");
+				}
+			});
+		}
 $(document).ready(function() {
 //	var year = $("#list").val();
   //  update_graph(year);

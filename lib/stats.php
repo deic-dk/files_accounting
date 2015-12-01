@@ -8,7 +8,6 @@ use \OCP\Config;
 use \OCA\Files_Accounting\ActivityHooks;
 use \OC_Preferences;
 use Mail;
-use \OCP\Util;
 use \OCP\Defaults;
 
 require('deicfpdf.php');
