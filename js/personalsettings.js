@@ -39,7 +39,7 @@ function getServerUrl(url, callback){
 						 // just fall through.
 						 //return true;
 					 }
-					callback(s.url);
+					callback(s.data.url);
 				 },
 				error:function(s){
 					alert("Unexpected error!");
