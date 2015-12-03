@@ -5,11 +5,7 @@
 	var arrayFromPHP = <?php
 			$user = \OCP\User::getUser();
 			$userStorage  = array();
-			if (isset($_POST['year'])){
-				$year = $_POST['year'];
-			}else {
-				$year = date('Y');
-			}
+			$year = isset($_GET['year'])?$_GET['year']:date('Y');
 			$average_lines = \OCA\Files_Accounting\Util::userBill($user, $year);
                         foreach ($average_lines as $line) {
                                 //$userRows = explode(" ", $line);

@@ -243,13 +243,6 @@ class Util {
 		
 	}	
 
-	public static function readFile($file, $link) {
-        	$type = filetype($file);
-        	header("Content-type: $type");
-        	header("Content-Disposition: attachment;filename=$link");
-        	readfile($file);
-  	}
- 	
 	public static function dbGetServerUrl($link) {
 		$query = \OC_DB::prepare('SELECT `internal_url` FROM `*PREFIX*files_sharding_servers` WHERE `url` LIKE ?');
         	$result = $query->execute(array('%'.$link.'%'));
@@ -259,7 +252,7 @@ class Util {
 		return $server;
 	}
 	public static function getServerUrl($link) {
-		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+		if(\OCA\FilesSharding\Lib::isMaster()){
                         $result = self::dbGetServerUrl($link);
                 }
                 else{

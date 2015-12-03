@@ -1,5 +1,5 @@
 <?php
-	$year = $_POST['year'];
+	$year = isset($_GET['year'])?$_GET['year']:null;
 	$bills = \OCA\Files_Accounting\Util::userBill(OC_User::getUser (), $year ) ;	
 	foreach (array_reverse($bills) as $bill) {
   		$status = $bill['status'];
@@ -42,13 +42,13 @@
                            </td><td class='month'>$date</td><td class='amount' style='padding-left:2px;'>$monthbill</td>
                            <td class='duedate'>$due_date</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
 
-			echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
+		echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
 					 <input type="hidden" name="cmd" value="_xclick">
                                         <input type="hidden" name="business" value="ioanna.psylla-facilitator@gmail.com">
                                         <input type="hidden" name="lc" value="DK">
                                         <input type="hidden" name="item_name" value="Storage Use for '.$fullmonth.'">
                                         <input type="hidden" name="amount" value="'.$monthbill.'">
-                                        <input type="hidden" name="item_number" value="'.substr($invoice, 0, -4).'">
+                                       <input type="hidden" name="item_number" value="'.substr($invoice, 0, -4).'">
                                         <input type="hidden" name="currency_code" value="DKK">
                                         <input type="hidden" name="button_subtype" value="services">
                                         <input type="hidden" name="no_note" value="0">

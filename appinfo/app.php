@@ -2,7 +2,7 @@
 OCP\App::checkAppEnabled('files_accounting');
 OCP\App::registerAdmin('files_accounting', 'settings');
 OCP\App::registerPersonal('files_accounting', 'personalsettings');
-OCP\Backgroundjob::registerJob('\OCA\Files_Accounting\Stats');
+//OCP\Backgroundjob::registerJob('OCA\Files_Accounting\Stats');
 
 OC::$CLASSPATH['Bill_Activity']   ='apps/files_accounting/lib/activity.php';
 OC::$CLASSPATH['Hooks'] = 'apps/activity/lib/hooks.php';
