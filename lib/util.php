@@ -66,6 +66,20 @@ class Util {
                 return $result;
 
 	}
+
+	public static function dbGetFileContent($user, $year) {
+		$fileContents = file_get_contents('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
+		return $fileContents;
+	}
+	public static function getFileContent($user, $year) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+			$result = self::dbGetFileContent($user, $year);
+		}else {
+			$result = \OCA\FilesSharding\Lib::ws('getFileContent', array('userid'=>$user, 'year'=>$year),
+				false, true, null, 'files_accounting');
+		}	 
+		return $result;
+	}
 	
 	public static function usersInGroup($gid, $search = '', $limit = null, $offset = null) {
 	  		$stmt = DB::prepare ( 'SELECT `uid` FROM `*PREFIX*user_group_admin_group_user` WHERE `gid` = ? AND `uid` LIKE ?', $limit, $offset );

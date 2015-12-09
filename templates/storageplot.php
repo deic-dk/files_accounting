@@ -49,7 +49,7 @@
                         title: 'Average Storage History',
                         hAxis: {title: year,  titleTextStyle: {color: '#333'}},
 			vAxis: {title: 'MB \n\n',  titleTextStyle: {color: '#333'}},
-			width: 900 
+			width: 900
                         }; 
 		}else {
                          for(i = 0; i < dates.length; i++){
