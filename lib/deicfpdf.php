@@ -1,14 +1,14 @@
 <?php
 namespace OCA\Files_Accounting;
 
-require('fpdf.php');
+require_once('fpdf.php');
 
 use \OCP\User;
 class PDF extends FPDF
 {
 	function __construct()
        {
-          parent::FPDF();
+          parent::__construct();
        }
 	// Load data
 	function LoadData($file)

@@ -10,7 +10,7 @@ use \OC_Preferences;
 use Mail;
 use \OCP\Defaults;
 
-require('deicfpdf.php');
+require_once('deicfpdf.php');
 
 class Stats extends \OC\BackgroundJob\QueuedJob {
 	protected function run($argument) {
@@ -19,29 +19,41 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	public function updateMonthlyAverage() {
 		$year = date('Y');
 		if (date("d") == "01") {
-			$users= User::getUsers();
-	    		$totalAverageUsers = array();
+			if(\OC_User::isAdminUser(\OC_User::getUser())){
+				$users = User::getUsers();
+			}
+			else{
+				$users = array(\OC_User::getUser());
+			}
+			$totalAverageUsers = array();
 			$monthToSave = (string)((int)date("m") - 01);
-                        $fullmonth = date('F', strtotime("2000-$monthToSave-01"));
-		  	$monthlyUsage = array("Storage use for ".$fullmonth."\n"."\n".str_pad('User',30,' ')."Usage(KB)"."\n");
-			foreach ($users as $user) { 
+			$fullmonth = date('F', strtotime("2000-$monthToSave-01"));
+			$monthlyUsage = array("Storage use for ".$fullmonth."\n"."\n".str_pad('User',30,' ')."Usage(KB)"."\n");
+			foreach ($users as $user) {
 				if (User::userExists($user)) {
-					$file = file_get_contents("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt");
-		       			$lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
-               				$dailyUsage = array();
-               				$averageToday = 0 ;
-               				$averageTodayTrash = 0;
-               				foreach ($lines as $line) {
-                 				$userRows = explode(" ", $line);
-                   				if ($userRows[0] == $user) {
-                         				$month =  (int)substr($userRows[1], 0, 2);
+					$averageFilePath = "/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt";
+					if(!file_exists($averageFilePath)){
+						touch($averageFilePath);
+					}
+					$dailyFilePath = "/tank/data/owncloud/".$user."/diskUsageDaily".$year.".txt";
+					if(!file_exists($dailyFilePath)){
+						touch($dailyFilePath);
+					}
+					$file = file_get_contents($averageFilePath);
+					$lines = file($dailyFilePath);
+					$dailyUsage = array();
+					$averageToday = 0 ;
+					$averageTodayTrash = 0;
+					foreach ($lines as $line) {
+						$userRows = explode(" ", $line);
+						if ($userRows[0] == $user) {
+							$month =  (int)substr($userRows[1], 0, 2);
 							if ($month == ((int)date("m") - 01)) {
 								$dailyUsage[] = array('usage' => (float)$userRows[2], 'trash' => (float)$userRows[3], 'month' => $month);
-                               					$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
-                               					$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
-	
+								$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
+								$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
 							}
-						}		 
+						}
 					}
 					$totalAverage = $averageToday + $averageTodayTrash;
 					array_push($totalAverageUsers, $totalAverage);
@@ -49,14 +61,14 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 					$averageTodayTrash = (string)$averageTodayTrash;
 					$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash;	
 					if ($averageToday != '0' && strpos($file, $txt) === false ) {
-						$monthlyAverageFile = fopen("/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt", "a") or die("Unable to open file!");
+						$monthlyAverageFile = fopen($averageFilePath, "a") or die("Unable to open file!");
 						$stringData = $txt . "\n";
-                      				$rv = fwrite($monthlyAverageFile, $stringData);
+						$rv = fwrite($monthlyAverageFile, $stringData);
 						if ( ! $rv ){
-        						die("unable to write to file");
+							die("unable to write to file");
 						}
-                       				fclose($monthlyAverageFile);
-              				}
+						fclose($monthlyAverageFile);
+					}
 					$updateDb = Stats::addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash);
 					$result = Util::inGroup($user);
 					if ($result) {
@@ -65,10 +77,17 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 					}
 				}
 			}
-			$saveText = "\n"."Total usage: ".array_sum($totalAverageUsers)." KB";
-			array_push($monthlyUsage, $saveText);
-			$info = implode(" ",$monthlyUsage);
-//		   	file_put_contents("/tank/data/owncloud/s141277@student.dtu.dk/useAverageDtu".$fullmonth.".txt", $info);
+			if(\OC_User::isAdminUser(\OC_User::getUser())){
+				$totalAverageFilePath = "/tank/data/owncloud/".$user."/totalDiskUsageAverage".$year.".txt";
+				if(!file_exists($totalAverageFilePath)){
+					touch($totalAverageFilePath);
+				}
+				$saveText = "\n"."Total usage: ".array_sum($totalAverageUsers)." KB";
+				array_push($monthlyUsage, $saveText);
+				$info = implode(" ",$monthlyUsage);
+	//		   	file_put_contents("/tank/data/owncloud/s141277@student.dtu.dk/useAverageDtu".$fullmonth.".txt", $info);
+				file_put_contents($totalAverageFilePath, $info, FILE_APPEND);
+			}
 		}
 	}
 

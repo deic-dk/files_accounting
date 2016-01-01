@@ -1,13 +1,5 @@
 <?php
-/*******************************************************************************
-* FPDF                                                                         *
-*                                                                              *
-* Version: 1.8                                                                 *
-* Date:    2015-11-29                                                          *
-* Author:  Olivier PLATHEY                                                     *
-*******************************************************************************/
-
-define('FPDF_VERSION','1.8');
+namespace OCA\Files_Accounting;
 
 class FPDF
 {
@@ -1809,7 +1801,7 @@ protected function _putresources()
 
 protected function _putinfo()
 {
-	$this->metadata['Producer'] = 'FPDF '.FPDF_VERSION;
+	$this->metadata['Producer'] = 'DeIC FPDF';
 	$this->metadata['CreationDate'] = 'D:'.@date('YmdHis');
 	foreach($this->metadata as $key=>$value)
 		$this->_put('/'.$key.' '.$this->_textstring($value));
@@ -1883,5 +1875,4 @@ protected function _enddoc()
 	$this->state = 3;
 }
 }
-?>
 
