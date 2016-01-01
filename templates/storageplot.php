@@ -59,17 +59,24 @@
                         title: 'Average Storage History',
                         hAxis: {title: year,  titleTextStyle: {color: '#333'}},
 			vAxis: {title: 'GB \n\n',  titleTextStyle: {color: '#333'}},
-			width: 900 
+			width: 900
                         };
 		}
+			//var container = document.getElementById('chart_div');
+			//container.style.display = 'block';
+			//var chart = new google.visualization.AreaChart(container);
+			//google.visualization.events.addListener(chart, 'ready', function () {
+    				//container.style.display = 'none';
+			//});
+			//chart.draw(data, options);	
                         new google.visualization.AreaChart(document.getElementById('chart_div')).
                         draw(data, options);
                         break;
 
 	}
 //        	new google.visualization.AreaChart(document.getElementById('chart_div')).draw(data, options);
-	//$(window).resize(function(){
-  		//drawChart();
+//	$(window).resize(function(){
+  //		drawChart();
 	//});
 }
 //drawChart();
