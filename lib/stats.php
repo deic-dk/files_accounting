@@ -17,7 +17,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$file_update = $this->updateMonthlyAverage();
 	}
 	public function updateMonthlyAverage() {
-		if (date("d") == "01") {
+		if (date("d") == "06") {
 			if(\OC_User::isAdminUser(\OC_User::getUser())){
 				$users = User::getUsers();
 			}
@@ -55,7 +55,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 						$userRows = explode(" ", $line);
 						if ($userRows[0] == $user) {
 							$month =  (int)substr($userRows[1], 0, 2);
-							if ($month == ((int)date("m") - 01)) {
+							if ($month == (int)$monthToSave) {
 								$dailyUsage[] = array('usage' => (float)$userRows[2], 'trash' => (float)$userRows[3], 'month' => $month);
 								$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
 								$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
@@ -64,8 +64,6 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 					}
 					$totalAverage = $averageToday + $averageTodayTrash;
 					array_push($totalAverageUsers, $totalAverage);
-					$averageToday = (string)$averageToday;
-					$averageTodayTrash = (string)$averageTodayTrash;
 					$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash;	
 					if ($averageToday != '0' && strpos($file, $txt) === false ) {
 						$monthlyAverageFile = fopen($averageFilePath, "a") or die("Unable to open file!");
@@ -129,7 +127,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 					$invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
 					$reference_id = $invoice;
 
-					$result = Stats::updateMonth($user, '0', $month, $average, $averageTrash, $bill, $reference_id);	
+					$result = Stats::updateMonth($user, '0', $month, $year, $average, $averageTrash, $bill, $reference_id);	
 					$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 
 				}else {
@@ -141,20 +139,21 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				$fullmonth = date('F', strtotime("2000-$month-01"));
                 		$invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
                 		$reference_id = $invoice;
-				$result = Stats::updateMonth($user, '0', $month, $average, $averageTrash, $bill, $reference_id);
+				//todo	
+				$result = Stats::updateMonth($user, '0', $month, $year, $average, $averageTrash, $bill, $reference_id);
 				$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 			}
 			return $result ? true : false;
 		}
 	} 
 
-	public static function updateMonth($user, $status, $month, $average, $averageTrash, $bill, $reference_id){
+	public static function updateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id){
                 $stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`) VALUES( ? , ? , ?
 , ? , ?, ?, ? )" );
                 $result = $stmt->execute ( array (
                                                   $user,
                                                   $status,
-                                                  date("Y-$month"),
+                                                  date("$year-$month"),
                                                   $average,
                                                   $averageTrash,
                                                   $bill,

@@ -33,7 +33,7 @@
 </form>
 
 </div>
-<div><?php
+<div><?php 
         $form = include "billing.php";
            ?>
 </div>
