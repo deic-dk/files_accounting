@@ -17,7 +17,6 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$file_update = $this->updateMonthlyAverage();
 	}
 	public function updateMonthlyAverage() {
-		$year = date('Y');
 		if (date("d") == "01") {
 			if(\OC_User::isAdminUser(\OC_User::getUser())){
 				$users = User::getUsers();
@@ -26,8 +25,16 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				$users = array(\OC_User::getUser());
 			}
 			$totalAverageUsers = array();
-			$monthToSave = (string)((int)date("m") - 01);
-			$fullmonth = date('F', strtotime("2000-$monthToSave-01"));
+			if ((int)date("m") != 01) { 
+				$monthToSave = (string)((int)date("m") - 01);
+                        	$fullmonth = date('F', strtotime("2000-$monthToSave-01"));
+				$year = date('Y');
+			}else {
+				$monthToSave = "12";
+				$fullmonth = date('F', strtotime("2000-$monthToSave-01"));	
+				$year = (int)date('Y') - 1;	
+			}
+
 			$monthlyUsage = array("Storage use for ".$fullmonth."\n"."\n".str_pad('User',30,' ')."Usage(KB)"."\n");
 			foreach ($users as $user) {
 				if (User::userExists($user)) {

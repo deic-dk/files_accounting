@@ -32,23 +32,27 @@ class Util {
 	}
 
 	public static function dbDailyUsage($user, $year) {
-		$lines = file('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
+		$dailyFilePath = "/tank/data/owncloud/".$user."/diskUsageDaily".$year.".txt";
+		if(!file_exists($dailyFilePath)){
+			touch($dailyFilePath);
+		}
+		$lines = file($dailyFilePath);
 		$dailyUsage = array();
 		$userStorage  = array();
 		$averageToday = 0 ;
 		$averageTodayTrash = 0;
-           	foreach ($lines as $line_num => $line) {
-                	$userRows = explode(" ", $line);
-                   	if ($userRows[0] == $user) {
+		foreach ($lines as $line_num => $line) {
+			$userRows = explode(" ", $line);
+			if ($userRows[0] == $user) {
 				$month =  substr($userRows[1], 0, 2);
 				if ($month == date('m')) { 
-		           		$month = (int)$month;
-				   	$dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
-				   	$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
+					$month = (int)$month;
+					$dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
+					$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
 					$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));	
 				}
 			}
-          	} 
+		} 
 		if ($averageToday != 0 && $year == date('Y')) {
 			$userStorage = array(date('M'), $averageToday, $averageTodayTrash);
 		}	
@@ -68,7 +72,11 @@ class Util {
 	}
 
 	public static function dbGetFileContent($user, $year) {
-		$fileContents = file_get_contents('/tank/data/owncloud/'.$user.'/diskUsageDaily'.$year.'.txt');
+		$dailyFilePath = "/tank/data/owncloud/".$user."/diskUsageDaily".$year.".txt";
+		if(!file_exists($dailyFilePath)){
+			touch($dailyFilePath);
+		}
+		$fileContents = file_get_contents($dailyFilePath);
 		return $fileContents;
 	}
 	public static function getFileContent($user, $year) {
@@ -108,7 +116,7 @@ class Util {
 			$years [] = explode("-", $row['month'])[0];
 		}
 		
-		return array_reverse($years);	
+		return array_reverse(array_unique($years));	
 	} 
 
 	public static function billYear($user) {
