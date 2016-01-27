@@ -46,6 +46,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 					if(!file_exists($dailyFilePath)){
 						touch($dailyFilePath);
 					}
+					//TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					$file = file_get_contents($averageFilePath);
 					$lines = file($dailyFilePath);
 					$dailyUsage = array();
@@ -57,11 +58,13 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 							$month =  (int)substr($userRows[1], 0, 2);
 							if ($month == (int)$monthToSave) {
 								$dailyUsage[] = array('usage' => (float)$userRows[2], 'trash' => (float)$userRows[3], 'month' => $month);
-								$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
-								$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
 							}
 						}
 					}
+					if (!empty($dailyUsage)) {
+                        			$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
+                        			$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
+                			}
 					$totalAverage = $averageToday + $averageTodayTrash;
 					array_push($totalAverageUsers, $totalAverage);
 					$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash;	

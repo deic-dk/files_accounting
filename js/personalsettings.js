@@ -20,6 +20,8 @@ function download_invoice() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
 		var link = $(this).text();
 		var owner = $("head").attr("data-user");
+		//todo
+		//remove hardcoded url
 		getServerUrl('https://test.data.deic.dk', function(serverUrl){
 		url = encodeURIComponent(serverUrl+'/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner);
 	 	proxy_url = OC.webroot+'/apps/files_sharding/download_proxy.php?url='+url+'&mode=native';

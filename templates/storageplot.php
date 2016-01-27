@@ -22,7 +22,7 @@
 
                         }
 
-			$userStorage[] = OCA\Files_Accounting\Util::dailyUsage($user, $year);
+			$userStorage[] = OCA\Files_Accounting\Storage_Lib::dailyUsage($user, $year);
                         echo json_encode($userStorage);
                         ?>;
       google.load("visualization", "1", {packages:["corechart"]});

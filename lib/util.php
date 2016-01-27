@@ -48,27 +48,18 @@ class Util {
 				if ($month == date('m')) { 
 					$month = (int)$month;
 					$dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
-					$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
-					$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));	
 				}
 			}
 		} 
-		if ($averageToday != 0 && $year == date('Y')) {
+		if (!empty($dailyUsage)) {
+			$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
+                        $averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
+		}
+
+		if ($averageToday != 0) {
 			$userStorage = array(date('M'), $averageToday, $averageTodayTrash);
 		}	
 		return $userStorage;
-	}
-
-	public static function dailyUsage($user, $year) {
-		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-                        $result = self::dbDailyUsage($user, $year);
-                }
-                else{
-                        $result = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$user, 'year'=>$year),
-                                 false, true, null, 'files_accounting');
-                }
-                return $result;
-
 	}
 
 	public static function dbGetFileContent($user, $year) {
