@@ -42,7 +42,8 @@ class Storage_Lib {
                 $dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $year);
                 $dailyUsage = empty($dailyUsageInfo)?array():array($dailyUsageInfo[0]);
                 for ($key = 0; $key < count($dailyUsageInfo)-1; $key++) {
-                        $dailyUsage[$key+1] = $dailyUsageInfo[$key+1] + $dailyUsageBackupInfo[$key+1];
+                        $dailyUsage[$key+1] = $dailyUsageInfo[$key+1] +
+                        (!empty($dailyUsageBackupInfo)&&isset($dailyUsageBackupInfo[$key+1])?$dailyUsageBackupInfo[$key+1]:0);
                 }
                 return $dailyUsage;
 
