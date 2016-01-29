@@ -20,34 +20,35 @@ function download_invoice() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
 		var link = $(this).text();
 		var owner = $("head").attr("data-user");
-		//todo
-		//remove hardcoded url
-		getServerUrl('https://test.data.deic.dk', function(serverUrl){
-		url = encodeURIComponent(serverUrl+'/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner);
-	 	proxy_url = OC.webroot+'/apps/files_sharding/download_proxy.php?url='+url+'&mode=native';
-                OC.redirect(proxy_url)});
-              // document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
-        });	
+		callMasterInternalUrl('https://test.data.deic.dk',  function(masterUrl){
+			var uri = '/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner;
+			var redirect_url = '';
+			if(typeof masterUrl !== 'undefined'){
+				redirect_url = uri;
+			}
+			else{
+				url = encodeURIComponent(masterUrl+uri);
+				redirect_url = OC.webroot+'/apps/files_sharding/download_proxy.php?url='+url+'&mode=native';
+			}
+    	OC.redirect(redirect_url);
+      // document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
+    });
+  });	
 }
 
-function getServerUrl(url, callback){
-			$.ajax(OC.linkTo('files_accounting','ajax/actions.php'), {
+function callMasterInternalUrl(callback){
+			$.ajax(OC.linkTo('files_sharding','ajax/get_master_url.php'), {
 				 type:'GET',
 				  data:{
-				          action: 'getserver', 	
-					  server_url: url
-				 },
+				  	internal: true
+				  },
 				 dataType:'json',
 				 success: function(s){
 					 if(s.error){
-						 alert(s.error);
+						 // files_sharding probably not installed
+						 callback();
 					 }
-					// if(s.same){
-						 // If we're already on the same server as the home server of the owner of the file,
-						 // just fall through.
-						 //return true;
-					// }
-					callback(s.data.url);
+					callback(s.url);
 				 },
 				error:function(s){
 					alert("Unexpected error!");

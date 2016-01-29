@@ -255,24 +255,4 @@ class Util {
                 }
 		
 	}	
-
-	public static function dbGetServerUrl($link) {
-		$query = \OC_DB::prepare('SELECT `internal_url` FROM `*PREFIX*files_sharding_servers` WHERE `url` LIKE ?');
-        	$result = $query->execute(array('%'.$link.'%'));
-		foreach($result->fetchAll() as $row){
-			$server = $row['internal_url'];
-		}
-		return $server;
-	}
-	public static function getServerUrl($link) {
-		if(\OCA\FilesSharding\Lib::isMaster()){
-                        $result = self::dbGetServerUrl($link);
-                }
-                else{
-
-			$result = \OCA\FilesSharding\Lib::ws('getServerUrl', array('link'=>urlencode($link)),
-                                 false, true, null, 'files_accounting');	
-		}
-		return $result;
-	}
 }

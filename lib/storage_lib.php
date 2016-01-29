@@ -27,17 +27,19 @@ class Storage_Lib {
 	 * Calculate storage in all servers for a user
 	 */
 	public static function dailyUsage($userid, $year) {
-                if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-                        $backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
-                        if(!empty($backupServerId)){
-                                $backupServerUrl = self::dbLookupInternalServerURL($backupServerId);
-                                $dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
-                                                        false, true, $backupServerUrl, 'files_accounting');
-                        }
-                }
-                else{
+                if(\OCP\App::isEnabled('files_sharding')){
+                	if(\OCA\FilesSharding\Lib::isMaster()){
+                		$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
+                		if(!empty($backupServerId)){
+                			$backupServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);
+                			$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
+                					false, true, $backupServerUrl, 'files_accounting');
+                		}
+                	}
+                  else{
                         $dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
                                  false, true, null, 'files_accounting');
+                	}
                 }
                 $dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $year);
                 $dailyUsage = empty($dailyUsageInfo)?array():array($dailyUsageInfo[0]);
@@ -48,24 +50,4 @@ class Storage_Lib {
                 return $dailyUsage;
 
         }
-
-	//This is a copy from lib_files_sharding
-	//todo
-	private static function dbLookupInternalServerURL($id){
-		$query = \OC_DB::prepare('SELECT `internal_url` FROM `*PREFIX*files_sharding_servers` WHERE `id` = ?');
-		$result = $query->execute(Array($id));
-		if(\OCP\DB::isError($result)){
-			\OCP\Util::writeLog('files_sharding', \OC_DB::getErrorMessage($result), \OC_Log::ERROR);
-		}
-		$results = $result->fetchAll();
-		if(count($results)>1){
-			\OCP\Util::writeLog('files_sharding', 'ERROR: Duplicate entries found for server '.$id, \OCP\Util::ERROR);
-		}
-		foreach($results as $row){
-			return($row['internal_url']);
-		}
-		\OCP\Util::writeLog('files_sharding', 'ERROR: ID not found: '.$id, \OC_Log::ERROR);
-		return null;
-	}
-
 }
