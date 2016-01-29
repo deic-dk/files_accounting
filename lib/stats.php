@@ -17,7 +17,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$file_update = $this->updateMonthlyAverage();
 	}
 	public function updateMonthlyAverage() {
-		if (date("d") == "06") {
+		if (date("d") == "01") {
 			if(\OC_User::isAdminUser(\OC_User::getUser())){
 				$users = User::getUsers();
 			}
@@ -34,73 +34,21 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				$fullmonth = date('F', strtotime("2000-$monthToSave-01"));	
 				$year = (int)date('Y') - 1;	
 			}
-
-			$monthlyUsage = array("Storage use for ".$fullmonth."\n"."\n".str_pad('User',30,' ')."Usage(KB)"."\n");
 			foreach ($users as $user) {
 				if (User::userExists($user)) {
-					$averageFilePath = "/tank/data/owncloud/".$user."/diskUsageAverage".$year.".txt";
-					if(!file_exists($averageFilePath)){
-						touch($averageFilePath);
-					}
-					$dailyFilePath = "/tank/data/owncloud/".$user."/diskUsageDaily".$year.".txt";
-					if(!file_exists($dailyFilePath)){
-						touch($dailyFilePath);
-					}
-					//TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-					$file = file_get_contents($averageFilePath);
-					$lines = file($dailyFilePath);
-					$dailyUsage = array();
-					$averageToday = 0 ;
-					$averageTodayTrash = 0;
-					foreach ($lines as $line) {
-						$userRows = explode(" ", $line);
-						if ($userRows[0] == $user) {
-							$month =  (int)substr($userRows[1], 0, 2);
-							if ($month == (int)$monthToSave) {
-								$dailyUsage[] = array('usage' => (float)$userRows[2], 'trash' => (float)$userRows[3], 'month' => $month);
-							}
-						}
-					}
-					if (!empty($dailyUsage)) {
-                        			$averageToday = array_sum(array_column($dailyUsage, 'usage')) / count(array_column($dailyUsage, 'usage'));
-                        			$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash')) / count(array_column($dailyUsage, 'trash'));
-                			}
-					$totalAverage = $averageToday + $averageTodayTrash;
-					array_push($totalAverageUsers, $totalAverage);
-					$txt = $user.' '.$monthToSave.' '.$averageToday.' '.$averageTodayTrash;	
-					if ($averageToday != '0' && strpos($file, $txt) === false ) {
-						$monthlyAverageFile = fopen($averageFilePath, "a") or die("Unable to open file!");
-						$stringData = $txt . "\n";
-						$rv = fwrite($monthlyAverageFile, $stringData);
-						if ( ! $rv ){
-							die("unable to write to file");
-						}
-						fclose($monthlyAverageFile);
-					}
-					$updateDb = Stats::addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash);
-					$result = Util::inGroup($user);
-					if ($result) {
-						$saveText = "\n".str_pad($user,30," ").$totalAverage;	
-						array_push($monthlyUsage, $saveText);
+					$dailyUsage = \OCA\Files_Accounting\Storage_Lib::dailyUsage($user, $year);
+					if (!empty($dailyUsage)){
+						$averageToday = $dailyUsage[1];
+						$averageTodayTrash = $dailyUsage[2];
+						$updateDb = Stats::addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash);
 					}
 				}
-			}
-			if(\OC_User::isAdminUser(\OC_User::getUser())){
-				$totalAverageFilePath = "/tank/data/owncloud/".$user."/totalDiskUsageAverage".$year.".txt";
-				if(!file_exists($totalAverageFilePath)){
-					touch($totalAverageFilePath);
-				}
-				$saveText = "\n"."Total usage: ".array_sum($totalAverageUsers)." KB";
-				array_push($monthlyUsage, $saveText);
-				$info = implode(" ",$monthlyUsage);
-	//		   	file_put_contents("/tank/data/owncloud/s141277@student.dtu.dk/useAverageDtu".$fullmonth.".txt", $info);
-				file_put_contents($totalAverageFilePath, $info, FILE_APPEND);
 			}
 		}
 	}
 
 	public function addToDb($user, $month, $year, $average, $averageTrash) {
-	// Check for existence
+		// Check for existence
                 $stmt = DB::prepare ( "SELECT `month` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
                 $result = $stmt->execute ( array (
                                 $user,
@@ -109,6 +57,8 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 if ($result->fetchRow ()) {
                         return false;
                 }else {	
+			//todo
+			//remove duplicate code and check for freequota instead
 			$gift_card = OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceed');
 			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
 			$quantity = ((float)$average/1048576);
