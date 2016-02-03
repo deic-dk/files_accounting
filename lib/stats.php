@@ -37,10 +37,19 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 			foreach ($users as $user) {
 				if (User::userExists($user)) {
 					$dailyUsage = \OCA\Files_Accounting\Storage_Lib::dailyUsage($user, $year);
-					if (!empty($dailyUsage)){
-						$averageToday = $dailyUsage[1];
-						$averageTodayTrash = $dailyUsage[2];
-						$updateDb = Stats::addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash);
+					if (!empty($dailyUsage[0])){
+						$averageTodayHome = $dailyUsage[0][1];
+						$averageTodayTrashHome = $dailyUsage[0][2];
+					}
+					if (!empty($dailyUsage[1])) {
+						$averageTodayBackup = $dailyUsage[1][1];
+						$averageTodayTrashBackup = $dailyUsage[1][2];
+					}
+					$averageToday = array(isset($averageTodayHome)?$averageTodayHome:null, 
+								isset($averageTodayBackup)?$averageTodayBackup:null);
+					$averageTodayTrash = array(isset($averageTodayTrashHome)?$averageTodayTrashHome:null,
+								isset($averageTodayTrashBackup)?$averageTodayTrashBackup:null);
+					$updateDb = Stats::addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash);
 					}
 				}
 			}
@@ -60,8 +69,18 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 			//todo
 			//remove duplicate code and check for freequota instead
 			$gift_card = OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceed');
-			$charge = (float) Config::getAppValue('files_accounting', 'dkr_perGb', '');
-			$quantity = ((float)$average/1048576);
+			$charge = (float) \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
+			$homeServerCharge = isset($charge["home"])?$charge["home"]:null;
+			$backupServerCharge = isset($charge["backup"])?$charge["backup"]:null;
+			$totalAverageHome = isset($average[0])?$average[0]:0 + isset($averageTrash[0])?$averageTrash[0]:0;
+			$totalAverageBackup = isset($average[1])?$average[1]:null + isset($averageTrash[1])?averageTrash[1]:null
+			$quantityHome = ((float)$totalAverageHome/1048576);
+			$quantityBackup = ((float)$totalAverageBackup/1048576); 
+			$quantity = $quantityHome + isset($quantityBackup)?$quantityBackup:0;
+			$totalAverage = isset($average[0])?$average[0]:0 + isset($average[1])?$average[1]:0;
+			$totalAverageTrash = isset($averageTrash[0])?$averageTrash[0]:0 + isset($averageTrash[1])?averageTrash[1]:0; 
+			//todo
+			//convert to computerfilesize instead and compare	
 			if (isset($gift_card)){
 				$str_to_ar = explode(" ", $gift_card);
                 		$gift_card = (float) $str_to_ar[0];
@@ -73,27 +92,33 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				}
 
 				if ($quantity > $gift_card) {
-				
-					$bill = ($quantity - $gift_card)*$charge;
+					if (isset($homeServerCharge)) {	
+						$billHome = $quantityHome*$homeServerCharge;
+					}
+					if (isset($backupServerCharge) && isset($quantityBackup)) {
+						$billBackup = $quantityBackup*$backupServerCharge;
+					}
+					$bill = isset($billHome)?$billHome:0 + isset($billBackup)?$billBackup:0;
 					$bill = round($bill, 2);
 					$fullmonth = date('F', strtotime("2000-$month-01"));
 					$invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
 					$reference_id = $invoice;
 
-					$result = Stats::updateMonth($user, '0', $month, $year, $average, $averageTrash, $bill, $reference_id);	
+					$result = Stats::updateMonth($user, '0', $month, $year, $totalAverage, $totalAverageTrash, $bill, $reference_id);	
 					$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 
 				}else {
-					$result = Stats::updateMonth($user, '2', $month, $average, $averageTrash, '', '');
+					$result = Stats::updateMonth($user, '2', $month, $totalAverage, $totalAverageTrash, '', '');
 				}
 			}else{
+				//todo
 				$bill = $quantity*$charge;
 				$bill = round($bill, 2);
 				$fullmonth = date('F', strtotime("2000-$month-01"));
                 		$invoice = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
                 		$reference_id = $invoice;
 				//todo	
-				$result = Stats::updateMonth($user, '0', $month, $year, $average, $averageTrash, $bill, $reference_id);
+				$result = Stats::updateMonth($user, '0', $month, $year, $totalAverage, $totalAverageTrash, $bill, $reference_id);
 				$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 			}
 			return $result ? true : false;

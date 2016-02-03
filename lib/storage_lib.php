@@ -71,12 +71,18 @@ class Storage_Lib {
                 }
 		//calculate the daily usage on the home server from the text file
                 $dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $year);
-                $dailyUsage = empty($dailyUsageInfo)?array():array($dailyUsageInfo[0]);
-                for ($key = 0; $key < count($dailyUsageInfo)-1; $key++) {
-                        $dailyUsage[$key+1] = $dailyUsageInfo[$key+1] +
-                        (!empty($dailyUsageBackupInfo)&&isset($dailyUsageBackupInfo[$key+1])?$dailyUsageBackupInfo[$key+1]:0);
-                }
-                return $dailyUsage;
+		$dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
+		return $dailyUsageTotal;
         }
+
+	public static function dailyUsageSum($userid, $year) {
+		$dailyUsageTotal = self::dailyUsage($userid, $year);
+		$dailyUsage = empty($dailyUsageTotal[0])?array():array($dailyUsageTotal[0][0]);
+                for ($key = 0; $key < count($dailyUsageTotal[0])-1; $key++) {
+                        $dailyUsage[$key+1] = $dailyUsageTotal[0][$key+1] +
+                        (!empty($dailyUsageTotal[1][$key+1])&&isset($dailyUsageTotal[1][$key+1])?$dailyUsageTotal[1][$key+1]:0);
+                }
+                return $dailyUsage; 
+	}
 
 }
