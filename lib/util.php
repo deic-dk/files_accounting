@@ -139,6 +139,36 @@ class Util {
                 return $result;
 
 	}
+
+	public static function dbUpdateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id){
+		$stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `refe
+, ? , ?, ?, ? )" );
+                $result = $stmt->execute ( array (
+                                                  $user,
+                                                  $status,
+                                                  date("$year-$month"),
+                                                  $average,
+                                                  $averageTrash,
+                                                  $bill,
+                                                  $reference_id
+                                             ) );
+
+                return $result;
+        }
+
+	public static function updateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id){
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbUpdateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id);
+                }
+                else{
+                        $result = \OCA\FilesSharding\Lib::ws('updateMonth', array('userid'=>$user, 'status'=>$status, 
+				'month'=>$month, 'year'=>$year, 'average'=>$average, 
+				'averageTrash'=>$averageTrash, 'bill'=>$bill, 'reference_id'=>$reference_id),
+                                 false, true, null, 'files_accounting');
+                }
+                return $result;
+	}
+
 	public static function dbCheckTxnId($tnxid) {
 		$query = DB::prepare("SELECT * FROM `*PREFIX*files_accounting_payments` WHERE `txnid` = '$tnxid'");
 		$result = $query->execute( array ($tnxid));
