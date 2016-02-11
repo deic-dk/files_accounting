@@ -56,24 +56,24 @@ class Storage_Lib {
 	 */
 	public static function dailyUsage($userid, $year) {
 		if(\OCP\App::isEnabled('files_sharding')){
-                	if(\OCA\FilesSharding\Lib::isMaster()){
-                 		$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
-                 		if(!empty($backupServerId)){
-                 			$backupServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);
-                 			$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
-                 					false, true, $backupServerUrl, 'files_accounting');
-                 		}
-                 	}
-                 	else{
-                        	$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
-                                 	false, true, null, 'files_accounting');
+			if(\OCA\FilesSharding\Lib::isMaster()){
+				$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
+				if(!empty($backupServerId)){
+					$backupServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);
+					$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
+							false, true, $backupServerUrl, 'files_accounting');
+				}
 			}
-                }
+			else{
+				$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
+						false, true, null, 'files_accounting');
+			}
+		}
 		//calculate the daily usage on the home server from the text file
-                $dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $year);
+		$dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $year);
 		$dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
 		return $dailyUsageTotal;
-        }
+	}
 
 	public static function dailyUsageSum($userid, $year) {
 		$dailyUsageTotal = self::dailyUsage($userid, $year);
