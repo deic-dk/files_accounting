@@ -123,12 +123,11 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 $username = User::getDisplayName($user);
                 $path = '/tank/data/owncloud/'.$user;
                 $file = $path . "/" . $filename;
-                $senderAddress = 'cloud@data.deic.dk';
                 $defaults = new \OCP\Defaults();
                 $senderName = $defaults->getName();
                 $url =  Config::getAppValue('files_accounting', 'url', '');
-                $sender = 'cloud@data.deic.dk';
-                $subject = 'DeIC Data: Invoice Payment for '.$fullmonth;
+                $senderAddress = \OCP\Config::getSystemValue('fromaddress', 'cloud@deic.dk');
+                $subject = 'Invoice Payment for '.$fullmonth;
                 $message = 'Dear '.$username.','."\n \n".'The bill for '.$fullmonth.' is '.$bill.' DKK. Please find an invoice in the attachments.'."\n".'To complete payment click the following link:'."\n
 \n".$url."\n \n".'Thank you for choosing our services.';
                 Mail::send($user, $username, $subject, $message, $senderAddress, $senderName, $file);
