@@ -84,15 +84,20 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				$gift_card = (float) \OCP\Util::computerFileSize($gift_card)/pow(1024, 3);
 				if ($quantity > $gift_card) {
 					$bill = self::getBillingInServers($quantityHome, $quantityBackup, $homeServerCharge, $backupServerCharge);
-
-					$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $bill); 
+					$totalBill = array_sum($bill);
+					$reference_id = Stats::createInvoice($month, $year, $user, round($quantityHome, 2), round($quantityBackup, 2), 
+							$bill, $homeServerCharge, $backupServerCharge);
+					$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $totalBill, $reference_id); 
 				}else {
 					$result = \OCA\Files_Accounting\Util::updateMonth($user, '2', $month, $totalAverage, $totalAverageTrash, '', '');
 				}
 			}else{
 				//todo
 				$bill = self::getBillingInServers($quantityHome, $quantityBackup, $homeServerCharge, $backupServerCharge);
-				$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $bill);
+				$totalBill = array_sum($bill);
+				$reference_id = Stats::createInvoice($month, $year, $user, round($quantityHome, 2), round($quantityBackup, 2),
+                                                        $bill, $homeServerCharge, $backupServerCharge);
+				$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $totalBill, $reference_id);
 			}
 			return $result ? true : false;
 		}
@@ -105,14 +110,12 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
       		if (isset($backupServerCharge) && isset($quantityBackup)) {
     	  		$billBackup = $quantityBackup*$backupServerCharge;
       		}   
-      		$bill = isset($billHome)?$billHome:0 + isset($billBackup)?$billBackup:0;
-      		$bill = round($bill, 2);
+      		$bill = array(isset($billHome)?$billHome:0, isset($billBackup)?$billBackup:null);
 	  	return $bill;
 	} 
 
-	public static function setBill($user, $status, $month, $year, $quantity, $charge, $average, $averageTrash, $bill) {
+	public static function setBill($user, $status, $month, $year, $quantity, $charge, $average, $averageTrash, $bill, $reference_id) {
 		$fullmonth = date('F', strtotime("2000-$month-01"));
-        	$reference_id = Stats::createInvoice($month, $year, $user, round($quantity, 2), $bill, $charge);
         	$result = \OCA\Files_Accounting\Util::updateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id);
         	$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 
@@ -126,7 +129,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 $defaults = new \OCP\Defaults();
                 $senderName = $defaults->getName();
                 $url =  Config::getAppValue('files_accounting', 'url', '');
-                $senderAddress = \OCP\Config::getSystemValue('fromaddress', 'cloud@deic.dk');
+		$senderAddress = \OCP\Config::getSystemValue('fromaddress', 'cloud@deic.dk');
                 $subject = 'Invoice Payment for '.$fullmonth;
                 $message = 'Dear '.$username.','."\n \n".'The bill for '.$fullmonth.' is '.$bill.' DKK. Please find an invoice in the attachments.'."\n".'To complete payment click the following link:'."\n
 \n".$url."\n \n".'Thank you for choosing our services.';
@@ -134,7 +137,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
         }
 
 
-	public function createInvoice($month, $year, $user, $quantity, $bill, $charge){	
+	public function createInvoice($month, $year, $user, $quantityHome, $quantityBackup, $bill, $homeServerCharge, $backupServerCharge){	
 		$vat = (float) Config::getAppValue('files_accounting', 'tax', '');
 		// from DB
 	 	$monthname = date('F', strtotime("2000-$month-01"));

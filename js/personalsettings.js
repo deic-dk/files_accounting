@@ -33,7 +33,7 @@ function download_invoice() {
     	OC.redirect(redirect_url);
       // document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
     });
-  });	
+  });
 }
 
 function callMasterInternalUrl(callback){
@@ -55,6 +55,7 @@ function callMasterInternalUrl(callback){
 				}
 			});
 }
+
 
 $(document).ready(function() {
 //	var year = $("#list").val();
@@ -112,7 +113,7 @@ $(document).ready(function() {
 			}
 		});
 	});
-	
+
 
 	$('.load_history').on('click', function () {
 		var action = 'downloadhistory';
@@ -120,7 +121,8 @@ $(document).ready(function() {
 	});
 
  	download_invoice();
-	
+
 	$('.activitysettings tr').eq(5).css('display','none');
 })
+
 

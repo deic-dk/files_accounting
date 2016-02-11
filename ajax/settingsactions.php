@@ -7,11 +7,9 @@ $action = isset($_GET['action']) ? $_GET['action'] : null;
 $group = isset($_GET['group']) ? $_GET['group'] : null;
 
 if($_POST['action'] == "addcharge") {
-	$charge= $_POST['charges'];
 	$taxes = $_POST['taxes'];
 	$url = $_POST['url'];
 	$gift = $_POST['gift'];
-    \OCP\Config::setAppValue('files_accounting', 'dkr_perGb', $charge);
 	\OCP\Config::setAppValue('files_accounting', 'tax', $taxes);
 	\OCP\Config::setAppValue('files_accounting', 'url', $url);
 	//$users = OC_User::getUsers();

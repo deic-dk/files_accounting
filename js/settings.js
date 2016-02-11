@@ -41,11 +41,11 @@ OC.Groups = {
     }
 };
 
-function add_charge_settings(charges, taxes, url, gift){
+function add_charge_settings(taxes, url, gift){
 	$.ajax(OC.linkTo('files_accounting','ajax/settingsactions.php'), {
 		 type:'POST',
 		  data:{
-			 action: 'addcharge', 'charges': charges, 'taxes': taxes, 'url': url, 'gift': gift
+			 action: 'addcharge', 'taxes': taxes, 'url': url, 'gift': gift
 		 },
 		 dataType:'json',
 		 success: function(data){
@@ -58,12 +58,11 @@ function add_charge_settings(charges, taxes, url, gift){
 
 
 $(document).ready(function() {
- 	$('#billsubmit').click(function() {
-		charges = $('#charges').val();
-		taxes = $('#taxes').val(); 
-		url = $('#url').val();
-		gift = $('#gift').val();
-		add_charge_settings(charges, taxes, url, gift);
+ 	$('#filesAccountingSettings #billsubmit').click(function() {
+		taxes = $('#billing-settings #taxes').val(); 
+		url = $('#billing-settings #url').val();
+		gift = $('#billing-settings #gift').val();
+		add_charge_settings(taxes, url, gift);
 	});
 //	$('#filesAccountingSettings .gift-all:checkbox').click(function() {
   //  		var $this = $(this);
