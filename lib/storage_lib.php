@@ -6,9 +6,36 @@ use \OC_DB;
 
 class Storage_Lib {
 	
+	public static function getServerNamesForInvoice($userid){
+		$homeServerUrl = 'https://'.$_SERVER['SERVER_NAME'];
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+			$homeServerSite = \OCA\FilesSharding\Lib::dbGetSite(null);
+			$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
+			$backupServerUrl = \OCA\FilesSharding\Lib::dbLookupServerURL($backupServerId);
+			$backupServerSite = \OCA\FilesSharding\Lib::dbGetSite($backupServerId);
+		}else{
+			//todo
+			//maybe create a new ws script for url/site instead of loading the list
+			$serversList = \OCA\FilesSharding\Lib::ws('get_servers', Array(), true, true);
+			$backupServerUrl = 'https://'.\OCA\FilesSharding\Lib::getMasterHostName();
+		 	foreach ($serversList as $server){	
+				if( strpos($homeServerUrl, $server['url']) !== false ){
+					$homeServerSite = $server['site'];
+				}
+				else if (strpos($backupServerUrl, $server['url']) !== false ){
+					$backupServerSite = $server['url'];
+				}
+			}
+		}
+		$serverNames = Array("home"=> Array($homeServerUrl, isset($homeServerSite)?$homeServerSite:null));
+		if (isset($backupServerUrl) && isset($backupServerSite)){
+			$serverNames["backup"] = Array($backupServerUrl, $backupServerSite);
+		}
+		return $serverNames;
+			
+	}
+
 	public static function getChargeForUserServers($userid){
-		//todo
-		//call this function in stats.php instead of appconfig
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$homeServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 0);
 			$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);

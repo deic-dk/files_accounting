@@ -69,10 +69,15 @@ class PDF extends FPDF
     	$this->SetFont('Helvetica','',12);
     	$e = array(" ", "Gigabyte ", "DKK/Gigabyte ", "DKK ");
     	for($i=0;$i<count($d);$i++){
-	    	for($j=0;$j<count($d[0]);$j++){
+	    	for($j=0;$j<count($d[0])-1;$j++){
 	    		$this->Cell($w[0][$j],7,$e[$j].$d[$i][$j],$b[1][$j],0,$a[1][$j]);
 	    	}
 	    	$this->Ln();
+			$this->Cell($w[0][0],5,$d[$i][4],"LBR",0,$a[1][0]);
+			for($j=1;$j<count($d[0])-1;$j++){
+	  			$this->Cell($w[0][$j],5,"","LBR",0,$a[1][0]);
+			}
+			$this->Ln();
     	}
 		// Render Footer Headings
 		$this->SetFont('Helvetica','',10);

@@ -138,6 +138,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 
 
 	public function createInvoice($month, $year, $user, $quantityHome, $quantityBackup, $bill, $homeServerCharge, $backupServerCharge){	
+		$serverNames = \OCA\Files_Accounting\Storage_Lib::getServerNamesForInvoice($user);
 		$vat = (float) Config::getAppValue('files_accounting', 'tax', '');
 		// from DB
 	 	$monthname = date('F', strtotime("2000-$month-01"));
@@ -150,9 +151,14 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		}
 		$duemonthname = date('F', strtotime("2000-$duemonth-01"));
 		$articles = array(
-				array('Cloud storage '.$monthname.' '.$year, $quantity, $charge, $bill),
-				//array('', '', '', '')
+                                array('Cloud storage '.$monthname.' '.$year.' '.$serverNames["home"][1], 
+                                        $quantityHome, $homeServerCharge, $bill[0], $serverNames["home"][0])
 				);
+		if (isset($serverNames["backup"]) && isset($quantityBackup) && isset($backupServerCharge)){
+			array_push($articles, array('Cloud storage '.$monthname.' '.$year.' '.$serverNames["backup"][1],
+                                                $quantityBackup, $backupServerCharge, $bill[1], $serverNames["backup"][0])
+				);
+		}
 		$referenceHash = md5( $year.$user.$month );
 		$reference = $year.'-'.$month.'-'.substr( $referenceHash, 0, 8 );
 		$total = 0;
