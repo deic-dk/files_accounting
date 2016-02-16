@@ -20,7 +20,7 @@ function download_invoice() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
 		var link = $(this).text();
 		var owner = $("head").attr("data-user");
-		callMasterInternalUrl('https://test.data.deic.dk',  function(masterUrl){
+		callMasterInternalUrl( function(masterUrl){
 			var uri = '/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner;
 			var redirect_url = '';
 			if(typeof masterUrl !== 'undefined'){
@@ -40,7 +40,8 @@ function callMasterInternalUrl(callback){
 			$.ajax(OC.linkTo('files_sharding','ajax/get_master_url.php'), {
 				 type:'GET',
 				  data:{
-				  	internal: true
+				  	internal: true,
+					user_id: $("head").attr("data-user")
 				  },
 				 dataType:'json',
 				 success: function(s){

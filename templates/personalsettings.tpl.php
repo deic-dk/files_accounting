@@ -34,10 +34,6 @@
 
 </div>
 <div><?php 
-//	$monthToSave = (string)((int)date("m") - 01);
-	//$storage =  \OCA\Files_Accounting\Storage_Lib::dailyUsage(OCP\USER::getUser (), $monthToSave, date("Y"));
-	//echo $storage[1][2];
-	//\OCA\Files_Accounting\Stats::updateMonthlyAverage();
         $form = include "billing.php";
            ?>
 </div>
