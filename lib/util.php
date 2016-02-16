@@ -31,7 +31,7 @@ class Util {
                 return $result;
 	}
 
-	public static function dbDailyUsage($user, $year) {
+	public static function dbDailyUsage($user, $monthToSave, $year) {
 		$dailyFilePath = "/tank/data/owncloud/".$user."/diskUsageDaily".$year.".txt";
 		if(!file_exists($dailyFilePath)){
 			touch($dailyFilePath);
@@ -45,7 +45,7 @@ class Util {
 			$userRows = explode(" ", $line);
 			if ($userRows[0] == $user) {
 				$month =  substr($userRows[1], 0, 2);
-				if ($month == date('m')) { 
+				if ($month == $monthToSave) { 
 					$month = (int)$month;
 					$dailyUsage[] = array('usage' => (int)$userRows[2], 'trash' => (int)$userRows[3], 'month' => $month);
 				}
@@ -141,8 +141,7 @@ class Util {
 	}
 
 	public static function dbUpdateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id){
-		$stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `refe
-, ? , ?, ?, ? )" );
+		$stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?)");
                 $result = $stmt->execute ( array (
                                                   $user,
                                                   $status,

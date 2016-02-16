@@ -18,7 +18,7 @@ foreach ($average_lines as $line) {
 
 }
 
-$userStorage[] = OCA\Files_Accounting\Storage_Lib::dailyUsageSum($user, $year);
+$userStorage[] = OCA\Files_Accounting\Storage_Lib::dailyUsageSum($user, date("m"), $year);
 OCP\JSON::success(array('data' => $userStorage));
 //echo json_encode($userStorage);
 ?>

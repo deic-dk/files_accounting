@@ -17,7 +17,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 		$file_update = $this->updateMonthlyAverage();
 	}
 	public function updateMonthlyAverage() {
-		if (date("d") == "01") {
+		if (date("d") == "16") {
 			if(\OC_User::isAdminUser(\OC_User::getUser())){
 				$users = User::getUsers();
 			}
@@ -36,7 +36,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 			}
 			foreach ($users as $user) {
 				if (User::userExists($user)) {
-					$dailyUsage = \OCA\Files_Accounting\Storage_Lib::dailyUsage($user, $year);
+					$dailyUsage = \OCA\Files_Accounting\Storage_Lib::dailyUsage($user, $monthToSave, $year);
 					if (!empty($dailyUsage[0])){
 						$averageTodayHome = $dailyUsage[0][1];
 						$averageTodayTrashHome = $dailyUsage[0][2];
@@ -49,8 +49,8 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 								isset($averageTodayBackup)?$averageTodayBackup:null);
 					$averageTodayTrash = array(isset($averageTodayTrashHome)?$averageTodayTrashHome:null,
 								isset($averageTodayTrashBackup)?$averageTodayTrashBackup:null);
+
 					$updateDb = Stats::addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash);
-					}
 				}
 			}
 		}
@@ -73,12 +73,12 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 			$homeServerCharge = isset($charge["home"])?$charge["home"]:null;
 			$backupServerCharge = isset($charge["backup"])?$charge["backup"]:null;
 			$totalAverageHome = isset($average[0])?$average[0]:0 + isset($averageTrash[0])?$averageTrash[0]:0;
-			$totalAverageBackup = isset($average[1])?$average[1]:null + isset($averageTrash[1])?averageTrash[1]:null
+			$totalAverageBackup = isset($average[1])?$average[1]:null + isset($averageTrash[1])?$averageTrash[1]:null;
 			$quantityHome = ((float)$totalAverageHome/pow(1024, 2)); //kilobytes to gigabytes
 			$quantityBackup = ((float)$totalAverageBackup/pow(1024, 2)); 
 			$quantity = $quantityHome + isset($quantityBackup)?$quantityBackup:0;
 			$totalAverage = isset($average[0])?$average[0]:0 + isset($average[1])?$average[1]:0;
-			$totalAverageTrash = isset($averageTrash[0])?$averageTrash[0]:0 + isset($averageTrash[1])?averageTrash[1]:0; 
+			$totalAverageTrash = isset($averageTrash[0])?$averageTrash[0]:0 + isset($averageTrash[1])?$averageTrash[1]:0; 
 			if (isset($gift_card)){
 			    //bytes to gigabytes
 				$gift_card = (float) \OCP\Util::computerFileSize($gift_card)/pow(1024, 3);
@@ -97,6 +97,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 				$totalBill = array_sum($bill);
 				$reference_id = Stats::createInvoice($month, $year, $user, round($quantityHome, 2), round($quantityBackup, 2),
                                                         $bill, $homeServerCharge, $backupServerCharge);
+				\OCP\Util::writeLog('Files_Accounting', 'Trash: '.$average[0].' '.$average[1], \OCP\Util::ERROR);
 				$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $totalBill, $reference_id);
 			}
 			return $result ? true : false;
@@ -174,7 +175,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 								$reference,			// reference #
 								$articles,
 								$vat,
-								$charge,
+								"",
 								$total,
 								"",
 								$filename);

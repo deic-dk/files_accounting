@@ -81,29 +81,29 @@ class Storage_Lib {
 	/*
 	 * Calculate storage in all servers for a user
 	 */
-	public static function dailyUsage($userid, $year) {
+	public static function dailyUsage($userid, $monthToSave, $year) {
 		if(\OCP\App::isEnabled('files_sharding')){
                 	if(\OCA\FilesSharding\Lib::isMaster()){
                  		$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
                  		if(!empty($backupServerId)){
                  			$backupServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);
-                 			$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
+                 			$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
                  					false, true, $backupServerUrl, 'files_accounting');
                  		}
                  	}
                  	else{
-                        	$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'year'=>$year),
+                        	$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
                                  	false, true, null, 'files_accounting');
 			}
 		}
 		//calculate the daily usage on the home server from the text file
-                $dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $year);
+                $dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $monthToSave, $year);
 		$dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
 		return $dailyUsageTotal;
         }
 
-	public static function dailyUsageSum($userid, $year) {
-		$dailyUsageTotal = self::dailyUsage($userid, $year);
+	public static function dailyUsageSum($userid, $monthToSave, $year) {
+		$dailyUsageTotal = self::dailyUsage($userid, $monthToSave, $year);
 		$dailyUsage = empty($dailyUsageTotal[0])?array():array($dailyUsageTotal[0][0]);
                 for ($key = 0; $key < count($dailyUsageTotal[0])-1; $key++) {
                         $dailyUsage[$key+1] = $dailyUsageTotal[0][$key+1] +
