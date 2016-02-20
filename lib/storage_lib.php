@@ -50,6 +50,7 @@ class Storage_Lib {
 		
 		$totalCharge = Array('home' => isset($chargeHome)?$chargeHome:null,
 				 'backup' => isset($chargeBackup)?$chargeBackup:null);
+		\OCP\Util::writeLog('Files_Accounting', 'CHARGE HOME: '.$totalCharge['home'].' BACKUP: '.$totalCharge['backup'], \OCP\Util::ERROR);
 		return $totalCharge;
 	}
 
@@ -72,7 +73,9 @@ class Storage_Lib {
 			$query = \OC_DB::prepare('SELECT `charge_per_gb` FROM `*PREFIX*files_sharding_servers` WHERE `id` = ?');
 			$result = $query->execute(Array($serverid));
 			$charge = $result->fetchRow();
-			return $charge;	
+			foreach($charge as $row){
+				return $row['charge_per_gb'];
+			}
 		}else {
 			return null;
 		}

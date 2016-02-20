@@ -18,7 +18,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 	}
 	public function updateMonthlyAverage() {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			if (date("d") == "16") {
+			if (date("d") == "20") {
 				if(\OC_User::isAdminUser(\OC_User::getUser())){
 					$users = User::getUsers();
 				}
@@ -71,7 +71,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 			//todo
 			// check for freequota instead
 			$gift_card = OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceed');
-			$charge = (float) \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
+			$charge = \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
 			$homeServerCharge = isset($charge["home"])?$charge["home"]:null;
 			$backupServerCharge = isset($charge["backup"])?$charge["backup"]:null;
 			$totalAverageHome = (isset($average[0])?$average[0]:0) + (isset($averageTrash[0])?$averageTrash[0]:0);
@@ -108,10 +108,10 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 
 	public static function getBillingInServers($quantityHome, $quantityBackup, $homeServerCharge, $backupServerCharge) {
 	  	if (isset($homeServerCharge)) {
-	      		$billHome = $quantityHome*$homeServerCharge;
+	      		$billHome = round($quantityHome*$homeServerCharge, 2);
       		}   
       		if (isset($backupServerCharge) && isset($quantityBackup)) {
-    	  		$billBackup = $quantityBackup*$backupServerCharge;
+    	  		$billBackup = round($quantityBackup*$backupServerCharge, 2);
       		}   
       		$bill = array(isset($billHome)?$billHome:0, isset($billBackup)?$billBackup:null);
 	  	return $bill;
@@ -162,6 +162,8 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                                                 $quantityBackup, $backupServerCharge, $bill[1], $serverNames["backup"][0])
 				);
 		}
+		\OCP\Util::writeLog('Files_Accounting', 'HOME: '.$quantityHome.' '.$homeServerCharge.' '.$bill[0], \OCP\Util::ERROR);
+		\OCP\Util::writeLog('Files_Accounting', 'BACKUP: '.$quantityBackup.' '.$backupServerCharge.' '.$bill[1], \OCP\Util::ERROR);
 		$referenceHash = md5( $year.$user.$month );
 		$reference = $year.'-'.$month.'-'.substr( $referenceHash, 0, 8 );
 		$total = 0;

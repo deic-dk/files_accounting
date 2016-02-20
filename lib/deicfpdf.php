@@ -73,20 +73,20 @@ class PDF extends FPDF
 	    		$this->Cell($w[0][$j],7,$e[$j].$d[$i][$j],$b[1][$j],0,$a[1][$j]);
 	    	}
 	    	$this->Ln();
-			$this->Cell($w[0][0],5,$d[$i][4],"LBR",0,$a[1][0]);
-			for($j=1;$j<count($d[0])-1;$j++){
-	  			$this->Cell($w[0][$j],5,"","LBR",0,$a[1][0]);
-			}
-			$this->Ln();
+		$this->Cell($w[0][0],5,$e[0].$d[$i][4],"LBR",0,$a[1][0]);
+		for($j=1;$j<count($d[0])-1;$j++){
+  			$this->Cell($w[0][$j],5,"","LBR",0,$a[1][0]);
+		}
+		$this->Ln();
     	}
-		// Render Footer Headings
-		$this->SetFont('Helvetica','',10);
+	// Render Footer Headings
+	$this->SetFont('Helvetica','',10);
     	for($j=0;$j<count($f);$j++){
     		$this->Cell($w[1][$j],5,$f[$j],$b[2][$j],0,$a[2][$j]);
     	}
     	$this->Ln();
     	// Render Footer SumData
-		$this->SetFont('Helvetica','',12);
+	$this->SetFont('Helvetica','',12);
     	for($j=0;$j<count($sum);$j++){
     		$this->Cell($w[1][$j],7,$sum[$j],$b[3][$j],0,$a[3][$j]);
     	}
