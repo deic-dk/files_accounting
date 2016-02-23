@@ -2,13 +2,10 @@
 
 namespace OCA\Files_Accounting;
 
-use \OCP\DB; 
-use \OCP\Config;
-
 class Util {
 
  	public static function dbUserBill($user,$year) {
-		$stmt = DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `trashbin`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND YEAR(STR_TO_DATE(`month`, '%Y-%m')) = ?" );
+		$stmt = \OCP\DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `trashbin`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND YEAR(STR_TO_DATE(`month`, '%Y-%m')) = ?" );
 		$result = $stmt->execute ( array ($user, $year ));
 		$monthly_bill = array ();
 		while ( $row = $result->fetchRow () ) {
@@ -81,7 +78,7 @@ class Util {
 	}
 	
 	public static function usersInGroup($gid, $search = '', $limit = null, $offset = null) {
-	  		$stmt = DB::prepare ( 'SELECT `uid` FROM `*PREFIX*user_group_admin_group_user` WHERE `gid` = ? AND `uid` LIKE ?', $limit, $offset );
+	  		$stmt = \OCP\DB::prepare ( 'SELECT `uid` FROM `*PREFIX*user_group_admin_group_user` WHERE `gid` = ? AND `uid` LIKE ?', $limit, $offset );
 			$result = $stmt->execute ( array (
 				  				$gid,
 								$search . '%',
@@ -96,7 +93,7 @@ class Util {
 
 	public static function dbBillYear($user) {
 		$year = date('Y');
-		$stmt = DB::prepare ( "SELECT DISTINCT `month`  FROM `*PREFIX*files_accounting` WHERE `user` = ? AND YEAR(STR_TO_DATE(`month`, '%Y-%m')) != ?" );
+		$stmt = \OCP\DB::prepare ( "SELECT DISTINCT `month`  FROM `*PREFIX*files_accounting` WHERE `user` = ? AND YEAR(STR_TO_DATE(`month`, '%Y-%m')) != ?" );
 	 	$result = $stmt->execute ( array (
 				$user,
 				$year
@@ -123,7 +120,7 @@ class Util {
 	}
 
 	public static function dbUpdateStatus($id) {
-		$query = DB::prepare ( "UPDATE `*PREFIX*files_accounting` SET `status` = true WHERE `reference_id` = ?" );
+		$query = \OCP\DB::prepare ( "UPDATE `*PREFIX*files_accounting` SET `status` = true WHERE `reference_id` = ?" );
 		$result = $query->execute ( array ($id) );
 		return $result;
 	} 
@@ -141,7 +138,7 @@ class Util {
 	}
 
 	public static function dbUpdateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id){
-		$stmt = DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?)");
+		$stmt = \OCP\DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?)");
                 $result = $stmt->execute ( array (
                                                   $user,
                                                   $status,
@@ -169,7 +166,7 @@ class Util {
 	}
 
 	public static function dbCheckTxnId($tnxid) {
-		$query = DB::prepare("SELECT * FROM `*PREFIX*files_accounting_payments` WHERE `txnid` = '$tnxid'");
+		$query = \OCP\DB::prepare("SELECT * FROM `*PREFIX*files_accounting_payments` WHERE `txnid` = '$tnxid'");
 		$result = $query->execute( array ($tnxid));
 
 		return $result->fetchRow () ? false:true;
@@ -188,7 +185,7 @@ class Util {
 
 	public static function dbCheckPrice($price, $id) {
 		$valid_price = false;
-		$query = DB::prepare("SELECT `bill` FROM `*PREFIX*files_accounting` WHERE `reference_id` = '$id'");
+		$query = \OCP\DB::prepare("SELECT `bill` FROM `*PREFIX*files_accounting` WHERE `reference_id` = '$id'");
 		$result = $query->execute(array($id));
 		while ( $row = $result->fetchRow () ) {
 			$bill = (float)$row["bill"]*1.25;
@@ -215,7 +212,7 @@ class Util {
 	
 	public static function dbUpdatePayments($data) {
 		if(is_array($data)){
-			$query = DB::prepare("INSERT INTO `*PREFIX*files_accounting_payments` ( `txnid`, `itemid`, `payment_amount`, `payment_status`, `created_time`) VALUES (?, ?, ?, ?, ?)");
+			$query = \OCP\DB::prepare("INSERT INTO `*PREFIX*files_accounting_payments` ( `txnid`, `itemid`, `payment_amount`, `payment_status`, `created_time`) VALUES (?, ?, ?, ?, ?)");
 			$query->execute( array(
 					$data['txn_id'],
 					$data['item_number'],
@@ -242,7 +239,7 @@ class Util {
                 return $result;
 	}
 	public static function getDefaultGroups($search,$limit = null, $offset = null ) {
-		$query = DB::prepare('SELECT `gid` FROM `*PREFIX*groups` WHERE `gid` LIKE ?', $limit, $offset );
+		$query = \OCP\DB::prepare('SELECT `gid` FROM `*PREFIX*groups` WHERE `gid` LIKE ?', $limit, $offset );
 		$result = $query->execute ( array ($search . '%',
 		) );
 		$groups = array ();
@@ -254,7 +251,7 @@ class Util {
 	}
 
 	public static function inGroup($user) {
-		$stmt = DB::prepare ( "SELECT `uid` FROM `*PREFIX*user_group_admin_group_user` WHERE `gid` = ? AND `uid` = ? " );
+		$stmt = \OCP\DB::prepare ( "SELECT `uid` FROM `*PREFIX*user_group_admin_group_user` WHERE `gid` = ? AND `uid` = ? " );
 		$result = $stmt->execute ( array (
 				'dtu.dk',
 				$user 
@@ -284,4 +281,44 @@ class Util {
                 }
 		
 	}	
+
+	//todo
+	//charge
+	public static function addNotification($user, $free_space) {
+		$free_space_exceed = self::updateFreeQuota($user, $free_space);
+		if (\OCP\App::isEnabled('files_accounting')){
+			\OCA\Files_Accounting\ActivityHooks::spaceExceed($user, $free_space);
+			$charge = \OCP\Config::getAppValue('files_accounting', 'dkr_perGb', '');
+			$name = \OCP\User::getDisplayName($user);
+			$defaults = new \OCP\Defaults();
+			$senderName = $defaults->getName();
+			$senderAddress = \OCP\Config::getSystemValue('fromaddress', 'cloud@deic.dk');
+			$subject = 'DeIC Data: Storage Notice';
+			$message = 'Dear '.$name.','."\n \n".'On '.date('l jS \of F Y h:i:s A').' you exceeded the available free storage space of ' . $free_space . '. From now on, your average use of storage will be charged '.$charge.' DKK/Gigabyte. '."\n\n".'Thank you for choosing our services.'."\n \n".'DeIC Data';
+		
+			$headers = 'From: '.$sender . "\r\n" . 'Reply-To: ' .$sender. "\r\n" . 'X-Mailer: PHP/' . phpversion ();
+			try {
+                		\OCP\Util::sendMail(
+                        	$user, $name,
+                        	$subject, $message,
+                        	$senderAddress, $senderName
+                		);
+        		} catch (\Exception $e) {
+                		\OCP\Util::writeLog('User_Group_Admin', 'A problem occurred while sending the e-mail. Please revisit your settings.', \OCP\Util::ERROR);
+        		}
+		}
+		$free_space = \OC_Preferences::setValue($user, 'files_accounting', 'freequota', null);
+	}
+
+	public static function updateFreeQuota($user, $free_space) {
+		$free_space_exceed = \OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceed');
+		if (isset($free_space_exceed)) {
+			$total_exceed = \OC_Helper::computerFileSize($free_space_exceed) + \OC_Helper::computerFileSize($free_space);
+			$total_exceed = \OC_Helper::humanFileSize($total_exceed);
+			$free_space_exceed = \OC_Preferences::setValue($user, 'files_accounting', 'freequotaexceed', $total_exceed);
+		}else {
+			$free_space_exceed = \OC_Preferences::setValue($user, 'files_accounting', 'freequotaexceed', $free_space);
+		}
+		return $free_space_exceed;	 	
+	}
 }

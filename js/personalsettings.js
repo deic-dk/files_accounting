@@ -21,9 +21,9 @@ function download_invoice() {
 		var link = $(this).text();
 		var owner = $("head").attr("data-user");
 		callMasterInternalUrl( function(masterUrl){
-			var uri = '/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner;
+			var uri = OC.webroot+'/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner;
 			var redirect_url = '';
-			if(typeof masterUrl !== 'undefined'){
+			if(typeof masterUrl == 'undefined'){
 				redirect_url = uri;
 			}
 			else{

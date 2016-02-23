@@ -7,6 +7,8 @@ OCP\Backgroundjob::registerJob('OCA\Files_Accounting\Stats');
 OC::$CLASSPATH['Bill_Activity']   ='apps/files_accounting/lib/activity.php';
 OC::$CLASSPATH['Hooks'] = 'apps/activity/lib/hooks.php';
 OC::$CLASSPATH['Mail'] = 'apps/files_accounting/lib/mail.php';
+OC::$CLASSPATH['PersonalUtil'] = OC::$SERVERROOT.'/themes/deic_theme_oc7/settings/lib/personalutil.php';
+
 \OCA\Files_Accounting\ActivityHooks::register();
 
 \OC::$server->getActivityManager()->registerExtension(function() {

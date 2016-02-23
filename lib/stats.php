@@ -70,7 +70,7 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
                 }else {	
 			//todo
 			// check for freequota instead
-			$gift_card = OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceed');
+			$gift_card = OC_Preferences::getValue($user, 'files_accounting', 'freequota');
 			$charge = \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
 			$homeServerCharge = isset($charge["home"])?$charge["home"]:null;
 			$backupServerCharge = isset($charge["backup"])?$charge["backup"]:null;
@@ -82,24 +82,15 @@ class Stats extends \OC\BackgroundJob\QueuedJob {
 			$totalAverage = (isset($average[0])?$average[0]:0) + (isset($average[1])?$average[1]:0);
 			$totalAverageTrash = (isset($averageTrash[0])?$averageTrash[0]:0) + (isset($averageTrash[1])?$averageTrash[1]:0); 
 			if (isset($gift_card)){
-			    //bytes to gigabytes
+			    	//bytes to gigabytes
 				$gift_card = (float) \OCP\Util::computerFileSize($gift_card)/pow(1024, 3);
-				if ($quantity > $gift_card) {
-					$bill = self::getBillingInServers($quantityHome, $quantityBackup, $homeServerCharge, $backupServerCharge);
-					$totalBill = array_sum($bill);
-					$reference_id = Stats::createInvoice($month, $year, $user, round($quantityHome, 2), round($quantityBackup, 2), 
-							$bill, $homeServerCharge, $backupServerCharge);
-					$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $totalBill, $reference_id); 
-				}else {
-					$result = \OCA\Files_Accounting\Util::updateMonth($user, '2', $month, $totalAverage, $totalAverageTrash, '', '');
-				}
+				$result = \OCA\Files_Accounting\Util::updateMonth($user, '2', $month, $totalAverage, $totalAverageTrash, '', '');
 			}else{
 				//todo
 				$bill = self::getBillingInServers($quantityHome, $quantityBackup, $homeServerCharge, $backupServerCharge);
 				$totalBill = array_sum($bill);
 				$reference_id = Stats::createInvoice($month, $year, $user, round($quantityHome, 2), round($quantityBackup, 2),
                                                         $bill, $homeServerCharge, $backupServerCharge);
-				\OCP\Util::writeLog('Files_Accounting', 'Trash: '.($average[0]+$average[1]), \OCP\Util::ERROR);
 				$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $totalBill, $reference_id);
 			}
 			return $result ? true : false;
