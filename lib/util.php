@@ -288,15 +288,19 @@ class Util {
 		$free_space_exceed = self::updateFreeQuota($user, $free_space);
 		if (\OCP\App::isEnabled('files_accounting')){
 			\OCA\Files_Accounting\ActivityHooks::spaceExceed($user, $free_space);
-			$charge = \OCP\Config::getAppValue('files_accounting', 'dkr_perGb', '');
+			$charge = \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
+			$serverNames = \OCA\Files_Accounting\Storage_Lib::getServerNamesForInvoice($user);
 			$name = \OCP\User::getDisplayName($user);
 			$defaults = new \OCP\Defaults();
 			$senderName = $defaults->getName();
 			$senderAddress = \OCP\Config::getSystemValue('fromaddress', 'cloud@deic.dk');
 			$subject = 'DeIC Data: Storage Notice';
-			$message = 'Dear '.$name.','."\n \n".'On '.date('l jS \of F Y h:i:s A').' you exceeded the available free storage space of ' . $free_space . '. From now on, your average use of storage will be charged '.$charge.' DKK/Gigabyte. '."\n\n".'Thank you for choosing our services.'."\n \n".'DeIC Data';
+			$message = "Dear ".$name.","."\n \n"."On ".date('l jS \of F Y h:i:s A')." you exceeded the available free storage space of " . $free_space . ". From now on, your average use of storage will be charged ".$charge['home']." DKK/Gigabyte for ".$serverNames['home'][1]." (".$serverNames['home'][0].")";
+			if (isset($serverNames['backup'])) {
+				$message .= " and ".$charge['backup']." DKK/Gigabyte for ".$serverNames['backup'][1]." (".$serverNames['backup'][0].")";
+			}
+			$message .= "."."\n\n"."Thank you for choosing our services."."\n \n";
 		
-			$headers = 'From: '.$sender . "\r\n" . 'Reply-To: ' .$sender. "\r\n" . 'X-Mailer: PHP/' . phpversion ();
 			try {
                 		\OCP\Util::sendMail(
                         	$user, $name,
@@ -304,7 +308,7 @@ class Util {
                         	$senderAddress, $senderName
                 		);
         		} catch (\Exception $e) {
-                		\OCP\Util::writeLog('User_Group_Admin', 'A problem occurred while sending the e-mail. Please revisit your settings.', \OCP\Util::ERROR);
+                		\OCP\Util::writeLog('Files_Accounting', 'A problem occurred while sending the e-mail. Please revisit your settings.', \OCP\Util::ERROR);
         		}
 		}
 		$free_space = \OC_Preferences::setValue($user, 'files_accounting', 'freequota', null);
