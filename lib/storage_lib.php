@@ -115,12 +115,15 @@ class Storage_Lib {
                 return $dailyUsage; 
 	}
 
+	//solution to work with ws based on
+	//https://github.com/owncloud/core/issues/5740
 	public static function dbUserStorage($userid) {
-		$storageInfo = \OC_Helper::getStorageInfo('/');
-                $usedStorage = $storageInfo['used'];
+		$user = \OC::$server->getUserManager()->get($userid);
+        	$storage = new \OC\Files\Storage\Home(array('user'=>$user));
+        	$rootInfo = $storage->getCache()->get('files');
+        	$usedStorage =  $rootInfo['size'];
                 $trashbinStorage = self::trashbinSize($userid);
                 $totalStorage = $usedStorage + $trashbinStorage;
-
                 return $totalStorage;
 	}
 
@@ -130,7 +133,6 @@ class Storage_Lib {
 				$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
                                 if(!empty($backupServerId)){
                                         $backupServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);
-					\OCP\Util::writeLog('Files_Accounting', 'backup SERVER_id: '.$backupServerUrl, \OCP\Util::ERROR);
                                         $userStorageBackup = \OCA\FilesSharding\Lib::ws('actionsPersonal', array('userid'=>$userid, 
 							'action'=>'userStorage'),false, true, 
 							$backupServerUrl, 'files_accounting');
@@ -149,10 +151,12 @@ class Storage_Lib {
 			
 	}
 
-	public static function trashbinSize($user) {
-		$view = new \OC\Files\View('/' . $user);
-		$fileInfo = $view->getFileInfo('/files_trashbin/files');
-		return isset($fileInfo['size']) ? $fileInfo['size'] : 0; 
+	public static function trashbinSize($userid) {
+		$user = \OC::$server->getUserManager()->get($userid);
+                $storage = new \OC\Files\Storage\Home(array('user'=>$user));
+                $rootInfo = $storage->getCache()->get('files_trashbin/files');
+                $trashSpace =  $rootInfo['size'];
+		return $trashSpace;
 	}
 	
 	public static function dbFreeSpace($user) {
