@@ -170,7 +170,7 @@ class Storage_Lib {
 		}
 	}
 
-	public static function relativeSpace($userid, $totalUsed) {
+	public static function dbRelativeSpace($userid, $totalUsed) {
 		$quota = \OC_Util::getUserQuota($userid);
 		$freeQuota = self::freeSpace($userid);
 		
@@ -183,6 +183,18 @@ class Storage_Lib {
 
 		return $relative;
 	}
+
+	public static function relativeSpace($userid, $totalUsed) {
+                if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbRelativeSpace($userid, $totalUsed);
+                }
+                else{
+                        $result = \OCA\FilesSharding\Lib::ws('actionsPersonal', array('userid'=>$userid,
+                                 'totalUsed'=>$totalUsed, 'action'=>'relativeSpace'),
+                                 false, true, null, 'files_accounting');
+                }
+                return $result;
+        }
 
 
 }

@@ -15,8 +15,9 @@ switch ($action) {
 	case "userStorage":
 		$result = \OCA\Files_Accounting\Storage_Lib::dbUserStorage($userid);
 		break;
-	case "freeSpace":
-		//todo
-		break;
+	case "relativeSpace":
+                $totalUsed = isset($_GET['totalUsed'])?$_GET['totalUsed']:null;
+                $result = \OCA\Files_Accounting\Storage_Lib::dbRelativeSpace($userid, $totalUsed);
+                break;
 }
 OCP\JSON::encodedPrint($result);
