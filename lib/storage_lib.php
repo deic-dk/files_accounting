@@ -159,7 +159,7 @@ class Storage_Lib {
 		return $trashSpace;
 	}
 	
-	public static function dbFreeSpace($user) {
+	public static function freeSpace($user) {
 		$free_space = \OC_Preferences::getValue($user, 'files_accounting', 'freequota');
 		if (isset($free_space)) {
 			$free_space_real = \OC_Helper::computerFileSize($free_space);
@@ -170,16 +170,15 @@ class Storage_Lib {
 		}
 	}
 
-	public static function relativeSpace($user, $total_used) {
-		$storageInfo = \OC_Helper::getStorageInfo('/');
-		$total_storage = $storageInfo['total'];
-		$free_quota = self::freeSpace($user);
+	public static function relativeSpace($userid, $totalUsed) {
+		$quota = \OC_Util::getUserQuota($userid);
+		$freeQuota = self::freeSpace($userid);
 		
-		if (isset($free_quota)) {
-			$free_quota = $free_quota[1];
-			$relative = round(($total_used / $free_quota) * 10000) / 100;		
+		if (isset($freeQuota)) {
+			$freeQuota = $freeQuota[1];
+			$relative = round(($totalUsed / $freeQuota) * 10000) / 100;		
 		}else {
-			$relative = round(($total_used / $total_storage) * 10000) / 100;
+			$relative = round(($totalUsed / $quota) * 10000) / 100;
 		}
 
 		return $relative;

@@ -17,4 +17,11 @@ else if ($action == 'loadgraph') {
 	$graph_page = $graph->fetchPage();
 	OCP\JSON::success(array('data' => array('page'=>$graph_page)));
 }
-
+else if ($action == 'checkmaster') {
+	if (\OCP\App::isEnabled('files_sharding')) {
+		$master = \OCA\FilesSharding\Lib::isMaster();	
+	}else{
+		$master = true;
+	}
+	OCP\JSON::success(array('data' => $master));
+}

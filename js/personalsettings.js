@@ -20,20 +20,36 @@ function download_invoice() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
 		var link = $(this).text();
 		var owner = $("head").attr("data-user");
-		callMasterInternalUrl( function(masterUrl){
-			var uri = OC.webroot+'/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner;
-			var redirect_url = '';
-			if(typeof masterUrl == 'undefined'){
-				redirect_url = uri;
-			}
-			else{
-				url = encodeURIComponent(masterUrl+uri);
-				redirect_url = OC.webroot+'/apps/files_sharding/download_proxy.php?url='+url+'&mode=native';
-			}
-    	OC.redirect(redirect_url);
-      // document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
-    });
-  });
+		$.ajax(OC.linkTo('files_accounting','ajax/actions.php'), {
+                	type:'GET',
+                	data:{
+                        	action: 'checkmaster'
+               		},
+                	dataType: 'json',
+                	success: function(jsondata) {
+                               var isMaster = jsondata.data;	
+				if (isMaster) {
+					document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
+				}else{
+					callMasterInternalUrl( function(masterUrl){
+                       	 			var uri = OC.webroot+'/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner;
+                        			var redirect_url = '';
+                        			if(typeof masterUrl == 'undefined'){
+                                			redirect_url = uri;
+                        			}
+                        			else{
+                                			url = encodeURIComponent(masterUrl+uri);
+                                			redirect_url = OC.webroot+'/apps/files_sharding/download_proxy.php?url='+url+'&mode=native';
+                        			}
+                        			OC.redirect(redirect_url);
+                			});
+				}
+                	}
+			error: function(jsondata){
+                                alert("Unexpected error!");
+                        }
+        	});
+  	});
 }
 
 function callMasterInternalUrl(callback){
