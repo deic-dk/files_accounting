@@ -44,7 +44,7 @@ function download_invoice() {
                         			OC.redirect(redirect_url);
                 			});
 				}
-                	}
+                	},
 			error: function(jsondata){
                                 alert("Unexpected error!");
                         }
