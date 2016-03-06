@@ -9,11 +9,9 @@
   $link = isset($_GET['link']) ? $_GET['link'] : null;
 
   if  ($action == "downloadhistory") {
-        $dailyStorage = 'diskUsageDaily2015.txt';
+	$dailyStorage = 'diskUsageDaily'.date("Y").'.txt';
         OCA\Files_Accounting\Util::downloadInvoice($dailyStorage, $username);
-        //OCA\Files_Accounting\Util::readFile($file, $dailyStorage);
   }elseif (isset($link)) {
         OCA\Files_Accounting\Util::downloadInvoice($link, $username);
-        //OCA\Files_Accounting\Util::readfile($file, $link);
    }
 

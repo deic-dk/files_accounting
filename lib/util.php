@@ -59,24 +59,6 @@ class Util {
 		return $userStorage;
 	}
 
-	public static function dbGetFileContent($user, $year) {
-		$dailyFilePath = "/tank/data/owncloud/".$user."/diskUsageDaily".$year.".txt";
-		if(!file_exists($dailyFilePath)){
-			touch($dailyFilePath);
-		}
-		$fileContents = file_get_contents($dailyFilePath);
-		return $fileContents;
-	}
-	public static function getFileContent($user, $year) {
-		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			$result = self::dbGetFileContent($user, $year);
-		}else {
-			$result = \OCA\FilesSharding\Lib::ws('getFileContent', array('userid'=>$user, 'year'=>$year),
-				false, true, null, 'files_accounting');
-		}	 
-		return $result;
-	}
-	
 	public static function usersInGroup($gid, $search = '', $limit = null, $offset = null) {
 	  		$stmt = \OCP\DB::prepare ( 'SELECT `uid` FROM `*PREFIX*user_group_admin_group_user` WHERE `gid` = ? AND `uid` LIKE ?', $limit, $offset );
 			$result = $stmt->execute ( array (
