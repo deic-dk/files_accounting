@@ -185,16 +185,26 @@ class Storage_Lib {
 	}
 
 	public static function relativeSpace($userid, $totalUsed) {
-                if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
                         $result = self::dbRelativeSpace($userid, $totalUsed);
                 }
                 else{
                         $result = \OCA\FilesSharding\Lib::ws('actionsPersonal', array('userid'=>$userid,
-                                 'totalUsed'=>$totalUsed, 'action'=>'relativeSpace'),
+				 'totalUsed'=>$totalUsed, 'action'=>'relativeSpace'),
+                                 false, true, null, 'files_accounting');
+                }
+		return $result;
+	}
+
+	public static function freeQuotaConfig($userid){
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = \OC_Preferences::getValue($userid, 'files_accounting', 'freequota');
+                }
+                else{
+                        $result = \OCA\FilesSharding\Lib::ws('actionsPersonal', array('userid'=>$userid,
+                                  'action'=>'freeQuotaConfig'),
                                  false, true, null, 'files_accounting');
                 }
                 return $result;
-        }
-
-
+	}
 }

@@ -12,11 +12,6 @@ if ($action == 'loadhistory') {
         OCP\JSON::success(array('data' => array('page'=>$page)));
 
 }
-else if ($action == 'loadgraph') {
-	$graph = new OCP\Template("files_accounting", "storageplot");
-	$graph_page = $graph->fetchPage();
-	OCP\JSON::success(array('data' => array('page'=>$graph_page)));
-}
 else if ($action == 'checkmaster') {
 	if (\OCP\App::isEnabled('files_sharding')) {
 		$master = \OCA\FilesSharding\Lib::isMaster();	

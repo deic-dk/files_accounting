@@ -1,21 +1,3 @@
-function update_graph(year){
-	$.ajax(OC.linkTo('files_accounting','ajax/actions.php'), {
-		type:'GET',
-		data:{
-			action: 'loadgraph',
-			year:year
-		},
-		dataType: 'json',
-		success: function(jsondata) {
-			if(jsondata.status == 'success' ) {
-				$('#chart_div').append(jsondata.data.page);
-			}else {
-				OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
-			}
-		}
-	});
-}
-
 function download_invoice() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
 		var link = $(this).text();
@@ -53,30 +35,28 @@ function download_invoice() {
 }
 
 function callMasterInternalUrl(callback){
-			$.ajax(OC.linkTo('files_sharding','ajax/get_master_url.php'), {
-				 type:'GET',
-				  data:{
-				  	internal: true,
-					user_id: $("head").attr("data-user")
-				  },
-				 dataType:'json',
-				 success: function(s){
-					 if(s.error){
-						 // files_sharding probably not installed
-						 callback();
-					 }
-					callback(s.url);
-				 },
-				error:function(s){
-					alert("Unexpected error!");
-				}
-			});
+	$.ajax(OC.linkTo('files_sharding','ajax/get_master_url.php'), {
+		 type:'GET',
+		  data:{
+		  	internal: true,
+			user_id: $("head").attr("data-user")
+		  },
+		 dataType:'json',
+		 success: function(s){
+			 if(s.error){
+				 // files_sharding probably not installed
+				 callback();
+			 }
+			callback(s.url);
+		 },
+		error:function(s){
+			alert("Unexpected error!");
+		}
+	});
 }
 
 
 $(document).ready(function() {
-//	var year = $("#list").val();
-  //  update_graph(year);
 
 	$("#billingtable #history").on ("click", function () {
 		var d = new Date();
@@ -105,8 +85,9 @@ $(document).ready(function() {
 
     	});
 
-	$('#list').change(function() {
+	$('#storageSettings #list').change(function() {
 		var year = $(this).val();
+		getData();
 		$.ajax(OC.linkTo('files_accounting', 'ajax/actions.php'), {
 			type: 'GET',
 			data: {
@@ -132,14 +113,14 @@ $(document).ready(function() {
 	});
 
 
-	$('.load_history').on('click', function () {
+	$('#storageSettings .load_history').on('click', function () {
 		var action = 'downloadhistory';
 		document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?action=' + action;
 	});
 
  	download_invoice();
 
-	$('.activitysettings tr').eq(5).css('display','none');
+	//$('.activitysettings tr').eq(5).css('display','none');
 })
 
 
