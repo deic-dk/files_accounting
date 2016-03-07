@@ -10,15 +10,20 @@ use \OC_Preferences;
 use Mail;
 use \OCP\Defaults;
 
-require_once('deicfpdf.php');
+require_once  __DIR__ . '/../deicfpdf.php';
 
-class Stats extends \OC\BackgroundJob\QueuedJob {
+class Stats extends \OC\BackgroundJob\TimedJob {
+
+	public function __construct() {
+		$this->setInterval(15 * 60);
+	}
+
 	protected function run($argument) {
 		$file_update = $this->updateMonthlyAverage();
 	}
 	public function updateMonthlyAverage() {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			if (date("d") == "20") {
+			if (date("d") == "07") {
 				if(\OC_User::isAdminUser(\OC_User::getUser())){
 					$users = User::getUsers();
 				}

@@ -71,7 +71,7 @@
 			$average = $bill['average'];
 			$duemonthname = date('F', strtotime("2000-$duemonth-01"));
 			$due_date =  $duemonthname." 1, 23:59 PM";
-			$vat = (float) \OCP\Config::getAppValue('files_accounting', 'tax', '');
+			$vat = \OCA\Files_Accounting\Util::getTaxRate();
 	  		if ($status == '0') {
       				$i ++;
 	      			$status = '<div style="color:#CDDC39"><strong>Pending</strong></div>';

@@ -184,14 +184,24 @@ class Util {
                         $result = self::dbCheckPrice($price, $id);
                 }
                 else{
-                          $result = \OCA\FilesSharding\Lib::ws('checkPrice', array('price'=>$price, 'id'=>$id),
+                          $result = \OCA\FilesSharding\Lib::ws('checkPrice', array('action'=>'checkPrice', 'price'=>$price, 'id'=>urlencode($id)),
                                  false, true, null, 'files_accounting');
                 }
                 return $result;
 
 	}
 	
-	
+	public static function getTaxRate() {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = (float) \OCP\Config::getAppValue('files_accounting', 'tax', '');
+                }
+                else{
+                        $result = \OCA\FilesSharding\Lib::ws('checkPrice', array('action'=>'getTaxRate'),
+                                 false, true, null, 'files_accounting');
+                }
+                return $result;	
+	}
+
 	public static function dbUpdatePayments($data) {
 		if(is_array($data)){
 			$query = \OCP\DB::prepare("INSERT INTO `*PREFIX*files_accounting_payments` ( `txnid`, `itemid`, `payment_amount`, `payment_status`, `created_time`) VALUES (?, ?, ?, ?, ?)");

@@ -2,6 +2,9 @@
 OCP\App::checkAppEnabled('files_accounting');
 OCP\App::registerAdmin('files_accounting', 'settings');
 OCP\App::registerPersonal('files_accounting', 'personalsettings');
+
+OC::$CLASSPATH['OCA\Files_Accounting\Stats'] = 'apps/files_accounting/lib/backgrounjob/stats.php';
+require_once('apps/files_accounting/lib/backgroundjob/stats.php');
 OCP\Backgroundjob::registerJob('OCA\Files_Accounting\Stats');
 
 OC::$CLASSPATH['Bill_Activity']   ='apps/files_accounting/lib/activity.php';
