@@ -106,13 +106,13 @@
 				$count ++; 	
 			}
 		}
-		if ($i <1) {
-                        echo '<tr><td class="empty">You don\'t have new invoices</td></tr>';
+		if ($i <1 && $count == 0) {
+                        echo '<tr><td colspan="6" class="empty">You don\'t have new invoices</td></tr>';
                 }
 
-		if ($count > 0) {
-			echo "<tr><td colspan='5' class='centertr'><div id='history' class='btn btn-primary btn-flat'>Load history</div></td></tr>";
-		} 
+                if ($count > 0) {
+                        echo '<tr><td colspan="6" class="centertr"><div id="history" class="btn btn-primary btn-flat">Load history</div></td></tr>';
+                }
 	}
 ?>
 </tbody>
