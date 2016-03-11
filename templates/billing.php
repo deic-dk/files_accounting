@@ -71,7 +71,6 @@
 			$average = $bill['average'];
 			$duemonthname = date('F', strtotime("2000-$duemonth-01"));
 			$due_date =  $duemonthname." 1, 23:59 PM";
-			$vat = \OCA\Files_Accounting\Util::getTaxRate();
 	  		if ($status == '0') {
       				$i ++;
 	      			$status = '<div style="color:#CDDC39"><strong>Pending</strong></div>';
@@ -92,8 +91,6 @@
 					<input type="hidden" name="no_note" value="0">
 					<input type="hidden" name="cn" value="Add special instructions to the seller:">
 					<input type="hidden" name="no_shipping" value="2">
-					<input type="hidden" name="tax_rate" value="'.$vat.'">
-					<input type="hidden" name="shipping" value="0.00">
 					<input type="hidden" name="custom" value="'.OC_User::getUser().'">
 					<input type="hidden" name="bn" value="PP-BuyNowBF:btn_paynow_SM.gif:NonHosted">
 					<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_paynow_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
@@ -110,9 +107,9 @@
                         echo '<tr><td colspan="6" class="empty">You don\'t have new invoices</td></tr>';
                 }
 
-                if ($count > 0) {
-                        echo '<tr><td colspan="6" class="centertr"><div id="history" class="btn btn-primary btn-flat">Load history</div></td></tr>';
-                }
+		if ($count > 0) {
+			echo '<tr><td colspan="6" class="centertr"><div id="history" class="btn btn-primary btn-flat">Load history</div></td></tr>';
+		} 
 	}
 ?>
 </tbody>

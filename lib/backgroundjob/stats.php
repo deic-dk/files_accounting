@@ -139,6 +139,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	public function createInvoice($month, $year, $user, $quantityHome, $quantityBackup, $bill, $homeServerCharge, $backupServerCharge){	
 		$serverNames = \OCA\Files_Accounting\Storage_Lib::getServerNamesForInvoice($user);
 		$vat = (float) Config::getAppValue('files_accounting', 'tax', '');
+		$vat = $vat*0.01;
 		// from DB
 	 	$monthname = date('F', strtotime("2000-$month-01"));
 		if (date("m") != '12') {

@@ -19,7 +19,8 @@ if($freeQuota !== 'none' and $freeQuota !== 'default') {
 	$freeQuota= OC_Helper::computerFileSize($freeQuota);
 	$freeQuota=OC_Helper::humanFileSize($freeQuota);
 }
-
+//todo
+//check for previous free quota
 // Return Success story
 if($username) {
 	OC_Preferences::setValue($username, 'files_accounting', 'freequota', $freeQuota);

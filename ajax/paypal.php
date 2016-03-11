@@ -146,7 +146,7 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
       		mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
 		}
 		if(DEBUG == true) {
-			error_log(date('[Y-m-d H:i e] '). "Verified IPN: $req ". PHP_EOL, 3, LOG_FILE);
+//			error_log(date('[Y-m-d H:i e] '). "Verified IPN: $req ". PHP_EOL, 3, LOG_FILE);
 		}	
 	
 	

@@ -170,8 +170,7 @@ class Util {
 		$query = \OCP\DB::prepare("SELECT `bill` FROM `*PREFIX*files_accounting` WHERE `reference_id` = '$id'");
 		$result = $query->execute(array($id));
 		while ( $row = $result->fetchRow () ) {
-			$bill = (float)$row["bill"]*1.25;
-			$bill = round($bill, 2);
+			$bill = (float)$row["bill"];
 			if ($bill == $price) {
 				$valid_price = true;
 			}
