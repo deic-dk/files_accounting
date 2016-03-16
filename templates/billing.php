@@ -42,7 +42,7 @@
 </thead>
 <tbody id="fileList">
 	<?php
-	$bills = \OCA\Files_Accounting\Util::userBill(OC_User::getUser (), date('Y') ) ;	
+	$bills = \OCA\Files_Accounting\Util::userBill(OC_User::getUser (), date('Y'), false ) ;	
 	if (count($bills) == 0) {
 	  echo '<tr><td class="empty">You don\'t have any invoices yet</td>';
 	}else {

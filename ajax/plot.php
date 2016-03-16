@@ -2,7 +2,7 @@
 $user = \OCP\User::getUser();
 $userStorage  = array();
 $year = isset($_GET['year'])?$_GET['year']:date('Y');
-$average_lines = \OCA\Files_Accounting\Util::userBill($user, $year);
+$average_lines = \OCA\Files_Accounting\Util::userBill($user, $year, true);
 foreach ($average_lines as $line) {
 	//$userRows = explode(" ", $line);
 	//if ($userRows[0] == $user) {

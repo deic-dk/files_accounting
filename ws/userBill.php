@@ -9,6 +9,7 @@ if(!OCA\FilesSharding\Lib::checkIP()){
 }
 $userid = isset($_GET['userid'])?$_GET['userid']:null;
 $year = isset($_GET['year'])?$_GET['year']:null;
-$ret = OCA\Files_Accounting\Util::dbUserBill($userid, $year);
+$plot = isset($_GET['plot'])?$_GET['plot']:null;
+$ret = OCA\Files_Accounting\Util::dbUserBill($userid, $year, $plot);
 OCP\JSON::encodedPrint($ret);
 

@@ -28,6 +28,7 @@ DKK</td></tr></table>
 
 </div>
 <div><?php 
+	//\OCA\Files_Accounting\Stats::updateMonthlyAverage();
         $form = include "billing.php";
            ?>
 </div>

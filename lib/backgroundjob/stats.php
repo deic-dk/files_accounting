@@ -23,7 +23,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	}
 	public function updateMonthlyAverage() {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			if (date("d") == "07") {
+			if (date("d") == "16") {
 				if(\OC_User::isAdminUser(\OC_User::getUser())){
 					$users = User::getUsers();
 				}
@@ -89,7 +89,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			if (isset($gift_card)){
 			    	//bytes to gigabytes
 				$gift_card = (float) \OCP\Util::computerFileSize($gift_card)/pow(1024, 3);
-				$result = \OCA\Files_Accounting\Util::updateMonth($user, '2', $month, $totalAverage, $totalAverageTrash, '', '');
+				$result = \OCA\Files_Accounting\Util::updateMonth($user, '2', $month, $year, $totalAverage, $totalAverageTrash, '', '');
 			}else{
 				//todo
 				$bill = self::getBillingInServers($quantityHome, $quantityBackup, $homeServerCharge, $backupServerCharge);

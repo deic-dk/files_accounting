@@ -1,6 +1,6 @@
 <?php
 	$year = isset($_GET['year'])?$_GET['year']:null;
-	$bills = \OCA\Files_Accounting\Util::userBill(OC_User::getUser (), $year ) ;	
+	$bills = \OCA\Files_Accounting\Util::userBill(OC_User::getUser (), $year, false ) ;	
 	foreach (array_reverse($bills) as $bill) {
   		$status = $bill['status'];
 		$month = $bill['month'];

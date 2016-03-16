@@ -4,25 +4,30 @@ namespace OCA\Files_Accounting;
 
 class Util {
 
- 	public static function dbUserBill($user,$year) {
+ 	public static function dbUserBill($user,$year, $plot=null) {
 		$stmt = \OCP\DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `trashbin`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND YEAR(STR_TO_DATE(`month`, '%Y-%m')) = ?" );
 		$result = $stmt->execute ( array ($user, $year ));
 		$monthly_bill = array ();
 		while ( $row = $result->fetchRow () ) {
-			if ((int)$row['status'] != 2) {
+			if (!$plot){
+				if ((int)$row['status'] != 2) {
+					$date = explode("-", $row['month']);
+					$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$date[1], 'bill' => (float)$row['bill'], 'average' => (float)$row['average'], 'trashbin' => (float)$row['trashbin'], 'link' => $row['reference_id'], 'year' => $date[0]); 
+				}	
+			}else {
 				$date = explode("-", $row['month']);
-				$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$date[1], 'bill' => (float)$row['bill'], 'average' => (float)$row['average'], 'trashbin' => (float)$row['trashbin'], 'link' => $row['reference_id'], 'year' => $date[0]); 
+				$monthly_bill[] = array('month' => (int)$date[1], 'average' => (float)$row['average'], 'trashbin' => (float)$row['trashbin'], 'year' => $date[0]);
 			}
 		}
 		return $monthly_bill;
 	}
 
-	public static function userBill($user, $year) {
+	public static function userBill($user, $year, $plot) {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-                        $result = self::dbUserBill($user, $year);
+                        $result = self::dbUserBill($user, $year, $plot);
                 }
                 else{
-                        $result = \OCA\FilesSharding\Lib::ws('userBill', array('userid'=>$user, 'year'=>$year),
+                        $result = \OCA\FilesSharding\Lib::ws('userBill', array('userid'=>$user, 'year'=>$year, 'plot'=>$plot),
                                  false, true, null, 'files_accounting');
                 }
                 return $result;
