@@ -61,6 +61,31 @@ class Storage_Lib {
 		}
 	}
 
+	public static function monthlyUsage($userid, $monthToSave, $year) {
+		$masterInternalUrl = \OCA\FilesSharding\Lib::getMasterInternalURL();
+		$homeInternalUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerUrlForUser($userid);
+		$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
+                if(!empty($backupServerId)){
+                        $backupServerInternalUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);		
+		}
+		if ($homeInternalUrl == $masterInternalUrl) {
+			$dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $monthToSave, $year);
+		} else {
+			$dailyUsageInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
+                                        false, true, $homeInternalUrl, 'files_accounting');
+		}
+		if (isset($backupServerInternalUrl)){
+			if ($backupServerInternalUrl == $masterInternalUrl) {
+                       		$dailyUsageBackupInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $monthToSave, $year);
+			} else {
+				$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
+                                       		false, true, $backupServerInternalUrl, 'files_accounting');
+			}
+		} 
+		$dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
+		return $dailyUsageTotal;
+	}
+
 	/*
 	 * Calculate storage in all servers for a user
 	 */

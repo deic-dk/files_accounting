@@ -22,7 +22,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$file_update = $this->updateMonthlyAverage();
 	}
 	public function updateMonthlyAverage() {
-		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+		if(\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			if (date("d") == "16") {
 				if(\OC_User::isAdminUser(\OC_User::getUser())){
 					$users = User::getUsers();
@@ -42,7 +42,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				}
 				foreach ($users as $user) {
 					if (User::userExists($user)) {
-						$dailyUsage = \OCA\Files_Accounting\Storage_Lib::dailyUsage($user, $monthToSave, $year);
+						$dailyUsage = \OCA\Files_Accounting\Storage_Lib::monthlyUsage($user, $monthToSave, $year);
 						if (!empty($dailyUsage[0])){
 							$averageTodayHome = $dailyUsage[0][1];
 							$averageTodayTrashHome = $dailyUsage[0][2];
@@ -91,7 +91,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				$gift_card = (float) \OCP\Util::computerFileSize($gift_card)/pow(1024, 3);
 				$result = \OCA\Files_Accounting\Util::updateMonth($user, '2', $month, $year, $totalAverage, $totalAverageTrash, '', '');
 			}else{
-				//todo
 				$bill = self::getBillingInServers($quantityHome, $quantityBackup, $homeServerCharge, $backupServerCharge);
 				$totalBill = array_sum($bill);
 				$reference_id = Stats::createInvoice($month, $year, $user, round($quantityHome, 2), round($quantityBackup, 2),
