@@ -15,8 +15,17 @@ class ActivityHooks {
 			return new Consumer();
 		});
 	}
+
+	//send notification to current home server of the user
 	public static function invoiceCreate($user, $params) {
+                $userServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerUrlForUser($user);
+                $sendNotification = \OCA\FilesSharding\Lib::ws('invoiceCreate', array('userid'=>$user, 
+					'params'=>urlencode($params)),false, true, 
+					$userServerUrl, 'files_accounting');
+	}
+	public static function dbInvoiceCreate($user, $params) {
 		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'created_self');		
+
 	}
 	public static function paymentComplete($user, $params) {
 		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'completed_self');
