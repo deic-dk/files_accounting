@@ -75,11 +75,11 @@ class Storage_Lib {
                                         false, true, $homeInternalUrl, 'files_accounting');
 		}
 		if (isset($backupServerInternalUrl)){
-                        $dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
-                                                false, true, $backupServerInternalUrl, 'files_accounting');
-               	}
-                $dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
-                return $dailyUsageTotal;
+			$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
+                                   		false, true, $backupServerInternalUrl, 'files_accounting');
+		} 
+		$dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
+		return $dailyUsageTotal;
 	}
 
 	/*
@@ -173,7 +173,7 @@ class Storage_Lib {
                         else{ 	
 				$backupServerInternalUrl = \OCA\FilesSharding\Lib::ws('actionsPersonal',
                                                          array('userid'=>$userid, 'action'=>'backupInternalUrl'),
-                                                         false, true, null, 'files_sharding');
+                                                         false, true, null, 'files_accounting');
 				if (isset($backupServerInternalUrl)){			
 					$userStorageBackup = \OCA\FilesSharding\Lib::ws('actionsPersonal',
                                                          	array('userid'=>$userid, 'action'=>'userStorage', 'trashbin'=>false),
