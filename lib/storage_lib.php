@@ -75,15 +75,11 @@ class Storage_Lib {
                                         false, true, $homeInternalUrl, 'files_accounting');
 		}
 		if (isset($backupServerInternalUrl)){
-			if ($backupServerInternalUrl == $masterInternalUrl) {
-                       		$dailyUsageBackupInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $monthToSave, $year);
-			} else {
-				$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
-                                       		false, true, $backupServerInternalUrl, 'files_accounting');
-			}
-		} 
-		$dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
-		return $dailyUsageTotal;
+                        $dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
+                                                false, true, $backupServerInternalUrl, 'files_accounting');
+               	}
+                $dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
+                return $dailyUsageTotal;
 	}
 
 	/*
