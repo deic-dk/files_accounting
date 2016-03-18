@@ -122,16 +122,22 @@ class Storage_Lib {
 
 	//solution to work with ws based on
 	//https://github.com/owncloud/core/issues/5740
-	public static function dbUserStorage($userid) {
+	public static function dbUserStorage($userid, $trashbin) {
 		$user = \OC::$server->getUserManager()->get($userid);
         	$storage = new \OC\Files\Storage\Home(array('user'=>$user));
         	$rootInfo = $storage->getCache()->get('files');
         	$usedStorage =  $rootInfo['size'];
-                $trashbinStorage = self::trashbinSize($userid);
-                $totalStorage = $usedStorage + $trashbinStorage;
+		if ($trashbin) {
+                	$trashbinStorage = self::trashbinSize($userid);
+                	$totalStorage = array($usedStorage, $trashbinStorage);
+		} else {
+			$totalStorage = $usedStorage;
+		}
                 return $totalStorage;
 	}
 
+	//todo
+	//maybe delete this function
 	public static function userStorage($userid){
 		if(\OCP\App::isEnabled('files_sharding')){
                         if(\OCA\FilesSharding\Lib::isMaster()){
@@ -154,6 +160,39 @@ class Storage_Lib {
 		$userStorageTotalHuman = \OC_Helper::HumanFileSize($userStorageTotal);
 		return [$userStorageTotalHuman, $userStorageTotal];
 			
+	}
+
+	public static function personalStorage($userid) {
+		if(\OCP\App::isEnabled('files_sharding')){
+                        if(\OCA\FilesSharding\Lib::isMaster()){
+                                $backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
+                                if(!empty($backupServerId)){
+                                        $backupServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);
+                                        $userStorageBackup = \OCA\FilesSharding\Lib::ws('actionsPersonal', array('userid'=>$userid,
+                                                        'action'=>'userStorage', 'trashbin'=>false),false, true,
+                                                        $backupServerUrl, 'files_accounting');
+					$userStorageBackupHuman = \OC_Helper::HumanFileSize($userStorageBackup);
+                                }
+                        }
+                        else{ 	
+				$backupServerInternalUrl = \OCA\FilesSharding\Lib::ws('actionsPersonal',
+                                                         array('userid'=>$userid, 'action'=>'backupInternalUrl'),
+                                                         false, true, null, 'files_sharding');
+				if (isset($backupServerInternalUrl)){			
+					$userStorageBackup = \OCA\FilesSharding\Lib::ws('actionsPersonal',
+                                                         	array('userid'=>$userid, 'action'=>'userStorage', 'trashbin'=>false),
+                                                         	false, true, $backupServerInternalUrl, 'files_accounting');
+					$userStorageBackupHuman = \OC_Helper::HumanFileSize($userStorageBackup);
+				}	
+                        }
+                }
+		$userStorageHome = self::dbUserStorage($userid, true);
+		$userStorageHomeHuman = array(\OC_Helper::HumanFileSize($userStorageHome[0]), \OC_Helper::HumanFileSize($userStorageHome[0]));
+		if (isset($userStorageBackup)) {
+			return [$userStorageHome, $userStorageHomeHuman, $userStorageBackup, $userStorageBackupHuman];
+		}else {
+			return [$userStorageHome, $userStorageHomeHuman];
+		}
 	}
 
 	public static function trashbinSize($userid) {
