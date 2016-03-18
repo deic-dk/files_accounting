@@ -16,7 +16,7 @@
  >Daily History</label>
 </div>
 <div style="margin-top: 2%">
-<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
+<form action="https://www.paypalobjects.paypal.com/cgi-bin/webscr" method="post" target="_top">
 <input type="hidden" name="cmd" value="_s-xclick">
 <input type="hidden" name="hosted_button_id" value="EPP2VQRP5XWF2">
 <table>
