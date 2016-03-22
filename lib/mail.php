@@ -3,7 +3,7 @@
  * This is owncloud's function for sending emails using PHPMailer Library.
  * It has been extended to include attachments.
  */
-require('/usr/local/www/owncloud/3rdparty/phpmailer/phpmailer/class.phpmailer.php');
+require('3rdparty/phpmailer/phpmailer/class.phpmailer.php');
 class Mail {
 	public static function send($toaddress, $toname, $subject, $mailtext, $fromaddress, $fromname, $path,
 		$html=0, $altbody='', $ccaddress='', $ccname='', $bcc='') {

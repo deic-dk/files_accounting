@@ -4,11 +4,15 @@ namespace OCA\Files_Accounting;
 require_once('fpdf.php');
 
 use \OCP\User;
+
 class PDF extends FPDF
 {
+	private $billingCurrency = "EUR";
+	
 	function __construct()
        {
           parent::__construct();
+          $this->billingCurrency = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
        }
 	// Load data
 	function LoadData($file)
@@ -24,17 +28,18 @@ class PDF extends FPDF
 	function Header()
 	{     
     	$this->SetFont('Helvetica','',20);
-    	$this->MultiCell(160,6,"Danish e-Infrastructure Cooperation",'','L');
+    	$fromAddress = \OCP\Config::getSystemValue('fromaddress', '');
+    	$this->MultiCell(160,6,$fromAddress,'','L');
 	}
 
 
-	function AddressTable($a, $name)
+	function AddressTable($name, $user_id, $email, $address)
 	{     
     	$this->SetFont('Helvetica','',12);
-    	$this->MultiCell(90,6,utf8_decode($name));
+    	$this->MultiCell(90,6,utf8_decode($name).' / '.utf8_decode($user_id).' / '.utf8_decode($email));
     	$this->Ln();
     	$this->SetFont('Helvetica','',10);
-    	$this->MultiCell(100,5,utf8_decode($a),'','L');
+    	$this->MultiCell(100,5,utf8_decode($address),'','L');
     	$this->Ln();
 	}
 
@@ -67,7 +72,7 @@ class PDF extends FPDF
     	$this->Ln();
     	// Render Products
     	$this->SetFont('Helvetica','',12);
-    	$e = array(" ", "Gigabyte ", "DKK/Gigabyte ", "DKK ");
+    	$e = array(" ", "Gigabyte ", $this->billingCurrency."/Gigabyte ", $this->billingCurrency." ");
     	for($i=0;$i<count($d);$i++){
 	    	for($j=0;$j<count($d[0])-1;$j++){
 	    		$this->Cell($w[0][$j],7,$e[$j].$d[$i][$j],$b[1][$j],0,$a[1][$j]);

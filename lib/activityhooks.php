@@ -18,30 +18,34 @@ class ActivityHooks {
 
 	//send notification to current home server of the user
 	public static function invoiceCreate($user, $params) {
-                $userServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerUrlForUser($user);
-                $sendNotification = \OCA\FilesSharding\Lib::ws('invoiceCreate', array('userid'=>$user, 
-					'params'=>urlencode($params)),false, true, 
-					$userServerUrl, 'files_accounting');
+		$userServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerUrlForUser($user);
+		$sendNotification = \OCA\FilesSharding\Lib::ws('invoiceCreate', array('userid'=>$user,
+			'params'=>urlencode($params)),false, true,
+			$userServerUrl, 'files_accounting');
 	}
 	public static function dbInvoiceCreate($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'created_self');		
-
+		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'created_self');
 	}
+	
 	public static function paymentComplete($user, $params) {
 		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'completed_self');
 	}
+	
 	public static function spaceExceed($user, $params) {
 		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'exceeded_space'); 
 	}
+	
 	public static function addNotificationsForAction($user, $bill, $activityType, $subject) {
 		ActivityHooks::addNotificationsForUser(
-                                $user, $subject,
-                                $bill, 
-                                40, $activityType
-                );
+			$user, $subject,
+			$bill,
+			40,
+			$activityType
+		);
 	}
+	
 	protected static function addNotificationsForUser($user, $subject, $path, $priority , $type ) {
-	        $app = 'files_accounting';	
+		$app = 'files_accounting';	
 		$link = '/index.php/settings/personal';
 		ActivityHooks::send($app, $subject, array($path), '', array(), '', $link, $user, $type, $priority);
 	}

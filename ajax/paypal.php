@@ -5,7 +5,13 @@
 define("DEBUG", 1);
 // Set to 0 once you're ready to go live
 define("USE_SANDBOX", 1);
-define("LOG_FILE", "/usr/local/www/owncloud/apps/files_accounting/ajax/ipn.log");
+define("LOG_FILE", \OC::$SERVERROOT."/apps/files_accounting/ajax/ipn.log");
+
+$paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
+$mail_From = \OCA\Files_Accounting\Storage_Lib::getIssuerAddress();
+$user = \OCP\User::getUser();
+$mail_To = \OCP\Config::getUserValue($user, 'settings', 'email');
+
 // Read POST data
 // reading posted data directly from $_POST causes serialization
 // issues with array data in POST. Reading raw POST data from input stream instead.
@@ -69,15 +75,15 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
 //$cert = __DIR__ . "./cacert.pem";
 //curl_setopt($ch, CURLOPT_CAINFO, $cert);
 	$res = curl_exec($ch);
-	if (curl_errno($ch) != 0) // cURL error
-	{
+	if (curl_errno($ch) != 0) { // cURL error
 		if(DEBUG == true) {	
 			\OCP\Util::writeLog('IPN Testing', "Can't connect to PayPal to validate IPN message: " . curl_error($ch), 3);
 		//error_log(date('[Y-m-d H:i e] '). "Can't connect to PayPal to validate IPN message: " . curl_error($ch) . PHP_EOL, 3, LOG_FILE);
 		}
 		curl_close($ch);
 		exit;
-	} else {
+	}
+	else {
 		// Log the entire HTTP response if debug is switched on.
 		if(DEBUG == true) {
 			//error_log(date('[Y-m-d H:i e] '). "HTTP request of validation request:". curl_getinfo($ch, CURLINFO_HEADER_OUT) ." for IPN payload: $req" . PHP_EOL, 3, LOG_FILE);
@@ -109,13 +115,9 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
 		$valid_txnid = \OCA\Files_Accounting\Util::checkTxnId($data['txn_id']);
 		$valid_price = 	\OCA\Files_Accounting\Util::checkPrice($data['payment_amount'], $data['item_number']);
 
-		$mail_From = "IPN@example.com";
-        	$mail_To = "ioanna.psylla@gmail.com";
-        	$mail_Subject = "Error during payment";
+		$mail_Subject = "Error during payment";
 
-		$user = \OCP\User::getUser();
-
-		if ( $valid_price && $data['receiver_email'] === 'ioanna.psylla-facilitator@gmail.com') {
+		if ( $valid_price && $data['receiver_email'] === $paypalAccount) {
 			if ($data['payment_status'] === 'Completed' && $valid_txnid) {
 				$orderid = \OCA\Files_Accounting\Util::updatePayments($data);
 				if ($orderid) {
@@ -123,53 +125,50 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
 					\OCA\Files_Accounting\ActivityHooks::paymentComplete($data['custom'], $data['item_name']); 
 					\OCP\Util::writeLog('IPN Testing', "Payment inserted into DB ", 3);
 				//error_log("Payment inserted into DB", 3, LOG_FILE);
-				} else {
+				}
+				else {
 					\OCP\Util::writeLog('IPN Testing', "Error inserting into DB ", 3);
 				//error_log("Error inserting into DB", 3, LOG_FILE);
 				}
-			}elseif ($data['payment_status'] === 'Declined') {
-			  \OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." is declined. ", 3);
-			  $mail_Body  = "Payment with transaction id ".$data['txn_id']." is declined.";
-			  mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
-			}else {
-			  \OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." is pending. ", 3);
-	          $mail_Body  = "Payment with transaction id ".$data['txn_id']." is pending.";
-              mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
-			}	  
-		
- 		}else {
-		  \OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." was made but data has been changed. ", 3);
-			$mail_From    = "IPN@example.com";
-      		$mail_To      = "ioanna.psylla@gmail.com";
-      		$mail_Subject = "Error during payment";
-      		$mail_Body    = "Payment with transaction id ".$data['txn_id']."was made but data has been changed.";
-      		mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+			}
+			elseif ($data['payment_status'] === 'Declined') {
+				\OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." is declined. ", 3);
+				$mail_Body  = "Payment with transaction id ".$data['txn_id']." is declined.";
+				mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+			}
+			else {
+				\OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." is pending. ", 3);
+				$mail_Body  = "Payment with transaction id ".$data['txn_id']." is pending.";
+				mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+			}
+		}
+ 		else {
+			\OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." was made but data has been changed. ", 3);
+			$mail_Subject = "Error during payment";
+			$mail_Body = "Payment with transaction id ".$data['txn_id']."was made but data has been changed.";
+			mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
 		}
 		if(DEBUG == true) {
-//			error_log(date('[Y-m-d H:i e] '). "Verified IPN: $req ". PHP_EOL, 3, LOG_FILE);
+			//error_log(date('[Y-m-d H:i e] '). "Verified IPN: $req ". PHP_EOL, 3, LOG_FILE);
 		}	
 	
 	
-	// Send an email announcing the IPN message is VERIFIED
-      	$mail_From    = "IPN@example.com";
-      	$mail_To      = "ioanna.psylla@gmail.com";
-      	$mail_Subject = "VERIFIED IPN";
-      	$mail_Body    = $req;
-      	mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
-
-	} else if (strcmp ($res, "INVALID") == 0) {
-	// log for manual investigation
-	// Add business logic here which deals with invalid IPN messages
-		if(DEBUG == true) {
-	  		\OCP\Util::writeLog('IPN Testing', "Invalid IPN: $req ", 3);
-			//error_log(date('[Y-m-d H:i e] '). "Invalid IPN: $req" . PHP_EOL, 3, LOG_FILE);
-		}
-	// Send an email announcing the IPN message is INVALID 
-      		$mail_From    = "IPN@example.com";
-      		$mail_To      = "ioanna.psylla@gmail.com";
-      		$mail_Subject = "INVALID IPN";
-      		$mail_Body    = $req;
-      		mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+		// Send an email announcing the IPN message is VERIFIED
+		$mail_Subject = "VERIFIED IPN";
+		$mail_Body    = $req;
+		mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+	}
+	else if (strcmp ($res, "INVALID") == 0) {
+		// log for manual investigation
+		// Add business logic here which deals with invalid IPN messages
+			if(DEBUG == true) {
+				\OCP\Util::writeLog('IPN Testing', "Invalid IPN: $req ", 3);
+				//error_log(date('[Y-m-d H:i e] '). "Invalid IPN: $req" . PHP_EOL, 3, LOG_FILE);
+			}
+		// Send an email announcing the IPN message is INVALID
+		$mail_Subject = "INVALID IPN";
+		$mail_Body    = $req;
+		mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
 		echo $req;
 	}
 }

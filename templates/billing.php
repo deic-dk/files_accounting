@@ -15,7 +15,7 @@
 
   <th id="headerDisplay" class="column-display" style="width:14%">
     <div class="size sort columntitle" data-sort="size">
-      <span>Amount (DKK)</span>
+      <span>Amount (<?php echo $billingCurrency;?>)</span>
     </div>
   </th>
 
@@ -42,6 +42,8 @@
 </thead>
 <tbody id="fileList">
 	<?php
+	$paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
+	$billingCurrency = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
 	$bills = \OCA\Files_Accounting\Util::userBill(OC_User::getUser (), date('Y'), false ) ;	
 	if (count($bills) == 0) {
 	  echo '<tr><td class="empty">You don\'t have any invoices yet</td>';
@@ -81,12 +83,11 @@
                            	<td class='duedate'>$due_date</td><td class='invoice'><a class='invoice-link'>$invoice</a></td><td class='paypal_btn'>";
 				echo '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
 					<input type="hidden" name="cmd" value="_xclick">
-					<input type="hidden" name="business" value="ioanna.psylla-facilitator@gmail.com">
-					<input type="hidden" name="lc" value="DK">
+					<input type="hidden" name="business" value="'.$paypalAccount.'">
 					<input type="hidden" name="item_name" value="Storage Use for '.$fullmonth.'">
 					<input type="hidden" name="amount" value="'.$monthbill.'">
 					<input type="hidden" name="item_number" value="'.substr($invoice, 0, -4).'">
-					<input type="hidden" name="currency_code" value="DKK">
+					<input type="hidden" name="currency_code" value="'.$billingCurrency.'">
 					<input type="hidden" name="button_subtype" value="services">
 					<input type="hidden" name="no_note" value="0">
 					<input type="hidden" name="cn" value="Add special instructions to the seller:">
