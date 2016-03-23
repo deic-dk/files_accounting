@@ -50,7 +50,7 @@ class Storage_Lib {
 			OC_Log::write('files_accounting', "ERROR, could not access files of user ".$user, OC_Log::ERROR);
 			return null;
 		}
-		return $fs->getPath();
+		return $fs->getPath('/');
 	}
 
 	public static function getChargeForUserServers($userid){
