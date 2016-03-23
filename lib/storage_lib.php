@@ -45,7 +45,7 @@ class Storage_Lib {
 	public static function getInvoiceDir($user){
 		\OC_User::setUserId($user);
 		\OC_Util::setupFS($user);
-		$fs = OCP\Files::getStorage('files_accounting');
+		$fs = \OCP\Files::getStorage('files_accounting');
 		if(!$fs){
 			OC_Log::write('files_accounting', "ERROR, could not access files of user ".$user, OC_Log::ERROR);
 			return null;
@@ -213,7 +213,7 @@ class Storage_Lib {
 			return [$userStorageHome, $userStorageHomeHuman, $userStorageBackup, $userStorageBackupHuman];
 		}
 		else{
-			return [$userStorageHome, $userStorageHomeHuman];
+			return [$userStorageHome, $userStorageHomeHuman, 0, 0];
 		}
 	}
 
