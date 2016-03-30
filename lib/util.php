@@ -5,18 +5,21 @@ namespace OCA\Files_Accounting;
 class Util {
 
  	public static function dbUserBill($user,$year, $plot=null) {
-		$stmt = \OCP\DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `trashbin`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND YEAR(STR_TO_DATE(`month`, '%Y-%m')) = ?" );
+		$stmt = \OCP\DB::prepare ( "SELECT  `status`, `month`, `bill`, `average`, `average_backup`, `trashbin`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND YEAR(STR_TO_DATE(`month`, '%Y-%m')) = ?" );
 		$result = $stmt->execute ( array ($user, $year ));
 		$monthly_bill = array ();
 		while ( $row = $result->fetchRow () ) {
 			if (!$plot){
 				if ((int)$row['status'] != 2) {
 					$date = explode("-", $row['month']);
-					$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$date[1], 'bill' => (float)$row['bill'], 'average' => (float)$row['average'], 'trashbin' => (float)$row['trashbin'], 'link' => $row['reference_id'], 'year' => $date[0]); 
+					$monthly_bill[] = array('status' => (int)$row['status'], 'month' => (int)$date[1], 'bill' => (float)$row['bill'], 
+							'average' => (float)$row['average'], 'average_backup' => (float)$row['average_backup'], 
+							'trashbin' => (float)$row['trashbin'], 'link' => $row['reference_id'], 'year' => $date[0]); 
 				}	
 			}else {
 				$date = explode("-", $row['month']);
-				$monthly_bill[] = array('month' => (int)$date[1], 'average' => (float)$row['average'], 'trashbin' => (float)$row['trashbin'], 'year' => $date[0]);
+				$monthly_bill[] = array('month' => (int)$date[1], 'average' => (float)$row['average'], 'average_backup' => (float)$row['average_backup'], 
+							'trashbin' => (float)$row['trashbin'], 'year' => $date[0]);
 			}
 		}
 		return $monthly_bill;
@@ -123,13 +126,14 @@ class Util {
 		return $result;
 	}
 
-	public static function dbUpdateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id){
-		$stmt = \OCP\DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `trashbin`, `bill`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?)");
+	public static function dbUpdateMonth($user, $status, $month, $year, $averageHome, $averageBackup, $averageTrash, $bill, $reference_id){
+		$stmt = \OCP\DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `month`, `average`, `average_backup`, `trashbin`, `bill`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?, ?)");
 		$result = $stmt->execute ( array (
 				$user,
 				$status,
 				date("$year-$month"),
-				$average,
+				$averageHome,
+				$averageBackup,
 				$averageTrash,
 				$bill,
 				$reference_id
@@ -138,13 +142,13 @@ class Util {
 		return $result;
 	}
 
-	public static function updateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id){
+	public static function updateMonth($user, $status, $month, $year, $averageHome, $averageBackup, $averageTrash, $bill, $reference_id){
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			$result = self::dbUpdateMonth($user, $status, $month, $year, $average, $averageTrash, $bill, $reference_id);
+			$result = self::dbUpdateMonth($user, $status, $month, $year, $averageHome, $averageBackup, $averageTrash, $bill, $reference_id);
 		}
 		else{
 			$result = \OCA\FilesSharding\Lib::ws('updateMonth', array('userid'=>$user, 'status'=>$status, 
-				'month'=>$month, 'year'=>$year, 'average'=>$average, 
+				'month'=>$month, 'year'=>$year, 'average'=>$averageHome, 'averageBackup'=>$averageBackup,
 				'averageTrash'=>$averageTrash, 'bill'=>$bill, 'reference_id'=>$reference_id),
 					false, true, null, 'files_accounting');
 		}

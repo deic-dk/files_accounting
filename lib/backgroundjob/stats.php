@@ -53,20 +53,18 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 					}
 					if (!empty($dailyUsage[1])) {
 						$averageTodayBackup = $dailyUsage[1][1];
-						$averageTodayTrashBackup = $dailyUsage[1][2];
 					}
 					$averageToday = array(isset($averageTodayHome)?$averageTodayHome:null,
 							isset($averageTodayBackup)?$averageTodayBackup:null);
-					$averageTodayTrash = array(isset($averageTodayTrashHome)?$averageTodayTrashHome:null,
-							isset($averageTodayTrashBackup)?$averageTodayTrashBackup:null);
+					$averageTodayTrash = isset($averageTodayTrashHome)?$averageTodayTrashHome:null;
 		
-					$this->addToDb($user, $monthToSave, $year, $averageToday, $averageTodayTrash);
+					$this->addToDb($user, $monthToSave, $year, $averageToday, $averageTodayHome, $averageTodayTrash);
 				}
 			}
 		}
 	}
 
-	private function addToDb($user, $month, $year, $average, $averageTrash) {
+	private function addToDb($user, $month, $year, $average, $averageHome, $averageTrash) {
 		// Check for existence
 		$stmt = DB::prepare ( "SELECT `month` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ?" );
 		$result = $stmt->execute ( array ($user, $year."-".$month) );
@@ -80,24 +78,23 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			$charge = \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
 			$homeServerCharge = isset($charge["home"])?$charge["home"]:null;
 			$backupServerCharge = isset($charge["backup"])?$charge["backup"]:null;
-			$totalAverageHome = (isset($average[0])?$average[0]:0) + (isset($averageTrash[0])?$averageTrash[0]:0);
-			$totalAverageBackup = (isset($average[1])?$average[1]:null) + (isset($averageTrash[1])?$averageTrash[1]:null);
+			$totalAverageHome = (isset($average[0])?$average[0]:0) + (isset($averageTrash)?$averageTrash:0);
+			$averageBackup = isset($average[1])?$average[1]:null;
 			$quantityHome = ((float)$totalAverageHome/pow(1024, 2)); //kilobytes to gigabytes
-			$quantityBackup = ((float)$totalAverageBackup/pow(1024, 2)); 
+			$quantityBackup = ((float)$averageBackup/pow(1024, 2)); 
 			$quantity = $quantityHome + (isset($quantityBackup)?$quantityBackup:0);
 			$totalAverage = (isset($average[0])?$average[0]:0) + (isset($average[1])?$average[1]:0);
-			$totalAverageTrash = (isset($averageTrash[0])?$averageTrash[0]:0) + (isset($averageTrash[1])?$averageTrash[1]:0); 
 			if(isset($gift_card)){
 			    	//bytes to gigabytes
 				$gift_card = (float) \OCP\Util::computerFileSize($gift_card)/pow(1024, 3);
-				$result = \OCA\Files_Accounting\Util::updateMonth($user, '2', $month, $year, $totalAverage, $totalAverageTrash, '', '');
+				$result = \OCA\Files_Accounting\Util::updateMonth($user, '2', $month, $year, $averageHome, $averageBackup, $averageTrash, '', '');
 			}
 			else{
 				$bill = self::getBillingInServers($quantityHome, $quantityBackup, $homeServerCharge, $backupServerCharge);
 				$totalBill = array_sum($bill);
 				$reference_id = $this->createInvoice($month, $year, $user, round($quantityHome, 2), round($quantityBackup, 2),
                                                         $bill, $homeServerCharge, $backupServerCharge);
-				$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $totalBill, $reference_id);
+				$result = self::setBill($user, '0', $month, $year, $quantity, $charge, $averageHome, $averageBackup, $averageTrash, $totalBill, $reference_id);
 			}
 			return $result ? true : false;
 		}
@@ -114,9 +111,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		return $bill;
 	}
 
-	public static function setBill($user, $status, $month, $year, $quantity, $charge, $totalAverage, $totalAverageTrash, $bill, $reference_id) {
+	public static function setBill($user, $status, $month, $year, $quantity, $charge, $averageHome, $averageBackup, $totalAverageTrash, $bill, $reference_id) {
 		$fullmonth = date('F', strtotime("2000-$month-01"));
-		$result = \OCA\Files_Accounting\Util::updateMonth($user, $status, $month, $year, $totalAverage, $totalAverageTrash, $bill, $reference_id);
+		$result = \OCA\Files_Accounting\Util::updateMonth($user, $status, $month, $year, $averageHome, $averageBackup, $totalAverageTrash, $bill, $reference_id);
 		$notification = ActivityHooks::invoiceCreate($user, $fullmonth);
 		return true;
 	}
