@@ -8,7 +8,7 @@ $action = isset($_GET['action'])?$_GET['action']:null;
 $server_url = isset($_GET['server_url'])?$_GET['server_url']:null;
 if ($action == 'loadhistory') {
 	$tmpl = new OCP\Template("files_accounting", "history");
-	page = $tmpl->fetchPage();
+	$page = $tmpl->fetchPage();
 	OCP\JSON::success(array('data' => array('page'=>$page)));
 
 }
