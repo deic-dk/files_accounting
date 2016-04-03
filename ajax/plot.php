@@ -27,7 +27,7 @@ $dailyUsage = OCA\Files_Accounting\Storage_Lib::dailyUsage($user, date("m"), $ye
 if (isset($dailyUsage[1])){
 	array_push($dailyUsage[0], $dailyUsage[1][1]);
 }
-//$userStorage[] = $dailyUsage[0]; 
+$userStorage[] = $dailyUsage[0]; 
 OCP\JSON::success(array('data' => $userStorage));
 //echo json_encode($userStorage);
 ?>

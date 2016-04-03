@@ -120,17 +120,21 @@ class Storage_Lib {
 				$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
 				if(!empty($backupServerId)){
 					$backupServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);
-					$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
-							false, true, $backupServerUrl, 'files_accounting');
 				}
 			}
 			else{
-				$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$monthToSave, 'year'=>$year),
+				$backupServerUrl = \OCA\FilesSharding\Lib::ws('actionsPersonal', array('userid'=>$userid, 
+						'action'=>'backupInternalUrl'),
 						false, true, null, 'files_accounting');
 			}
 		}
 		//calculate the daily usage on the home server from the text file
 		$dailyUsageInfo = \OCA\Files_Accounting\Util::dbDailyUsage($userid, $monthToSave, $year);
+		if(isset($backupServerUrl)){
+			$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 
+                                                        'month'=>$monthToSave, 'year'=>$year),
+                                                        false, true, $backupServerUrl, 'files_accounting');
+		}
 		$dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
 		return $dailyUsageTotal;
 	}
@@ -210,21 +214,19 @@ class Storage_Lib {
 			}
 		}
 		$userStorageHome = self::dbUserStorage($userid, true);
-		$userStorageHomeHuman = array(\OC_Helper::HumanFileSize($userStorageHome[0]), \OC_Helper::HumanFileSize($userStorageHome[0]));
+		$userStorageHomeHuman = array(\OC_Helper::HumanFileSize($userStorageHome[0]), \OC_Helper::HumanFileSize($userStorageHome[1]));
 		if(isset($userStorageBackup)){
 			return [$userStorageHome, $userStorageHomeHuman, $userStorageBackup, $userStorageBackupHuman];
 		}
 		else{
-			return [$userStorageHome, $userStorageHomeHuman, 0, 0];
+			return [$userStorageHome, $userStorageHomeHuman];
 		}
 	}
 
 	public static function trashbinSize($userid) {
-		$user = \OC::$server->getUserManager()->get($userid);
-		$storage = new \OC\Files\Storage\Home(array('user'=>$user));
-		$rootInfo = $storage->getCache()->get('files_trashbin/files');
-		$trashSpace =  $rootInfo['size'];
-		return $trashSpace;
+		$view = new \OC\Files\View('/' . $userid);
+ 		$fileInfo = $view->getFileInfo('/files_trashbin/files');
+ 		return isset($fileInfo['size']) ? $fileInfo['size'] : 0;
 	}
 	
 	public static function freeSpace($user) {
