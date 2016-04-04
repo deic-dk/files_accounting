@@ -8,17 +8,26 @@ foreach ($average_lines as $line) {
 	//if ($userRows[0] == $user) {
 	$month =  $line['month'];
 	if ($month != date('m')) {
-		$averageMonth = (int)$line['average'];
-		$averageMonthTrash = (int)$line['trashbin'];
+		$averageHomeMonth = $line['average'];
+		$averageMonthTrash = $line['trashbin'];
+		$averageBackupMonth = $line['average_backup']; 
 		$fullmonth = date('F', strtotime("2000-$month-01"));
 		$fullmonth = substr($fullmonth, 0, 3);
-		$userStorage[] = array($fullmonth, $averageMonth, $averageMonthTrash);
+		if (isset($averageBackupMonth)) { 
+			$userStorage[] = array($fullmonth, $averageHomeMonth, $averageMonthTrash, $averageBackupMonth);
+		}else {
+			$userStorage[] = array($fullmonth, $averageMonth, $averageMonthTrash);
+		}
 
 	}
 
 }
 
-$userStorage[] = OCA\Files_Accounting\Storage_Lib::dailyUsageSum($user, date("m"), $year);
+$dailyUsage = OCA\Files_Accounting\Storage_Lib::dailyUsage($user, date("m"), $year);
+if (isset($dailyUsage[1])){
+	array_push($dailyUsage[0], $dailyUsage[1][1]);
+}
+$userStorage[] = $dailyUsage[0]; 
 OCP\JSON::success(array('data' => $userStorage));
 //echo json_encode($userStorage);
 ?>
