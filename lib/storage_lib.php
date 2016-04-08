@@ -480,7 +480,7 @@ class Storage_Lib {
 					$data['item_number'],
 					$data['payment_amount'],
 					$data['payment_status'],
-					date("Y-m-d H:i:s")
+					date("c")
 			));
 			return true;
 		}
