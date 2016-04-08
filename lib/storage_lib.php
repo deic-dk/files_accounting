@@ -189,8 +189,8 @@ class Storage_Lib {
 	
 	public static function getDefaultQuotas(){
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			$defaultQuota = OC_Appconfig::getValue('files', 'default_quota', INF);
-			$defaultFreeQuota = OC_Appconfig::getValue('files_accounting', 'default_freequota', 0);
+			$defaultQuota = \OC_Appconfig::getValue('files', 'default_quota', INF);
+			$defaultFreeQuota = \OC_Appconfig::getValue('files_accounting', 'default_freequota', 0);
 		}
 		else{
 			$quotas = \OCA\FilesSharding\Lib::ws('personalStorage', array('key'=>'defaultQuotas'),
@@ -202,7 +202,7 @@ class Storage_Lib {
 	}
 	
 	public static function personalStorage($userid, $trashbin=true) {
-		$defaultQuotas = getDefaultQuotas();
+		$defaultQuotas = self::getDefaultQuotas();
 		$defaultQuota = $defaultQuotas['default_quota'];
 		$defaultFreeQuota = $defaultQuotas['default_freequota'];
 		
@@ -212,7 +212,7 @@ class Storage_Lib {
 		
 		$userStorageBackup = 0;
 		if(\OCP\App::isEnabled('files_sharding')){
-						$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($user_id, true, 1);
+						$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true, 1);
 				if(!empty($backupServerInternalUrl)){
 					$personalStorageBackup = \OCA\FilesSharding\Lib::ws('personalStorage',
 							array('userid'=>$userid, 'key'=>'userStorage', 'trashbin'=>false),
