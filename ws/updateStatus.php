@@ -8,6 +8,6 @@ if(!OCA\FilesSharding\Lib::checkIP()){
         exit;
 }
 $id = isset($_GET['id'])?$_GET['id']:null;
-$ret = OCA\Files_Accounting\Util::dbUpdateStatus($id);
+$ret = OCA\Files_Accounting\Storage_Lib::dbUpdateStatus($id);
 OCP\JSON::encodedPrint($ret);
 

@@ -8,7 +8,7 @@ define("USE_SANDBOX", 1);
 define("LOG_FILE", \OC::$SERVERROOT."/apps/files_accounting/ajax/ipn.log");
 
 $paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
-$mail_From = \OCA\Files_Accounting\Storage_Lib::getIssuerAddress();
+$mail_From = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
 $user = \OCP\User::getUser();
 $mail_To = \OCP\Config::getUserValue($user, 'settings', 'email');
 
@@ -112,16 +112,16 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
 		$data['payer_email'] = $_POST['payer_email'];
 		$data['custom'] = $_POST['custom'];
 
-		$valid_txnid = \OCA\Files_Accounting\Util::checkTxnId($data['txn_id']);
-		$valid_price = 	\OCA\Files_Accounting\Util::checkPrice($data['payment_amount'], $data['item_number']);
+		$valid_txnid = \OCA\Files_Accounting\Storage_Lib::checkTxnId($data['txn_id']);
+		$valid_price = 	\OCA\Files_Accounting\Storage_Lib::checkPrice($data['payment_amount'], $data['item_number']);
 
 		$mail_Subject = "Error during payment";
 
 		if ( $valid_price && $data['receiver_email'] === $paypalAccount) {
 			if ($data['payment_status'] === 'Completed' && $valid_txnid) {
-				$orderid = \OCA\Files_Accounting\Util::updatePayments($data);
+				$orderid = \OCA\Files_Accounting\Storage_Lib::updatePayments($data);
 				if ($orderid) {
-					\OCA\Files_Accounting\Util::updateStatus($data['item_number']);	
+					\OCA\Files_Accounting\Storage_Lib::updateStatus($data['item_number']);	
 					\OCA\Files_Accounting\ActivityHooks::paymentComplete($data['custom'], $data['item_name']); 
 					\OCP\Util::writeLog('IPN Testing', "Payment inserted into DB ", 3);
 				//error_log("Payment inserted into DB", 3, LOG_FILE);
@@ -132,20 +132,20 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
 				}
 			}
 			elseif ($data['payment_status'] === 'Declined') {
-				\OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." is declined. ", 3);
-				$mail_Body  = "Payment with transaction id ".$data['txn_id']." is declined.";
+				\OCP\Util::writeLog('IPN Testing', "Payment with transaction ID ".$data['txn_id']." is declined. ", 3);
+				$mail_Body  = "Payment with transaction id ".$data['txn_id']." was declined.";
 				mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
 			}
 			else {
-				\OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." is pending. ", 3);
+				\OCP\Util::writeLog('IPN Testing', "Payment with transaction ID ".$data['txn_id']." is pending. ", 3);
 				$mail_Body  = "Payment with transaction id ".$data['txn_id']." is pending.";
 				mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
 			}
 		}
  		else {
-			\OCP\Util::writeLog('IPN Testing', "Payment with transaction id ".$data['txn_id']." was made but data has been changed. ", 3);
+			\OCP\Util::writeLog('IPN Testing', "Payment with transaction ID ".$data['txn_id']." was made, but data has been changed. ", 3);
 			$mail_Subject = "Error during payment";
-			$mail_Body = "Payment with transaction id ".$data['txn_id']."was made but data has been changed.";
+			$mail_Body = "Payment with transaction ID ".$data['txn_id']." was made, but data has been changed.";
 			mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
 		}
 		if(DEBUG == true) {

@@ -1,126 +1,60 @@
-function download_invoice() {
+var PAYMENT_STATUS_PAID = 1;
+var PAYMENT_STATUS_PENDING = 2;
+
+function add_download_links() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
 		var link = $(this).text();
-		var owner = $("head").attr("data-user");
-		$.ajax(OC.linkTo('files_accounting','ajax/actions.php'), {
-                	type:'GET',
-                	data:{
-                        	action: 'checkmaster'
-               		},
-                	dataType: 'json',
-                	success: function(jsondata) {
-                               var isMaster = jsondata.data;	
-				if (isMaster) {
-					document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link;
-				}else{
-					callMasterInternalUrl( function(masterUrl){
-                       	 			var uri = OC.webroot+'/apps/files_accounting/ws/getInvoice.php?filename='+link+'&user='+owner;
-                        			var redirect_url = '';
-                        			if(typeof masterUrl == 'undefined'){
-                                			redirect_url = uri;
-                        			}
-                        			else{
-                                			url = encodeURIComponent(masterUrl+uri);
-                                			redirect_url = OC.webroot+'/apps/files_sharding/download_proxy.php?url='+url+'&mode=native';
-                        			}
-                        			OC.redirect(redirect_url);
-                			});
-				}
-                	},
-			error: function(jsondata){
-                                alert("Unexpected error!");
-                        }
-        	});
-  	});
-}
-
-function callMasterInternalUrl(callback){
-	$.ajax(OC.linkTo('files_sharding','ajax/get_master_url.php'), {
-		 type:'GET',
-		  data:{
-		  	internal: true,
-			user_id: $("head").attr("data-user")
-		  },
-		 dataType:'json',
-		 success: function(s){
-			 if(s.error){
-				 // files_sharding probably not installed
-				 callback();
-			 }
-			callback(s.url);
-		 },
-		error:function(s){
-			alert("Unexpected error!");
-		}
+		OC.redirect( OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link);
 	});
 }
-
 
 $(document).ready(function() {
 
 	$("#billingtable #history").on ("click", function () {
-		var d = new Date();
-		var year = d.getFullYear();
-		$.ajax(OC.linkTo('files_accounting', 'ajax/actions.php'), {
+		var year = $('#storageSettings #years').val();
+		$.ajax(OC.linkTo('files_accounting', 'ajax/getBills.php'), {
 			type: 'GET',
 			data: {
-				action: 'loadhistory',
+				status: PAYMENT_STATUS_PAID,
 				year: year
 			},
 			dataType:'json',
-			success: function(jsondata){
-				if(jsondata.status == 'success' ) {
-                                	$("billingtable").find("td.empty").remove();
-                                	$("#billingtable").append(jsondata.data.page);
-                                	$('.centertr').hide();
-	                              	download_invoice();
-                        	}else{
-                                	OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
-                        	}
+			success: function(data){
+				if(data) {
+					$("#billingtable").find("td.empty").remove();
+					$("#billingtable").append(data);
+					$('.centertr').hide();
+					add_download_links();
+				}
 			},
 			error:function(jsondata){
-                                alert("Unexpected error!");
-                        }
+				alert("Unexpected error!");
+				}
 		});
+	});
 
-    	});
-
-	$('#storageSettings #list').change(function() {
+	$('#storageSettings #years').change(function() {
 		var year = $(this).val();
-		getData();
-		$.ajax(OC.linkTo('files_accounting', 'ajax/actions.php'), {
+		$.ajax(OC.linkTo('files_accounting', 'ajax/getBills.php'), {
 			type: 'GET',
 			data: {
-				action: 'loadhistory',
+				status: PAYMENT_STATUS_PENDING,
 				year: year
 			},
 			dataType:'json',
-			success: function(jsondata){
+			success: function(data){
 				if(jsondata.status == 'success' ) {
-                                	$("#billingtable").find("tr:gt(0)").remove();
-                                	$('#billingtable').append(jsondata.data.page);
-                                	$('#billingtable').find('tr').removeClass('unpaid');
-                //                	$('#chart_div').slideToggle();
-                              		download_invoice();
-                        	}else{
-                                	OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
-                        	}
+					$("#billingtable tr").not(':first').not(':last').remove();
+					$('#billingtable tr:first').after(data);
+					add_download_links();
+				}
 			},
 			error: function(jsondata) {
 				alert("Unexpected error!");
 			}
 		});
 	});
-
-
-	$('#storageSettings .load_history').on('click', function () {
-		var action = 'downloadhistory';
-		document.location.href = OC.linkTo('files_accounting', 'ajax/download.php') + '?action=' + action;
-	});
-
- 	download_invoice();
-
-	//$('.activitysettings tr').eq(5).css('display','none');
-})
+	add_download_links();
+});
 
 

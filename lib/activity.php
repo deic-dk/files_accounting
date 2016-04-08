@@ -39,7 +39,7 @@ class Bill_Activity implements IExtension {
 	 */
 	public function getNotificationTypes($languageCode) {
 		$l = $this->getL10N($languageCode);
-		return [self::TYPE_INVOICE => (string) $l->t('Notifications from <strong>Billing</strong> app'),];
+		return [self::TYPE_INVOICE => (string) $l->t('Account status has changed or a bill is <strong>pending</strong>'),];
 	}
 	/**
 	 * For a given method additional types to be displayed in the settings can be returned.
@@ -73,12 +73,12 @@ class Bill_Activity implements IExtension {
 			return false;
 		}
 		switch ($text) {
-			case 'created_self':
+			case 'new_invoice':
 				return (string) $this->l->t('You have a new invoice for: <strong>%1$s</strong>', $params);
-			case 'completed_self':
+			case 'payment_complete':
 				return (string) $this->l->t('You have successfully completed a payment: <strong>%1$s</strong>', $params);
 			case 'exceeded_space':
-				return (string) $this->l->t('You exceeded your available free space');
+				return (string) $this->l->t('You are now exceeding your free space of <strong>%1$s</strong>', $params);
 			default:
 				return false;
 		}

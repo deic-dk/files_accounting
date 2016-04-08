@@ -1,38 +1,94 @@
 <fieldset id='storageSettings' class='section'>
-  <h2>Storage Use</h2>
-  <div id="chart_div">
-</div>
+	<h2>Storage Use</h2>
+	
+	<div style="padding-top:25px;">
+	<select id="years">
+	<?php
+	include "billing.php";
+	$hostedButtonID = \OCA\Files_Accounting\Storage_Lib::getPayPalHostedButtonID();
+	$billingCurrency = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
+	$years = \OCA\Files_Accounting\Storage_Lib::accountedYears(OCP\USER::getUser ());
+	$thisYear = date("Y");
+	foreach ($years as $year) {
+		echo "<option value=$year".$year==$thisYear?"selected='selected'":"".">$year</option>";
+	}
+	?>
+	</option>
+	</select>
+	</div>
 
-<div style="padding-top:25px;"><select id="list" name="yearList" method="POST"><option name='year' value=<?php echo date("Y"); ?> ><?php echo date("Y"); ?></option>
-<?php 
-$hostedButtonID = \OCA\Files_Accounting\Storage_Lib::getPayPalHostedButtonID();
-$billingCurrency = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
-$years = \OCA\Files_Accounting\Util::billYear(OCP\USER::getUser ());
-foreach ($years as $year) {
-	echo "<option name='year' value=$year>$year</option>";
-}
-?>
-</option>
-</select>
-<label class="load_history button" href=# data-action="downloadhistory"
- >Daily History</label>
-</div>
-<div style="margin-top: 2%">
-<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
-<input type="hidden" name="cmd" value="_s-xclick">
-<input type="hidden" name="hosted_button_id" value="<?php echo $hostedButtonID;?>">
-<table>
-<tr><td>Enter the maximum amount you want to pay each month</td></tr><tr><td><input type="text" name="max_amount" value="">
-<?php echo $billingCurrency;?></td></tr></table>
-<table><tr><td align=center><i>Sign up for</i></td></tr><tr><td><input type="image" src="https://www.paypalobjects.com/en_US/GB/i/btn/btn_auto_billing_LG.gif" border="0" name="submit" alt="PayPal – The safer, easier way to pay online."></td></tr></table>
-<img alt="" border="0" src="https://www.sandbox.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1">
-</form>
+	<div id="chart_div">
+	</div>
 
-</div>
-<div><?php 
-	//\OCA\Files_Accounting\Stats::updateMonthlyAverage();
-        include "billing.php";
-           ?>
-</div>
+	<div style="margin-top: 2%">
+	<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
+		<input type="hidden" name="cmd" value="_s-xclick">
+		<input type="hidden" name="hosted_button_id" value="<?php echo $hostedButtonID;?>">
+		<span>
+			Maximum amount you want to pay each month:
+			<input type="text" name="max_amount" value="" /><?php echo $billingCurrency;?>
+		</span>
+		<span>
+			Sign up for<input type="image" src="https://www.paypalobjects.com/en_US/GB/i/btn/btn_auto_billing_LG.gif" border="0" name="submit" alt="PayPal">
+			<img alt="" border="0" src="https://www.sandbox.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1">
+		</span>
+	</form>
+	
+	</div>
+
+	<table id="billingtable" class="panel" style="width:100%; margin-top:12px;">
+		<thead class="panel-heading"> 
+		<tr>
+	  <th id="headerName" class="column-display" style="padding-left:20px;">
+	        <div class="name sort columntitle" data-sort="descr">
+			  <span class="text-semibold">Status</span>         
+		    </div>
+	  </th>
+
+	  <th id="headerDisplay" class="column-display" style="width:14%">
+	    <div class="size sort columntitle" data-sort="size">
+	      <span>Amount (<?php echo $billingCurrency;?>)</span>
+	    </div>
+	  </th>
+	
+	  <th id="headerName" class= "column-name" style="padding-left:12px;">
+	    <div class="row">
+	      <span class="text-semibold">Date</span>
+	    </div>
+	  </th>
+	
+	  <th id="headerDisplay" class="column-display">
+	        <div class="size sort columntitle" data-sort="size">
+	         <span>Due</span>
+	        </div>
+	  </th>	
+
+	  <th id="headerDisplay" class="column-display">
+	        <div class="size sort columntitle" data-sort="size">
+	         <span>Period</span>
+	        </div>
+	  </th>	
+
+	  <th id="headerDisplay" class="column-display" style="width:20%">
+	    <div class="size sort columntitle" data-sort="size">
+	      <span>Invoice</span>
+	    </div>
+	  </th>
+
+	  <th id="headerDisplay" class="">
+	    <div class="size sort columntitle" data-sort="size">
+	      <span>Payment</span>
+	    </div>
+	  </th>
+
+		</tr>
+		</thead>
+		<tbody id="fileList">
+			<?php echo getPending();?>
+		</tbody>
+
+		<tr><td colspan="6" class="centertr"><div id="history" class="btn btn-primary btn-flat">Load history</div></td></tr>
+
+	</table>
 
 </fieldset>

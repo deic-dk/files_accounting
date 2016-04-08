@@ -8,6 +8,6 @@ if(!OCA\FilesSharding\Lib::checkIP()){
 	exit;
 }
 $userid = isset($_GET['userid'])?$_GET['userid']:null;
-$ret = OCA\Files_Accounting\Util::dbBillYear($userid);
+$ret = OCA\Files_Accounting\Storage_Lib::dbAccountedYears($userid);
 OCP\JSON::encodedPrint($ret);
 

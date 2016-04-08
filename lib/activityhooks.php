@@ -16,23 +16,16 @@ class ActivityHooks {
 		});
 	}
 
-	//send notification to current home server of the user
 	public static function invoiceCreate($user, $params) {
-		$userServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerUrlForUser($user);
-		$sendNotification = \OCA\FilesSharding\Lib::ws('invoiceCreate', array('userid'=>$user,
-			'params'=>urlencode($params)),false, true,
-			$userServerUrl, 'files_accounting');
-	}
-	public static function dbInvoiceCreate($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'created_self');
+		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'new_invoice');
 	}
 	
 	public static function paymentComplete($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'completed_self');
+		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'payment_complete');
 	}
 	
 	public static function spaceExceed($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, 'invoice', 'exceeded_space'); 
+		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'exceeded_space'); 
 	}
 	
 	public static function addNotificationsForAction($user, $bill, $activityType, $subject) {

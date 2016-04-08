@@ -8,6 +8,6 @@ if(!OCA\FilesSharding\Lib::checkIP()){
         exit;
 }
 $txnid = isset($_GET['txnid'])?$_GET['txnid']:null;
-$ret = OCA\Files_Accounting\Util::dbCheckTxnId($txnid);
+$ret = OCA\Files_Accounting\Storage_Lib::dbCheckTxnId($txnid);
 OCP\JSON::encodedPrint($ret);
 

@@ -12,7 +12,7 @@ if (isset($_GET['search'])) {
     $offset = 0;
     while ($count < 4 && count($groups) == $limit) {
         $limit = 4 - $count;
-        $groups = \OCA\Files_Accounting\Util::getDefaultGroups($_GET['search'], $limit, $offset);
+        $groups = \OCA\Files_Accounting\Storage_Lib::getDefaultGroups($_GET['search'], $limit, $offset);
         $offset += $limit;
         foreach ($groups as $group => $name) {
             if ((!isset($_GET['itemShares']) || !is_array($_GET['itemShares'][OCP\Share::SHARE_TYPE_USER]) || !in_array($group, $_GET['itemShares'][OCP\Share::SHARE_TYPE_USER]))) {

@@ -1,6 +1,10 @@
 <?php
 OCP\App::checkAppEnabled('files_accounting');
-OCP\App::registerAdmin('files_accounting', 'settings');
+
+// If sharding, only master holds settings
+if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+	OCP\App::registerAdmin('files_accounting', 'settings');
+}
 OCP\App::registerPersonal('files_accounting', 'personalsettings');
 
 OC::$CLASSPATH['OCA\Files_Accounting\Stats'] = 'apps/files_accounting/lib/backgrounjob/stats.php';
