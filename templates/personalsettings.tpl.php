@@ -84,7 +84,7 @@
 		</tr>
 		</thead>
 		<tbody id="fileList">
-			<?php echo getPending();?>
+			<?php echo getBills();?>
 		</tbody>
 
 		<tr><td colspan="6" class="centertr"><div id="history" class="btn btn-primary btn-flat">Load history</div></td></tr>

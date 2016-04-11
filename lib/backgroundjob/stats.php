@@ -49,15 +49,11 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	}
 	
 	private function updateAndBill() {
-		if(\OC_User::isAdminUser(\OC_User::getUser())){
-			$users = \User::getUsers();
-		}
-		else{
-			$users = array(\OC_User::getUser());
-		}
+		$users = \OC_User::getUsers();
 		foreach ($users as $user) {
 			// Add a line to usage-201*.txt locally.
 			// logDailyUsage checks if the line already exists and bails of so.
+			\OCP\Util::writeLog('Files_Accounting', 'Logging usage of user: '.$user, \OCP\Util::WARN);
 			\OCA\Files_Accounting\Storage_Lib::logDailyUsage($user);
 		}
 		// Only run billing on the billing day
@@ -74,7 +70,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		if(!\User::userExists($user)){
 			return;
 		}
-
+		\OCP\Util::writeLog('Files_Accounting', 'Billing user: '.$user, \OCP\Util::WARN);
 		$personalStorage = \OCA\Files_Accounting\Storage_Lib::personalStorage($user);
 		if(isset($personalStorage['freequota'])) {
 			$freequota_exceeded = \OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceeded', false);
@@ -102,7 +98,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 		// Log monthly average to DB on master
 		$charge = \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
-		$monthlyUsageAverage = \OCA\Files_Accounting\Storage_Lib::monthlyUsageAverage($user, $this->billingYear, $this->billingMonth);
+		$monthlyUsageAverage = \OCA\Files_Accounting\Storage_Lib::currentUsageAverage($user, $this->billingYear, $this->billingMonth);
 		
 		$totalAverageHome = ((float)$monthlyUsageAverage['home']['files_usage_average']) +
 			((float)$monthlyUsageAverage['home']['trash_usage_average']);
@@ -238,6 +234,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$pdf->Cell(190,40,$comment,0,0,'C');
 		
 		$path = \OCA\Files_Accounting\Storage_Lib::getInvoiceDir($user);
+		if(!file_exists($usageFilePath)){
+			mkdir($usageFilePath, 0777, false);
+		}
 		$pdf->Output($path.'/'.$filename, 'F');
 	}
 }

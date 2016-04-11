@@ -10,7 +10,7 @@ class Storage_Lib {
 	const PAYMENT_STATUS_PENDING = 2;
 	
 	public static function getBillingDayOfMonth(){
-		return \OCP\Config::getSystemValue('billingdayofmonth', 16);
+		return \OCP\Config::getSystemValue('billingdayofmonth', 10);
 	}
 
 	public static function getBillingNetDays(){
@@ -18,7 +18,7 @@ class Storage_Lib {
 	}
 
 	public static function getBillingVAT(){
-		return \OCP\Config::getSystemValue('billingvat', 10);
+		return \OCP\Config::getSystemValue('billingvat', 25);
 	}
 
 	public static function getBillingCurrency(){
@@ -69,7 +69,7 @@ class Storage_Lib {
 	}
 	
 	public static function getInvoiceDir($user){
-		return self::getAppDir($user);
+		return self::getAppDir($user)."/bills";
 	}
 	
 	public static function getChargeForUserServers($userid){
@@ -131,7 +131,7 @@ class Storage_Lib {
 		return array('charge_per_gb'=> \OCP\Config::getSystemValue('defaultchargepergb', 0));
 	}
 
-	public static function monthlyUsageAverage($userid, $month, $year) {
+	public static function currentUsageAverage($userid, $year, $month) {
 		$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true, \OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
 		if(\OCA\FilesSharding\Lib::onServerForUser($userid)) {
 			$homeUsageAverage = self::localCurrentUsageAverage($userid, $year, $month);
@@ -145,30 +145,6 @@ class Storage_Lib {
 				false, true, $backupServerInternalUrl, 'files_accounting');
 		}
 		return array('home'=>$homeUsageAverage, 'backup'=>$backupUsageAverage);
-	}
-
-	/*
-	 * Calculate storage usage on both home and backup server for a user
-	 */
-	private static function dailyUsage($userid, $year, $month) {
-		if(\OCP\App::isEnabled('files_sharding')){
-			if(\OCA\FilesSharding\Lib::isMaster()){
-				$backupServerId = \OCA\FilesSharding\Lib::dbLookupServerIdForUser($userid, 1);
-				if(!empty($backupServerId)){
-					$backupServerUrl = \OCA\FilesSharding\Lib::dbLookupInternalServerURL($backupServerId);
-					$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$month, 'year'=>$year),
-							false, true, $backupServerUrl, 'files_accounting');
-				}
-			}
-			else{
-				$dailyUsageBackupInfo = \OCA\FilesSharding\Lib::ws('dailyUsage', array('userid'=>$userid, 'month'=>$month, 'year'=>$year),
-						false, true, null, 'files_accounting');
-			}
-		}
-		//calculate the daily usage on the home server from the text file
-		$dailyUsageInfo = self::localCurrentUsageAverage($userid, $year, $month);
-		$dailyUsageTotal = array(!empty($dailyUsageInfo)?$dailyUsageInfo:null, !empty($dailyUsageBackupInfo)?$dailyUsageBackupInfo:null);
-		return $dailyUsageTotal;
 	}
 
 	public static function getLocalUsage($userid, $trashbin=true) {
@@ -285,29 +261,52 @@ class Storage_Lib {
 			touch($usageFilePath);
 		}
 		$lines = file($usageFilePath);
-		while(empty($lastLine)){
-			$lastLine = array_pop($lines);
+		if(!empty($lines)){
+			while(empty($lastLine)){
+				$lastLine = array_pop($lines);
+				$lastLineArr = explode(" ", $lastLine);
+			}
 		}
-		if($lastLine[0]==$user && $lastLine[1]==$year && $lastLine[2]==$month && $lastLine[3]==$day){
+		if(!empty($lastLine) && $lastLineArr[0]==$user &&
+				$lastLineArr[1]==$year && $lastLineArr[2]==$month && $lastLineArr[3]==$day){
 			if($overwrite){
 				foreach ($lines as $line) {
 					file_put_contents($usageFilePath, $line, LOCK_EX);
 				}
 			}
 			else{
+				\OCP\Util::writeLog('Files_Accounting', 'Already logged user: '.$user. '. Skipping.', \OCP\Util::WARN);
 				return;
 			}
 		}
-		$row = explode(" ", $lastLine);
-		$usage = self::getLocalUsage($userid, $trashbin);
-		$line = $user.' '.$year.' '.$month.' '.$day.' '.$time.' '.$usage['files_usage'].' '.$usage['trash_usage'].'\n';
+		$usage = self::getLocalUsage($user, true);
+		$line = $user." ".$year." ".$month." ".$day." ".$time." ".$usage['files_usage']." ".$usage['trash_usage']."\n";
 		file_put_contents($usageFilePath, $line, FILE_APPEND | LOCK_EX);
 	}
 	
-	public static function localCurrentUsageAverage($user, $year, $month) {
+	public static function localUsageData($user, $year, $month=null){
+		$dailyUsage = array();
 		$usageFilePath = self::getUsageFilePath($user, $year);
 		if(!file_exists($usageFilePath)){
-			touch($usageFilePath);
+			return $dailyUsage;
+		}
+		$lines = file($usageFilePath);
+		foreach ($lines as $line_num => $line) {
+			$row = explode(" ", $line);
+			if (!empty($row) && $row[0] == $user) {
+				if ($row[1] == $year && (empty($month) || $row[2] == $month)) {
+					$dailyUsage[] = array('year'=>(int)$row[1], 'month'=>(int)$row[2], 'day'=>(int)$row[3],
+							'files_usage' => (int)$row[5], 'trash_usage' => (int)$row[6]);
+				}
+			}
+		}
+		return $dailyUsage;
+	}
+	
+	public static function localCurrentUsageAverage($user, $year, $month=null) {
+		$usageFilePath = self::getUsageFilePath($user, $year);
+		if(!file_exists($usageFilePath)){
+			return array('files_usage'=>0, 'trash_usage'=>0);
 		}
 		$lines = file($usageFilePath);
 		$dailyUsage = array();
@@ -317,7 +316,7 @@ class Storage_Lib {
 		foreach ($lines as $line_num => $line) {
 			$row = explode(" ", $line);
 			if (!empty($row) && $row[0] == $user) {
-				if ($row[1] == $year && $row[2] == $month) {
+				if ($row[1] == $year && (empty($month) || $row[2] == $month)) {
 					$dailyUsage[] = array('day'=>(int)$row[3], 'files_usage' => (int)$row[5],
 							'trash_usage' => (int)$row[6]);
 				}

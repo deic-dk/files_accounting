@@ -1,6 +1,6 @@
 <?php
 
-function getBills($status, $year=null){
+function getBills($status=null, $year=null){
 	if(empty($year)){
 		$year = date('Y');
 	}
