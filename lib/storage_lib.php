@@ -10,11 +10,11 @@ class Storage_Lib {
 	const PAYMENT_STATUS_PENDING = 2;
 	
 	public static function getBillingDayOfMonth(){
-		return \OCP\Config::getSystemValue('billingdayofmonth', 10);
+		return \OCP\Config::getSystemValue('billingdayofmonth', 1);
 	}
 
 	public static function getBillingNetDays(){
-		return \OCP\Config::getSystemValue('billingnetdays', 30);
+		return \OCP\Config::getSystemValue('billingnetdays', 120);
 	}
 
 	public static function getBillingVAT(){
@@ -41,13 +41,20 @@ class Storage_Lib {
 		return \OCP\Config::getSystemValue('paypalaccount', '');
 	}
 	
-	public static function getBillingURL($user){
+	public static function getBillingURL($user, $fq=true){
+		$homeServer = "";
 		if(\OCP\App::isEnabled('files_sharding')){
-			$homeServer = \OCA\FilesSharding\Lib::getServerForUser($user, false);
-			$url = $homeServer . \OC::$WEBROOT . "/index.php/settings/personal#userapps";
+			if($fq){
+				$homeServer = \OCA\FilesSharding\Lib::getServerForUser($user, false);
+			}
+			$url = $homeServer . "/index.php/settings/personal#userapps";
 		}
 		else{
-			$url = \OCP\Config::getSystemValue('billingurl', '');
+			if($fq){
+				$charge = getChargeForUserServers($userid);
+				$homeServer = $charge['url_home'];
+			}
+			$url = $homeServer . "/index.php/settings/personal";
 		}
 		return $url;
 	}
@@ -77,24 +84,33 @@ class Storage_Lib {
 		// Allow local override of charge set in DB on master.
 		$localCharge = \OCP\Config::getSystemValue('chargepergb', null);
 		if(!\OCP\App::isEnabled('files_sharding')){
-			$chargeHome = $localCharge;
-			$chargeBackup = 0;
-			$homeServerID = '';
-			$backupServerID = '';
+			$chargeHome = array();
+			$chargeHome['charge_per_gb'] = $localCharge;
+			// In non-sharded setups, set chargepergb and url of the server in config.php.
+			$chargeHome['url'] = \OCP\Config::getSystemValue('url', '');
+			$chargeBackup = array();
 		}
 		else{
+			$isMaster = \OCA\FilesSharding\Lib::isMaster();
 			$homeServerID = \OCA\FilesSharding\Lib::lookupServerIdForUser($userid,
 					\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_PRIMARY);
-			$isMaster = \OCA\FilesSharding\Lib::isMaster();
+			if(empty($homeServerID)){
+				if($isMaster){
+					$master = \OCA\FilesSharding\Lib::getMasterHostName();
+					$homeServerID = \OCA\FilesSharding\Lib::lookupServerId($master);
+				}
+				else{
+					// Called from cron job on backup server for user with home on master.
+					// We only check usage for user with home here.
+					return null;
+				}
+			}
 			if($isMaster){
 				$chargeHome = isset($localCharge)?$localCharge:self::dbGetCharge($homeServerId);
 			}
 			else{
 				$chargeHome = \OCA\FilesSharding\Lib::ws('getCharge', array('server_id'=>$homeServerID),
 					false, true, null, 'files_accounting');
-			}
-			if(!empty($backupServerID)){
-				
 			}
 			$backupServerID = \OCA\FilesSharding\Lib::lookupServerIdForUser($userid,
 					\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
@@ -109,7 +125,8 @@ class Storage_Lib {
 			}
 		}
 		$ret = Array(
-				'charge_home' => $chargeHome['charge_per_gb'], 'charge_backup' => isset($chargeBackup['charge_per_gb'])?$chargeBackup['charge_per_gb']:0,
+				'charge_home' => $chargeHome['charge_per_gb'],
+				'charge_backup' => isset($chargeBackup['charge_per_gb'])?$chargeBackup['charge_per_gb']:0,
 				'id_home' => $homeServerID, 'id_backup' => !empty($backupServerID)?$backupServerID:'',
 				'url_home'=>$chargeHome['url'], 'url_backup'=>isset($chargeBackup['url'])?$chargeBackup['url']:'',
 				'site_home'=>$chargeHome['site'], 'site_backup'=>isset($chargeBackup['site'])?$chargeBackup['site']:'');
@@ -121,8 +138,7 @@ class Storage_Lib {
 		if(isset($serverid)){
 			$query = \OC_DB::prepare('SELECT * FROM `*PREFIX*files_sharding_servers` WHERE `id` = ?');
 			$result = $query->execute(Array($serverid));
-			$charge = $result->fetchRow();
-			foreach($charge as $row){
+			while ( $row = $result->fetchRow () ) {
 				return $row;
 			}
 		}
@@ -132,7 +148,10 @@ class Storage_Lib {
 	}
 
 	public static function currentUsageAverage($userid, $year, $month) {
-		$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true, \OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
+		$homeInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
+				\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_PRIMARY);
+		$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
+				\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
 		if(\OCA\FilesSharding\Lib::onServerForUser($userid)) {
 			$homeUsageAverage = self::localCurrentUsageAverage($userid, $year, $month);
 		}
@@ -144,10 +163,13 @@ class Storage_Lib {
 			$backupUsageAverage = \OCA\FilesSharding\Lib::ws('currentUsageAverage', array('userid'=>$userid, 'month'=>$month, 'year'=>$year),
 				false, true, $backupServerInternalUrl, 'files_accounting');
 		}
+		else{
+			$backupUsageAverage = 0;
+		}
 		return array('home'=>$homeUsageAverage, 'backup'=>$backupUsageAverage);
 	}
 
-	public static function getLocalUsage($userid, $trashbin=true) {
+	public static function getLocalUsage($userid, $trash=true) {
 		//solution to work with ws based on
 		//https://github.com/owncloud/core/issues/5740
 		$user = \OC::$server->getUserManager()->get($userid);
@@ -155,10 +177,11 @@ class Storage_Lib {
 		$ret['free_space'] = $storage->free_space('/');
 		$filesInfo = $storage->getCache()->get('files');
 		$ret = array();
-		$ret['files_usage'] = $filesInfo['size'];
-		if($trashbin){
+		$ret['files_usage'] = trim($filesInfo['size']);
+		\OCP\Util::writeLog('Files_Accounting', 'Files usage for '.$userid. ': '.$ret['files_usage'], \OCP\Util::WARN);
+		if($trash){
 			$trashInfo = $storage->getCache()->get('files_trashbin/files');
-			$ret['trash_usage'] = $trashInfo['size'];
+			$ret['trash_usage'] = isset($trashInfo)&&isset($trashInfo['size'])?$trashInfo['size']:0;
 		}
 		return $ret;
 	}
@@ -188,7 +211,8 @@ class Storage_Lib {
 		
 		$userStorageBackup = 0;
 		if(\OCP\App::isEnabled('files_sharding')){
-						$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true, 1);
+						$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
+								\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
 				if(!empty($backupServerInternalUrl)){
 					$personalStorageBackup = \OCA\FilesSharding\Lib::ws('personalStorage',
 							array('userid'=>$userid, 'key'=>'userStorage', 'trashbin'=>false),
@@ -303,7 +327,15 @@ class Storage_Lib {
 		return $dailyUsage;
 	}
 	
-	public static function localCurrentUsageAverage($user, $year, $month=null) {
+	public static function localCurrentUsageAverage($user, $year, $month=null, $timestamp=null) {
+		
+		if(empty($timestamp)){
+			$todayDay = (int)date("j");
+		}
+		else{
+			$todayDay = (int)date("j", $timestamp);
+		}
+		
 		$usageFilePath = self::getUsageFilePath($user, $year);
 		if(!file_exists($usageFilePath)){
 			return array('files_usage'=>0, 'trash_usage'=>0);
@@ -313,21 +345,33 @@ class Storage_Lib {
 		$userStorage  = array();
 		$averageToday = 0 ;
 		$averageTodayTrash = 0;
+		$i = 0;
+		$firstDay = 0;
+		$firstMonth = 0;
 		foreach ($lines as $line_num => $line) {
-			$row = explode(" ", $line);
+			$row = explode(" ", trim($line));
 			if (!empty($row) && $row[0] == $user) {
-				if ($row[1] == $year && (empty($month) || $row[2] == $month)) {
+				if(empty($firstDay)){
+					$firstDay = (int)$row[3];
+					$firstMonth = (int)$row[2];
+				}
+				// We will calculate the average from this day last month to today.
+				if(((int)$row[1])==$year && (empty($month) || ((int)$row[2])==$month ||
+						(((int)$row[2])==$month-1 || ((int)$row[2])==12 && $month==1) && ((int)$row[3])>=$todayDay)){
 					$dailyUsage[] = array('day'=>(int)$row[3], 'files_usage' => (int)$row[5],
 							'trash_usage' => (int)$row[6]);
+					\OC_Log::write('files_accounting', $row[2]."==".$month."--> files: ".$row[5].", trash: ".$row[6], \OC_Log::WARN);
+					++$i;
 				}
 			}
 		}
 		if(!empty($dailyUsage)){
-			$averageToday = array_sum(array_column($dailyUsage, 'files_usage')) / count(array_column($dailyUsage, 'files_usage'));
-			$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash_usage')) / count(array_column($dailyUsage, 'trash_usage'));
+			$averageToday = array_sum(array_column($dailyUsage, 'files_usage')) / $i;
+			$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash_usage')) / $i;
 		}
 	
-		return array('files_usage'=>$averageToday, 'trash_usage'=>$averageTodayTrash);
+		return array('days'=>$i, 'first_day'=>$firstDay, 'first_month'=>$firstMonth,
+				'files_usage'=>$averageToday, 'trash_usage'=>$averageTodayTrash);
 	}
 	
 	// TODO
@@ -385,9 +429,11 @@ class Storage_Lib {
 		return $result;
 	}
 	
-	public static function dbUpdateMonth($user, $status, $year, $month, $timestamp, $timedue, $average, $averageTrash, $averageBackup,
-			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite, $bill, $referenceId){
-		$stmt = \OCP\DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `year`, `month`, `timestamp`, `time_due` home_files_usage`, `home_trash_usage`, `backup_files_usage`, `home_id`, `backup_id`, `home_url`, `backup_url`, `home_site`, `backup_site`, `amount_due`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?)");
+	public static function dbUpdateMonth($user, $status, $year, $month, $timestamp, $timedue,
+			$average, $averageTrash, $averageBackup,
+			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,
+			$amountDue, $referenceId){
+		$stmt = \OCP\DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `year`, `month`, `timestamp`, `time_due`, `home_files_usage`, `home_trash_usage`, `backup_files_usage`, `home_id`, `backup_id`, `home_url`, `backup_url`, `home_site`, `backup_site`, `amount_due`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 		$result = $stmt->execute ( array (
 				$user,
 				$status,
@@ -399,31 +445,38 @@ class Storage_Lib {
 				$averageTrash,
 				$averageBackup,
 				$homeId,
-				$backupSite,
+				$backupId,
 				$homeUrl,
 				$backupUrl,
 				$homeSite,
 				$backupSite,
-				$bill,
+				$amountDue,
 				$referenceId
 		) );
 	
 		return $result;
 	}
 	
-	public static function updateMonth($user, $status, $year, $month, $timestamp, $timedue, $average, $averageTrash, $averageBackup,
-			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite, $bill, $referenceId){
+	public static function updateMonth($user, $status, $year, $month, $timestamp, $timedue,
+			$average, $averageTrash, $averageBackup,
+			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,
+			$amountDue, $referenceId){
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			$result = self::dbUpdateMonth($user, $status, $year, $month, $timestamp, $timedue, $average, $averageTrash, $averageBackup,
-					$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite, $bill, $referenceId);
+			$result = self::dbUpdateMonth($user, $status, $year, $month, $timestamp, $timedue,
+					$average, $averageTrash, $averageBackup,
+					$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,
+					$amountDue, $referenceId);
 		}
 		else{
 			$result = \OCA\FilesSharding\Lib::ws('updateMonth', array('user_id'=>$user, 'status'=>$status,
-					'year'=>$year, 'month'=>$month, 'timestamp'=>$timestamp, 'time_due'=>$timedue, 'home_files_usage'=>$average,
-					'home_trash_usage'=>$averageTrash, 'backup_files_usage'=>$averageTrash, 'bill'=>$bill,
-					'reference_id'=>$referenceId, 'home_id'=>$homeSite, 'backup_id'=>$backupSite,
-					'home_url'=>$homeSite, 'backup_url'=>$backupSite, 'home_site'=>$homeSite, 'backup_site'=>$backupSite),
-					false, true, null, 'files_accounting');
+					'year'=>$year, 'month'=>$month, 'timestamp'=>$timestamp, 'time_due'=>$timedue,
+					'home_files_usage'=>$average, 'home_trash_usage'=>$averageTrash,
+					'backup_files_usage'=>$averageTrash,
+					'home_id'=>$homeId, 'backup_id'=>$backupId,
+					'home_url'=>$homeUrl, 'backup_url'=>$backupUrl,
+					'home_site'=>$homeSite, 'backup_site'=>$backupSite,
+					'amount_due'=>$amountDue, 'reference_id'=>$referenceId),
+					true, true, null, 'files_accounting');
 		}
 		return $result;
 	}

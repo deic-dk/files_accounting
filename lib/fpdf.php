@@ -105,7 +105,7 @@ function __construct($orientation='P', $unit='mm', $size='A4')
 	else
 		$this->fontpath = '';
 	// Core fonts
-	$this->CoreFonts = array('courier', 'helvetica', 'times', 'symbol', 'zapfdingbats');
+	$this->CoreFonts = array('courier', 'helvetica', 'helveticab', 'times', 'symbol', 'zapfdingbats');
 	// Scale factor
 	if($unit=='pt')
 		$this->k = 1;
@@ -260,7 +260,7 @@ function AliasNbPages($alias='{nb}')
 function Error($msg)
 {
 	// Fatal error
-	throw new Exception('FPDF error: '.$msg);
+	throw new \Exception('FPDF error: '.$msg);
 }
 
 function Close()
@@ -1236,7 +1236,13 @@ protected function _parsejpg($file)
 protected function _parsepng($file)
 {
 	// Extract info from a PNG file
-	$f = fopen($file,'rb');
+	$arrContextOptions=array(
+			"ssl"=>array(
+					"verify_peer"=>false,
+					"verify_peer_name"=>false,
+			),
+	);
+	$f = fopen($file,'rb', false, stream_context_create($arrContextOptions));
 	if(!$f)
 		$this->Error('Can\'t open image file: '.$file);
 	$info = $this->_parsepngstream($f,$file);

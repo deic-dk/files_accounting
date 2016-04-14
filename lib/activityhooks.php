@@ -39,7 +39,7 @@ class ActivityHooks {
 	
 	protected static function addNotificationsForUser($user, $subject, $path, $priority , $type ) {
 		$app = 'files_accounting';	
-		$link = '/index.php/settings/personal';
+		$link = $url = \OCA\Files_Accounting\Storage_Lib::getBillingURL($user, false);
 		ActivityHooks::send($app, $subject, array($path), '', array(), '', $link, $user, $type, $priority);
 	}
 	

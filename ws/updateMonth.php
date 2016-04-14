@@ -8,23 +8,23 @@ if(!OCA\FilesSharding\Lib::checkIP()){
         exit;
 }
 
-$userid = isset($_GET['user_id'])?$_GET['user_id']:\OC_User::getUser();
-$status = isset($_GET['status'])?$_GET['status']:null;
-$year = isset($_GET['year'])?$_GET['year']:null;
-$month = isset($_GET['month'])?$_GET['month']:null;
-$timestamp = isset($_GET['timestamp'])?$_GET['timestamp']:null;
-$timedue = isset($_GET['time_dur'])?$_GET['time_dur']:null;
-$average = isset($_GET['home_files_usage'])?$_GET['home_files_usage']:null;
-$averageTrash = isset($_GET['home_trash_usage'])?$_GET['home_trash_usage']:null;
-$averageBackup = isset($_GET['backup_files_usage'])?$_GET['backup_files_usage']:null;
-$homeId = isset($_GET['home_id'])?$_GET['home_id']:null;
-$backupId = isset($_GET['backup_id'])?$_GET['backup_id']:null;
-$homeUrl = isset($_GET['home_url'])?$_GET['home_url']:null;
-$backupUrl = isset($_GET['backup_url'])?$_GET['backup_url']:null;
-$homeSite = isset($_GET['home_site'])?$_GET['home_site']:null;
-$backupSite = isset($_GET['backup_site'])?$_GET['backup_site']:null;
-$amountDue = isset($_GET['amount_due'])?$_GET['amount_due']:null;
-$referenceId = isset($_GET['reference_id'])?$_GET['reference_id']:null;
+$userid = isset($_POST['user_id'])?$_POST['user_id']:\OC_User::getUser();
+$status = isset($_POST['status'])?$_POST['status']:null;
+$year = isset($_POST['year'])?$_POST['year']:null;
+$month = isset($_POST['month'])?$_POST['month']:null;
+$timestamp = isset($_POST['timestamp'])?$_POST['timestamp']:null;
+$timedue = isset($_POST['time_due'])?$_POST['time_due']:null;
+$average = isset($_POST['home_files_usage'])?$_POST['home_files_usage']:null;
+$averageTrash = isset($_POST['home_trash_usage'])?$_POST['home_trash_usage']:null;
+$averageBackup = isset($_POST['backup_files_usage'])?$_POST['backup_files_usage']:null;
+$homeId = isset($_POST['home_id'])?$_POST['home_id']:null;
+$backupId = isset($_POST['backup_id'])?$_POST['backup_id']:null;
+$homeUrl = isset($_POST['home_url'])?$_POST['home_url']:null;
+$backupUrl = isset($_POST['backup_url'])?$_POST['backup_url']:null;
+$homeSite = isset($_POST['home_site'])?$_POST['home_site']:null;
+$backupSite = isset($_POST['backup_site'])?$_POST['backup_site']:null;
+$amountDue = isset($_POST['amount_due'])?$_POST['amount_due']:null;
+$referenceId = isset($_POST['reference_id'])?$_POST['reference_id']:null;
 
 $ret = OCA\Files_Accounting\Storage_Lib::dbUpdateMonth($userid, $status, $year, $month, $timestamp, $timedue,
 		$average, $averageTrash, $averageBackup, $homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,

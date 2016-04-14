@@ -79,7 +79,8 @@
 			<field>
 				<name>backup_files_usage</name>
 				<type>integer</type>
-				<notnull>16</notnull>
+				<length>255</length>
+				<notnull>false</notnull>
 			</field>
 
 			<field>
@@ -92,7 +93,7 @@
 			<field>
 				<name>backup_id</name>
 				<type>text</type>
-				<notnull>true</notnull>
+				<notnull>false</notnull>
 				<length>255</length>
 			</field>
 
@@ -106,7 +107,7 @@
 			<field>
 				<name>backup_url</name>
 				<type>text</type>
-				<notnull>true</notnull>
+				<notnull>false</notnull>
 				<length>255</length>
 			</field>
 
@@ -120,7 +121,7 @@
 			<field>
 				<name>backup_site</name>
 				<type>text</type>
-				<notnull>true</notnull>
+				<notnull>false</notnull>
 				<length>255</length>
 			</field>
 
