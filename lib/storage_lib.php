@@ -260,10 +260,10 @@ class Storage_Lib {
 				$arr['userid'] = $user;
 			}
 			if(!empty($year)){
-				$arr['year'] = $user;
+				$arr['year'] = $year;
 			}
 			if(!empty($status)){
-				$arr['status'] = $user;
+				$arr['status'] = $status;
 			}
 			$result = \OCA\FilesSharding\Lib::ws('getBills', $arr, false, true, null, 'files_accounting');
 		}
@@ -565,24 +565,17 @@ class Storage_Lib {
 		return $groups;
 	}
 	
-	public static function dbDownloadInvoice($filename, $user) {
+	public static function getInvoice($filename, $user) {
 		$dir = self::getInvoiceDir($user);
 		$file = $dir . "/" . $filename;
-		if(!file_exists($file)) die("I'm sorry, the file doesn't seem to exist.");
+		if(!file_exists($file)){
+			\OCP\Util::writeLog('Files_Accounting', 'File not found: '.$filename, \OCP\Util::ERROR);
+			return;
+		}
 		$type = filetype($file);
 		header("Content-type: $type");
 		header("Content-Disposition: attachment;filename=$filename");
 		readfile($file);
-	}
-	
-	public static function downloadInvoice($filename, $user) {
-		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			self::dbDownloadInvoice($filename, $user);
-		}
-		else{
-			\OCA\FilesSharding\Lib::ws('getInvoice', array('filename'=>urlencode($filename), 'user'=>$user),
-					false, true, null, 'files_accounting');
-		}
 	}
 	
 	public static function addQuotaExceededNotification($user, $free_quota) {

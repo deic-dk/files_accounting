@@ -160,7 +160,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$file = $path . "/" . $filename;
 		$defaults = new \OCP\Defaults();
 		$senderEmail = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
-		$subject = "Invoice Payment for ".$this->billingMonthName;
+		$subject = "Invoice for ".$this->billingMonthName;
 		$message = "Dear ".$realName.",\n\nThe bill for ".$this->billingMonthName." is ".$amount." ".
 				$this->billingCurrency.". An invoice is attached.\n".
 				(empty($url)?"Please complete payment in your account settings":"To complete payment please visit ".

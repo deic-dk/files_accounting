@@ -3,8 +3,8 @@ var PAYMENT_STATUS_PENDING = 2;
 
 function add_download_links() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
-		var link = $(this).text();
-		OC.redirect( OC.linkTo('files_accounting', 'ajax/download.php') + '?link=' + link);
+		var file = $(this).text();
+		OC.redirect( OC.linkTo('files_accounting', 'ajax/getInvoice.php') + '?file=' + file);
 	});
 }
 

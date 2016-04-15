@@ -1,5 +1,10 @@
 google.load("visualization", "1", {packages:["corechart"]});
 google.setOnLoadCallback(getData);
+
+var dataTable;
+var chart;
+var options;
+
 function getData() {
 	var year = $('#storageSettings #list').val();
 	$.ajax(OC.linkTo('files_accounting', 'ajax/getUsageData.php'), {
@@ -9,7 +14,7 @@ function getData() {
 		},
 		dataType:'json',
 		success: function(ret){
-			if(jsondata.status == 'success' ) {
+			if(ret.status == 'success' ) {
 				drawGraph(ret.data, year);
 			}
 		},
@@ -17,12 +22,12 @@ function getData() {
 			alert("Unexpected error!");
 		}
 	});
-}s
+}
 
 function drawGraph(data, year) {
 	var usageUnit;
 	var usageUnitStr;
-	if (files_usage[files_usage.length-1]['files_usage'] < 1000) {
+	if (data[data.length-1]['files_usage'] < 1000) {
 		usageUnit = Math.pow(1024, 2);
 		usageUnitStr = "MB";
 	}
@@ -30,23 +35,24 @@ function drawGraph(data, year) {
 		usageUnit = Math.pow(1024, 3);
 		usageUnitStr = "GB";
 	}
-	var options = {
-			title: 'Average Storage History',
+ options = {
+			title: ' Storage History',
 			hAxis: {title: year,  titleTextStyle: {color: '#333'}},
 			vAxis: {title: usageUnitStr+' \n\n',  titleTextStyle: {color: '#333'}},
-			width:  "100%"
+			//width:  '100%'
 	};
-	var data = new google.visualization.DataTable();
-	data.addColumn('string', 'dates');
-	data.addColumn('number', 'files');
-	data.addColumn('number', 'trashbin');
+	 dataTable = new google.visualization.DataTable();
+	dataTable.addColumn('string', 'dates');
+	dataTable.addColumn('number', 'files');
+	dataTable.addColumn('number', 'trashbin');
 	for (var i=0; i<data.length; i++) {
 		date = data[i]['month']+'-'+data[i]['day'];
 		files_usage = parseInt(data[i]['files_usage'])/usageUnit;
 		trash_usage = parseInt(data[i]['trash_usage'])/usageUnit;
-		data.addRowFromValues(date, files_usage, trash_usage);
+		dataTable.addRow([date, files_usage, trash_usage]);
 	}	
-	new google.visualization.AreaChart(document.getElementById('chart_div')).draw(data, options);
+	chart = new google.visualization.AreaChart(document.getElementById('chart_div'));
+	chart.draw(dataTable, options);
 }
 //create trigger to resizeEnd event     
 $(window).resize(function() {
@@ -60,5 +66,7 @@ $(window).resize(function() {
 
 //redraw graph when window resize is completed  
 $(window).on('resizeEnd', function() {
-	getData();
+	options.width = 0.9* $('#content').innerWidth();
+	//alert(options.width);
+	chart.draw(dataTable, options);
 });

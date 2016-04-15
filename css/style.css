@@ -37,3 +37,58 @@ tr.unpaid {
 	cursor: pointer;
 	z-index: 0;
 }
+
+#billingtable.panel: {
+	width:100%;
+	margin-top:12px;
+}
+
+.column-display{
+	padding-left:12px;
+}
+
+storageSettings.section select#years {
+ style="padding-top:25px;"
+}
+
+#paypal_billing_button {
+	padding-left: 7px;
+	height: 20px;
+	vertical-align: middle;
+	margin-bottom: 3px;
+}
+
+.paypal_img {
+	padding-left: 52px;
+}
+
+#billingtable {
+	margin-top: 36px;
+	width: 100%;
+}
+
+.pending {
+	color:#CDDC39;
+	font-weight: bold;
+}
+
+.paid {
+	color: #AAAAAA;
+	font-weight: bold;
+}
+
+table#billingtable th .columntitle.name, .paypal_btn input {
+    margin: 0;
+    padding: 15px 0;
+}
+
+.paypal_btn input {
+    margin: 0;
+    padding: 16px 0;
+    height: 52px;
+}
+
+.paypal_btn form {
+	padding-left: 12px;
+}
+
