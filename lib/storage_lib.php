@@ -596,9 +596,30 @@ class Storage_Lib {
 	
 	public static function setPreapprovalKey($user, $preapprovalKey) {
 		$hashKey = \OC::$server->getHasher()->hash($preapprovalKey);
-		$query = \OC_DB::prepare ("UPDATE `*PREFIX*files_accounting` SET `preapproval_key` = '$hashKey' WHERE `user` = ?" );
-		$result = $query->execute( array ($user));
+		$expiration = date('Y-m-d', strtotime('+1 year');
+		$query = \OC_DB::prepare ("INSERT INTO `*PREFIX*files_accounting_adaptive_payments` ( `user` , `preapproval_key`, `expiration` ) VALUES( ? , ?, ? )" );
+		$result = $query->execute( array ($user, $hashKey, $expiration));
+
 		return $result ? true : false;
+	}
+
+	public static setAutomaticCharge($user, $amount, $preapprovalKey) {
+		$paypalCredentials = self::getPayPalApiCredentials();
+		$receiverEmail = self::getPayPalAccount();
+		$currencyCode = self::getBillingCurrency();
+
+		\PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
+		
+		$options = array(
+    			'currencyCode' => $currencyCode,
+    			'receiverEmailArray' => array($receiverEmail),
+    			'receiverAmountArray' => array($amount),
+    			'actionType' => 'PAY',
+    			'preapprovalKey' => $preapprovalKey,
+		);
+		
+		$response = \PayPalAP::doPayment($options);
+		return $response;
 	}
 }
 
