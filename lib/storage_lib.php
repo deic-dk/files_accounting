@@ -41,6 +41,13 @@ class Storage_Lib {
 		return \OCP\Config::getSystemValue('paypalaccount', '');
 	}
 	
+	public static function getPayPalApiCredentials(){
+		$username = \OCP\Config::getSystemValue('paypalusername', '');
+		$password = \OCP\Config::getSystemValue('paypalpassword', '');
+		$signature = \OCP\Config::getSystemValue('paypalsignature', '');
+		return array($username, $password, $signature);
+	}
+	
 	public static function getBillingURL($user, $fq=true){
 		$homeServer = "";
 		if(\OCP\App::isEnabled('files_sharding')){
@@ -374,21 +381,6 @@ class Storage_Lib {
 				'files_usage'=>$averageToday, 'trash_usage'=>$averageTodayTrash);
 	}
 	
-	// TODO
-	public static function usersInGroup($gid, $search = '', $limit = null, $offset = null) {
-		$stmt = \OCP\DB::prepare ( 'SELECT `uid` FROM `*PREFIX*user_group_admin_group_user` WHERE `gid` = ? AND `uid` LIKE ?', $limit, $offset );
-		$result = $stmt->execute ( array (
-				$gid,
-				$search . '%',
-		) );
-		$users = array ();
-		while ( $row = $result->fetchRow () ) {
-			$users [] = $row ['uid'];
-		}
-	
-		return $users;
-	}
-	
 	public static function dbAccountedYears($user) {
 		$year = date('Y');
 		$stmt = \OCP\DB::prepare ( "SELECT DISTINCT `year`  FROM `*PREFIX*files_accounting` WHERE `user` = ?" );
@@ -552,17 +544,6 @@ class Storage_Lib {
 					false, true, null, 'files_accounting');
 		}
 		return $result;
-	}
-	
-	// TODO
-	public static function getDefaultGroups($search,$limit = null, $offset = null ) {
-		$query = \OCP\DB::prepare('SELECT `gid` FROM `*PREFIX*groups` WHERE `gid` LIKE ?', $limit, $offset );
-		$result = $query->execute ( array ($search . '%') );
-		$groups = array ();
-		while ( $row = $result->fetchRow () ) {
-			$groups [] = $row ['gid'];
-		}
-		return $groups;
 	}
 	
 	public static function getInvoice($filename, $user) {

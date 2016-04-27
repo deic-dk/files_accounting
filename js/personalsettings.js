@@ -9,6 +9,18 @@ function add_download_links() {
 }
 
 $(document).ready(function() {
+	$("#adaptive-payments").on("click", function() {
+	  $.ajax(OC.linkTo('files_accounting', 'ajax/adaptivePayments.php'), {
+		type: 'POST',
+		dataType: 'json',
+		success: function(jsondata) {
+		  window.location.href = jsondata.data.url;
+		},
+		error: function(jsondata) {
+		  alert("Unexpected error!");
+		}
+	  });
+	});
 
 	$("#billingtable #history").on ("click", function () {
 		var year = $('#storageSettings #years').val();

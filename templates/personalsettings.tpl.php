@@ -16,23 +16,12 @@
 
 	<div id="chart_div">
 	</div>
-
-	<div>
-	<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
-		<input type="hidden" name="cmd" value="_s-xclick">
-		<input type="hidden" name="hosted_button_id" value="<?php echo $hostedButtonID;?>">
-		<span>
-			Maximum amount you want to pay each month:
-			<input type="text" name="max_amount" value="" /><?php echo $billingCurrency;?>
-		</span>
-		<span class="paypal_img">
-			Sign up for<input id="paypal_billing_button" type="image" src="https://www.paypalobjects.com/en_US/GB/i/btn/btn_auto_billing_LG.gif" border="0" name="submit" alt="PayPal">
-			<img alt="Paypal button" border="0" src="https://www.sandbox.paypal.com/en_GB/i/scr/pixel.gif">
-		</span>
-	</form>
 	
+	<div id="adaptive-payments">	
+		<a data-paypal-button="true" class="inlineblock button">
+			Preapprove Future Payments
+		</a>
 	</div>
-
 	<table id="billingtable" class="panel">
 		<thead class="panel-heading"> 
 		<tr>

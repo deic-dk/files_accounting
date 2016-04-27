@@ -1,16 +1,11 @@
 OC.Groups = {
 	group : [] ,
 	initDropDown : function() {
-		OC.Groups.group[OC.Share.SHARE_TYPE_USER]  = [];
-		OC.Groups.group[OC.Share.SHARE_TYPE_GROUP] = [];
-		
 		$('.ui-autocomplete-input').autocomplete({
 			minLength : 2,
 			source : function(search, response) {
 				$.get(OC.filePath('files_accounting', 'ajax', 'groups.php'), {
-					fetch : 'getShareWith',
-					search : search.term,
-					itemShares : [OC.Groups.group[OC.Share.SHARE_TYPE_USER]]
+					search : search.term
 				},
 				function(result) {
 					if(result.status == 'success' && result.data.length > 0) {
@@ -22,13 +17,12 @@ OC.Groups = {
 				event.preventDefault();
 			},
 			select : function(event, selected) {
-				var group = selected.item.value.shareWith;
+				var group = selected.item;
 				var groupFreeQuota = $('#groupFreeQuota').val();
 				$.post(OC.filePath('files_accounting', 'ajax', 'setFreeQuota.php'), {group : group, groupFreeQuota : groupFreeQuota},
 					function ( jsondata ){
 						if(jsondata.status == 'success' ) {
 							$('.ui-autocomplete-input').val('');
-							OC.Groups.group[OC.Share.SHARE_TYPE_USER].push(group);
 							OC.Groups.initDropDown() ;
 						}
 						else{
