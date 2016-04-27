@@ -158,9 +158,7 @@ class PayPalAP
 		{
 			if ($options['preapprovalKey'] == "")
 			{
-				// redirect for web approval flow
-				$cmd = "cmd=_ap-payment&paykey=" . urldecode($resArray["payKey"]);
-				return urldecode($resArray["payKey"]);;
+				return array('success' => false, 'errors' => 'No key was found');
 			}
 			else
 			{
