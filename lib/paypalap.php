@@ -106,8 +106,9 @@ class PayPalAP
 		$ack = strtoupper($resArray["responseEnvelope.ack"]);
 		if($ack=="SUCCESS")
 		{
-			\OCP\Util::writeLog('PAYPAL', 'SUCCESS', \OC_Log::DEBUG);
 			$cmd = "cmd=_ap-preapproval&preapprovalkey=" . urldecode($resArray["preapprovalKey"]);
+			session_start();
+    			$_SESSION['preapprovalKey'] = urldecode($resArray["preapprovalKey"]);
 			// use this for integrating preapproved payments in the payment flow
 			// https://www.paypal.com/webapps/adaptivepayment/flow/pay?expType=light&paykey=&preapprovalkey=
 			//$cmd = "&paykey=" . $options['payKey']. "&preapprovalkey=" . urldecode($resArray["preapprovalKey"]);
@@ -115,7 +116,6 @@ class PayPalAP
 		} 
 		else  
 		{
-			\OCP\Util::writeLog('PAYPAL', 'ERROR', \OC_Log::DEBUG);
 			return array('success' => false, 'errors' => self::generateErrorArray($resArray));
 		}
 	}

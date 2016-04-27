@@ -4,8 +4,8 @@ OCP\JSON::checkLoggedIn();
 OCP\JSON::checkAppEnabled('files_accounting');
 OCP\JSON::callCheck();
 
-$cancelUrl = 'https://'.$_SERVER['SERVER_NAME']; 
-$returnUrl = 'https://'.$_SERVER['SERVER_NAME'];
+$cancelUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/settings/personal?cancel=true#userapps'; 
+$returnUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/settings/personal?success=true#userapps';
 $currencyCode = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
 $maxTotalAmountOfAllPayments = '2000'; // TODO
 $maxNumberOfPayments = '12'; // TODO

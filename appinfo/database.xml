@@ -138,6 +138,13 @@
 				<length>255</length>
 			</field>
 
+			<field>
+                                <name>preapproval_key</name>
+                                <type>text</type>
+                                <notnull>false</notnull>
+                                <length>255</length>
+                        </field>
+
 		</declaration>
 
 	</table>	

@@ -594,5 +594,11 @@ class Storage_Lib {
 		}
 	}
 	
+	public static function setPreapprovalKey($user, $preapprovalKey) {
+		$hashKey = \OC::$server->getHasher()->hash($preapprovalKey);
+		$query = \OC_DB::prepare ("UPDATE `*PREFIX*files_accounting` SET `preapproval_key` = '$hashKey' WHERE `user` = ?" );
+		$result = $query->execute( array ($user));
+		return $result ? true : false;
+	}
 }
 
