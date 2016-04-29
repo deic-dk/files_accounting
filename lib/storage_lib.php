@@ -2,6 +2,7 @@
 
 namespace OCA\Files_Accounting;
 
+require_once 'phpass/PasswordHash.php';
 use \OC_DB;
 
 class Storage_Lib {
@@ -593,9 +594,24 @@ class Storage_Lib {
 			\OCP\Util::writeLog('Files_Accounting', 'A problem occurred while sending e-mail. '.$e, \OCP\Util::ERROR);
 		}
 	}
+
+	public static function adaptivePaymentStatus($user) {
+		if ($_GET ['success'] == true)  {
+        		self::setPreapprovalKey(\OCP\User::getUser(), $_SESSION['preapprovalKey']);
+		}
+		unset($_SESSION['preapprovalKey']);
+	}
 	
-	public static function setPreapprovalKey($user, $preapprovalKey) {
-		$hashKey = \OC::$server->getHasher()->hash($preapprovalKey);
+	private static function setPreapprovalKey($user, $preapprovalKey) {
+		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
+		$result = $stmt->execute ( array ($user) );
+		if ($result->fetchRow ()) {
+			return false;
+		}
+
+		$forcePortable = (CRYPT_BLOWFISH != 1);
+		$hasher = new \PasswordHash(8, $forcePortable);
+		$hashKey = $hasher->HashPassword($preapprovalKey . \OC_Config::getValue('passwordsalt', ''));
 		$expiration = date('Y-m-d', strtotime('+1 year'));
 		$query = \OC_DB::prepare ("INSERT INTO `*PREFIX*files_accounting_adaptive_payments` ( `user` , `preapproval_key`, `expiration` ) VALUES( ? , ?, ? )" );
 		$result = $query->execute( array ($user, $hashKey, $expiration));

@@ -15,7 +15,7 @@ class PayPalAP
 	private static $__useProxy;
 	private static $__proxyHost;
 	private static $__proxyPort;
-	
+
 	/*********************************************
 	* Public usage functions
 	**********************************************/
@@ -107,7 +107,6 @@ class PayPalAP
 		if($ack=="SUCCESS")
 		{
 			$cmd = "cmd=_ap-preapproval&preapprovalkey=" . urldecode($resArray["preapprovalKey"]);
-			session_start();
     			$_SESSION['preapprovalKey'] = urldecode($resArray["preapprovalKey"]);
 			// use this for integrating preapproved payments in the payment flow
 			// https://www.paypal.com/webapps/adaptivepayment/flow/pay?expType=light&paykey=&preapprovalkey=
