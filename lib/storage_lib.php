@@ -215,7 +215,7 @@ class Storage_Lib {
 		
 		$usage = self::getLocalUsage($userid, $trashbin);
 		$ret['files_usage'] = $usage['files_usage'];
-		$ret['trash_usage'] = $usage['trash_usage'];
+		$ret['trash_usage'] = $trashbin?$usage['trash_usage']:0;
 		
 		if(\OCP\App::isEnabled('files_sharding')){
 						$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,

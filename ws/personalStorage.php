@@ -13,7 +13,7 @@ $userid = isset($_GET['userid'])?$_GET['userid']:'';
 switch ($key) {
 	case "usage":
 		$trashbin = isset($_GET['trashbin'])?$_GET['trashbin']:false;
-		$result = \OCA\Files_Accounting\Storage_Lib::personalStorage($userid, $trashbin);
+		$result = \OCA\Files_Accounting\Storage_Lib::getLocalUsage($userid, $trashbin);
 		break;
 	case "quotas":
 		$quota = \OC_Preferences::getValue($userid, 'files', 'quota');
