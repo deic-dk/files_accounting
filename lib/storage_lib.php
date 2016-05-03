@@ -217,13 +217,12 @@ class Storage_Lib {
 		$ret['files_usage'] = $usage['files_usage'];
 		$ret['trash_usage'] = $usage['trash_usage'];
 		
-		$userStorageBackup = 0;
 		if(\OCP\App::isEnabled('files_sharding')){
 						$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
 								\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
 				if(!empty($backupServerInternalUrl)){
 					$personalStorageBackup = \OCA\FilesSharding\Lib::ws('personalStorage',
-							array('userid'=>$userid, 'key'=>'userStorage', 'trashbin'=>false),
+							array('userid'=>$userid, 'key'=>'usage', 'trashbin'=>false),
 							false, true, $backupServerInternalUrl, 'files_accounting');
 					$ret['backup_usage'] = $personalStorageBackup['files_usage'];
 				}
@@ -350,7 +349,6 @@ class Storage_Lib {
 		}
 		$lines = file($usageFilePath);
 		$dailyUsage = array();
-		$userStorage  = array();
 		$averageToday = 0 ;
 		$averageTodayTrash = 0;
 		$i = 0;
@@ -596,8 +594,8 @@ class Storage_Lib {
 	}
 
 	public static function adaptivePaymentStatus($user) {
-		if ($_GET ['success'] == true)  {
-        		self::setPreapprovalKey(\OCP\User::getUser(), $_SESSION['preapprovalKey']);
+		if(isset($_GET['success']) && $_GET['success']==true) {
+			self::setPreapprovalKey(\OCP\User::getUser(), $_SESSION['preapprovalKey']);
 		}
 		unset($_SESSION['preapprovalKey']);
 	}

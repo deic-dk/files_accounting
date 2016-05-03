@@ -32,7 +32,7 @@ class ActivityHooks {
 		ActivityHooks::addNotificationsForUser(
 			$user, $subject,
 			$bill,
-			Data::PRIORITY_MEDIUM,
+			\OCA\UserNotification\Data::PRIORITY_MEDIUM,
 			$activityType
 		);
 	}

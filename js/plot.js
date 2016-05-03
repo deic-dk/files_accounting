@@ -27,7 +27,7 @@ function getData() {
 function drawGraph(data, year) {
 	var usageUnit;
 	var usageUnitStr;
-	if (data[data.length-1]['files_usage'] < 1000) {
+	if (data.length>0 && data[data.length-1]['files_usage'] < 1000) {
 		usageUnit = Math.pow(1024, 2);
 		usageUnitStr = "MB";
 	}

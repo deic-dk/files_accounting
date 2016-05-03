@@ -88,6 +88,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		
 		// Check if already logged and billed monthly
 		$path = \OCA\Files_Accounting\Storage_Lib::getInvoiceDir($user);
+		if(!file_exists($path)){
+			mkdir($path, 0777, false);
+		}
 		$files = scandir($path);
 		$currentMonthFiles = preg_grep("/^".$this->billingYear."-".$this->billingMonth."-.*\.pdf$/", $files);
 		if(!empty($currentMonthFiles)){
