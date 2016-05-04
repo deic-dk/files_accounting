@@ -27,7 +27,11 @@ $verifiedIpn = \PayPalAP::handleIpn($myPost, USE_SANDBOX);
 // IPN for preapproved payments registration
 if (isset($_POST["preapproval_key"])) {
         if ($verifiedIpn == true) {
-		\OCA\Files_Accounting\Storage_Lib::setPreapprovalKey($user, $_POST["preapproval_key"], $_POST["ending_date"]);
+		if ($_POST['approved'] == true) {
+			// TODO
+			// User::getUser() does not work for IPN. Need to find another way to get userid
+			\OCA\Files_Accounting\Storage_Lib::setPreapprovalKey($user, $_POST["preapproval_key"], $_POST["ending_date"]);		
+		}
 	}
 }
 // IPN for basic payments

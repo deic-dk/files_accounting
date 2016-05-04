@@ -601,13 +601,6 @@ class Storage_Lib {
 		}
 	}
 
-	public static function adaptivePaymentStatus($user) {
-		if(isset($_GET['success']) && $_GET['success']==true) {
-			self::setPreapprovalKey(\OCP\User::getUser(), $_SESSION['preapprovalKey']);
-		}
-		unset($_SESSION['preapprovalKey']);
-	}
-	
 	public static function setPreapprovalKey($user, $preapprovalKey, $expiration) {
 		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute ( array ($user) );
@@ -616,21 +609,17 @@ class Storage_Lib {
 		}
 		$query = \OC_DB::prepare ("INSERT INTO `*PREFIX*files_accounting_adaptive_payments` ( `user` , `preapproval_key`, `expiration` ) VALUES( ? , ?, ? )" );
 		$result = $query->execute( array ($user, $preapprovalKey, $expiration));
-
 		return $result ? true : false;
 	}
-
 	private static function deletePreapprovalKey($user, $preapprovalKey) {
 		$stmt = \OC_DB::prepare ("DELETE FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ? AND `preapproval_key` = ?");
 		$result = $stmt->execute(array($user, $preapprovalKey));		
 	}
-
 	public static function setAutomaticCharge($user, $amount, $preapprovalKey) {
 		$keyErrors = array(569013, 569017, 569018, 579024);	
 		$paypalCredentials = self::getPayPalApiCredentials();
 		$receiverEmail = self::getPayPalAccount();
 		$currencyCode = self::getBillingCurrency();
-
 		\PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
 		
 		$options = array(
@@ -657,7 +646,6 @@ class Storage_Lib {
 			
 		}	
 	}
-
 	public static function getPreapprovalKey($user, $amount){
 		$stmt = \OC_DB::prepare ( "SELECT `preapproval_key`, `expiration` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute(array($user));
