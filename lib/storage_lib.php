@@ -608,7 +608,7 @@ class Storage_Lib {
 		unset($_SESSION['preapprovalKey']);
 	}
 	
-	private static function setPreapprovalKey($user, $preapprovalKey, $expiration) {
+	public static function setPreapprovalKey($user, $preapprovalKey, $expiration) {
 		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute ( array ($user) );
 		if ($result->fetchRow ()) {
