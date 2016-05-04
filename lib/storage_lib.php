@@ -88,9 +88,6 @@ class Storage_Lib {
 	}
 	
 	public static function getChargeForUserServers($userid){
-		// Allow functioning without files_sharding.
-		// Allow local override of charge set in DB on master.
-		$localCharge = \OCP\Config::getSystemValue('chargepergb', null);
 		if(!\OCP\App::isEnabled('files_sharding')){
 			$chargeHome = array();
 			$chargeHome['charge_per_gb'] = $localCharge;
@@ -114,7 +111,7 @@ class Storage_Lib {
 				}
 			}
 			if($isMaster){
-				$chargeHome = isset($localCharge)?$localCharge:self::dbGetCharge($homeServerId);
+				$chargeHome = self::dbGetCharge($homeServerID);
 			}
 			else{
 				$chargeHome = \OCA\FilesSharding\Lib::ws('getCharge', array('server_id'=>$homeServerID),
@@ -143,16 +140,27 @@ class Storage_Lib {
 	}
 
 	public static function dbGetCharge($serverid) {
-		if(isset($serverid)){
-			$query = \OC_DB::prepare('SELECT * FROM `*PREFIX*files_sharding_servers` WHERE `id` = ?');
-			$result = $query->execute(Array($serverid));
-			while ( $row = $result->fetchRow () ) {
-				return $row;
-			}
-		}
+		// Allow functioning without files_sharding.
+		// Allow local override of charge set in DB or via defaultchargepergb on master.
+		$localChargePerGB = \OCP\Config::getSystemValue('chargepergb', null);
 		// defaultchargepergb is the default for servers
 		// with no charge def in DB on master and no local setting of chargepergb
-		return array('charge_per_gb'=> \OCP\Config::getSystemValue('defaultchargepergb', 0));
+		$globalDefaultChargePerGB = \OCP\Config::getSystemValue('defaultchargepergb', null);
+		
+		if(isset($serverid) && \OCP\App::isEnabled('files_sharding')){
+			$query = \OC_DB::prepare('SELECT * FROM `*PREFIX*files_sharding_servers` WHERE `id` = ?');
+			$result = $query->execute(Array($serverid));
+			$row = $result->fetchRow();
+		}
+		
+		if(isset($row)){
+			if(!empty($localChargePerGB)){
+				$row['charge_per_gb'] = $localChargePerGB;
+			}
+			return $row;
+		}
+		
+		return array('charge_per_gb'=> $globalDefaultChargePerGB);
 	}
 
 	public static function currentUsageAverage($userid, $year, $month) {
@@ -565,7 +573,7 @@ class Storage_Lib {
 		$currency = self::getBillingCurrency();
 		
 		$message = "Dear ".$name.",\n \nOn ".date('l jS \of F Y h:i:s A').
-		" you have exceeded your free space " . $free_space .
+		" you have exceeded your free space " . $free_quota .
 		". From now on, you will be charged ".$charge['charge_home']." ".$currency."/GB on ".
 		$charge['site_home'];
 		if(isset($serverNames['backup'])){
@@ -578,7 +586,7 @@ class Storage_Lib {
 		
 		// Send long email regardless of the user's notification settings.
 		$userEmail = \OCP\Config::getUserValue($user, 'settings', 'email');
-		$userRealName = \User::getDisplayName($user);
+		$userRealName = \OCP\User::getDisplayName($user);
 		$fromEmail = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
 		$fromRealName = $charge['site_home'];
 		try {
@@ -600,19 +608,14 @@ class Storage_Lib {
 		unset($_SESSION['preapprovalKey']);
 	}
 	
-	private static function setPreapprovalKey($user, $preapprovalKey) {
+	private static function setPreapprovalKey($user, $preapprovalKey, $expiration) {
 		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute ( array ($user) );
 		if ($result->fetchRow ()) {
 			return false;
 		}
-
-		$forcePortable = (CRYPT_BLOWFISH != 1);
-		$hasher = new \PasswordHash(8, $forcePortable);
-		$hashKey = $hasher->HashPassword($preapprovalKey . \OC_Config::getValue('passwordsalt', ''));
-		$expiration = date('Y-m-d', strtotime('+1 year'));
 		$query = \OC_DB::prepare ("INSERT INTO `*PREFIX*files_accounting_adaptive_payments` ( `user` , `preapproval_key`, `expiration` ) VALUES( ? , ?, ? )" );
-		$result = $query->execute( array ($user, $hashKey, $expiration));
+		$result = $query->execute( array ($user, $preapprovalKey, $expiration));
 
 		return $result ? true : false;
 	}
@@ -641,8 +644,6 @@ class Storage_Lib {
 		$response = \PayPalAP::doPayment($options);
 		
 		if ($response['success'] == true) {
-			//TODO
-			//update files_accounting table
 			return true;
 		}else {
 			$errors = $response['errors'];
@@ -655,6 +656,28 @@ class Storage_Lib {
 			return false;
 			
 		}	
+	}
+
+	public static function getPreapprovalKey($user, $amount){
+		$stmt = \OC_DB::prepare ( "SELECT `preapproval_key`, `expiration` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
+		$result = $stmt->execute(array($user));
+		$row = $result->fetchRow ();	
+		if($row) {
+			$expiration = strtotime($row["expiration"]);
+			$preapprovalKey = $row["preapproval_key"];
+			if (time()  > $expiration) {
+				// key has expired. Delete user from the table.
+				self::deletePreapprovalKey($user, $preapprovalKey);
+				return false;
+			}else {
+				// charge user
+				self::setAutomaticCharge($user, $amount, $preapprovalKey);	
+				return true;
+			}
+		}else{
+			// user has not signed up for preapproved payments
+			return false;
+		} 
 	}
 }
 

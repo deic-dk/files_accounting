@@ -101,13 +101,13 @@ class PayPalAP
 		if(!isset($options['maxAmountPerPayment'])) $options['maxAmountPerPayment'] = '';
 		if(!isset($options['maxNumberOfPaymentsPerPeriod'])) $options['maxNumberOfPaymentsPerPeriod'] = '';
 		if(!isset($options['pinType'])) $options['pinType'] = '';
-		
-		$resArray = self::CallPreapproval($options['returnUrl'], $options['cancelUrl'], $options['currencyCode'], $options['startingDate'], $options['endingDate'], $options['maxTotalAmountOfAllPayments'], $options['senderEmail'], $options['maxNumberOfPayments'], $options['paymentPeriod'], $options['dateOfMonth'], $options['dayOfWeek'], $options['maxAmountPerPayment'], $options['maxNumberOfPaymentsPerPeriod'], $options['pinType']);
+		if(!isset($options['ipnNotificationUrl'])) $options['ipnNotificationUrl'] = '';		
+
+		$resArray = self::CallPreapproval($options['returnUrl'], $options['cancelUrl'], $options['currencyCode'], $options['startingDate'], $options['endingDate'], $options['maxTotalAmountOfAllPayments'], $options['senderEmail'], $options['maxNumberOfPayments'], $options['paymentPeriod'], $options['dateOfMonth'], $options['dayOfWeek'], $options['maxAmountPerPayment'], $options['maxNumberOfPaymentsPerPeriod'], $options['pinType'], $options['ipnNotificationUrl']);
 		$ack = strtoupper($resArray["responseEnvelope.ack"]);
 		if($ack=="SUCCESS")
 		{
 			$cmd = "cmd=_ap-preapproval&preapprovalkey=" . urldecode($resArray["preapprovalKey"]);
-    			$_SESSION['preapprovalKey'] = urldecode($resArray["preapprovalKey"]);
 			// use this for integrating preapproved payments in the payment flow
 			// https://www.paypal.com/webapps/adaptivepayment/flow/pay?expType=light&paykey=&preapprovalkey=
 			//$cmd = "&paykey=" . $options['payKey']. "&preapprovalkey=" . urldecode($resArray["preapprovalKey"]);
@@ -188,45 +188,71 @@ class PayPalAP
 	*	If VERIFIED: true
 	*	If UNVERIFIED: false
 	*/
-	public static function handleIpn($data_array) {
-		if (self::$__env == "sandbox") 
+	public static function handleIpn($data_array, $sandbox) {
+		if ($sandbox == true) 
 		{
-			$payPalURL = "www.sandbox.paypal.com";
+			$paypal_url = "https://www.sandbox.paypal.com/cgi-bin/webscr";
 		}
 		else
 		{
-			$payPalURL = "www.paypal.com";
+			$paypal_url = "https://www.paypal.com/cgi-bin/webscr";
 		}
 		
-		$request = "cmd=_notify-validate";
+		$req = 'cmd=_notify-validate';
+        	if(function_exists('get_magic_quotes_gpc')) {
+                	$get_magic_quotes_exists = true;
+        	}
+        	foreach ($data_array as $key => $value) {
+                	if($get_magic_quotes_exists == true && get_magic_quotes_gpc() == 1) {
+                        	$value = urlencode(stripslashes($value));
+                	} else {
+                        	$value = urlencode($value);
+                	}
+                	$req .= "&$key=$value";
+        	}
+		// Post IPN data back to PayPal to validate the IPN data is genuine
+		// Without this step anyone can fake IPN data
 		
-		foreach ($data_array as $key => $value) {
-			$request .= "&" . $key . "=" . urlencode($value);
-		}
-		
-		$header = "";
-		$header .= "POST /cgi-bin/webscr HTTP/1.0\r\n";
-		$header .= "Content-Type: application/x-www-form-urlencoded\r\n";
-		$header .= "Content-Length: " . strlen($request) . "\r\n\r\n";
-		$fp = fsockopen('ssl://' . $payPalURL, 443, $errno, $errstr, 30);
-		if (!$fp) {
-			// HTTP ERROR
-		} else { 
-			fwrite($fp, $header . $request);
-			while (!feof($fp)) {
-				$res = fgets($fp, 1024);
-				if(strcmp($res, "VERIFIED") == 0) {
-					//Log successfull
-					fclose($fp);
-					return true;
-				} else if(strcmp($res, "INVALID") == 0) {
-					//Log unsuccessfull
-					fclose($fp);
-					return false;
-				}
-			} 
-		}
-	}
+	 	$ch = curl_init($paypal_url);
+        	if ($ch == FALSE) {
+                	return FALSE;
+        	}
+        	curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        	curl_setopt($ch, CURLOPT_POST, 1);
+        	curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
+        	curl_setopt($ch, CURLOPT_POSTFIELDS, $req);
+        	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+        	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        	curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
+               	curl_setopt($ch, CURLOPT_HEADER, 1);
+               	curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+        	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));	
+		// CONFIG: Please download 'cacert.pem' from "http://curl.haxx.se/docs/caextract.html" and set the directory path
+		// of the certificate as shown below. Ensure the file is readable by the webserver.
+		// This is mandatory for some environments.
+		//$cert = __DIR__ . "./cacert.pem";
+		//curl_setopt($ch, CURLOPT_CAINFO, $cert);
+		$res = curl_exec($ch);
+        	if (curl_errno($ch) != 0) { // cURL error
+                       	\OCP\Util::writeLog('IPN Testing', "Can't connect to PayPal to validate IPN message: " . curl_error($ch), 3);
+                	curl_close($ch);
+                	exit;
+        	}
+                curl_close($ch);
+		// Inspect IPN validation result and act accordingly
+		// Split response headers and payload, a better way for strcmp
+		$tokens = explode("\r\n\r\n", trim($res));
+        	$res = trim(end($tokens));
+        	if (strcmp ($res, "VERIFIED") == 0) {
+                	\OCP\Util::writeLog('PAYPAL IPN', "VERIFIED", 3);
+			return true;
+        	}else if(strcmp($res, "INVALID") == 0) {
+                	\OCP\Util::writeLog('PAYPAL IPN', "inot VERIFIED", 3);
+			return false;
+        	}
+        }
+
 	
 	
 	/*********************************************
@@ -461,7 +487,7 @@ class PayPalAP
 		return $resArray;
 	}
 	
-	private static function CallPreapproval($returnUrl, $cancelUrl, $currencyCode, $startingDate, $endingDate, $maxTotalAmountOfAllPayments, $senderEmail, $maxNumberOfPayments, $paymentPeriod, $dateOfMonth, $dayOfWeek, $maxAmountPerPayment, $maxNumberOfPaymentsPerPeriod, $pinType)
+	private static function CallPreapproval($returnUrl, $cancelUrl, $currencyCode, $startingDate, $endingDate, $maxTotalAmountOfAllPayments, $senderEmail, $maxNumberOfPayments, $paymentPeriod, $dateOfMonth, $dayOfWeek, $maxAmountPerPayment, $maxNumberOfPaymentsPerPeriod, $pinType, $ipnNotificationUrl)
 	{
 		/* Gather the information to make the Preapproval call.
 			The variable nvpstr holds the name value pairs
@@ -507,6 +533,11 @@ class PayPalAP
 		{
 			$nvpstr .= "&pinType=" . urlencode($pinType);
 		}
+		if ("" != $ipnNotificationUrl)
+		{
+			$nvpstr .= "&ipnNotificationUrl=" . urlencode($ipnNotificationUrl);
+		}
+
 		/* Make the Preapproval call to PayPal */
 		$resArray = self::hash_call("Preapproval", $nvpstr);
 		/* Return the response array */

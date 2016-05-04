@@ -12,7 +12,8 @@ $maxNumberOfPayments = '12'; // TODO
 $paymentPeriod = 'MONTHLY'; // TODO
 $maxAmountPerPayment = '1.0'; // TODO
 $dateOfMonth =  \OCA\Files_Accounting\Storage_Lib::getBillingDayOfMonth();
-
+$ipnNotificationUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/apps/files_accounting/ajax/paypal.php';
+ 
 $paypalCredentials = \OCA\Files_Accounting\Storage_Lib::getPayPalApiCredentials();
 
 $options = array(
@@ -26,6 +27,7 @@ $options = array(
     'paymentPeriod' => $paymentPeriod,
     'dateOfMonth' => $dateOfMonth,
     'maxAmountPerPayment' => $maxAmountPerPayment, // The maximum amount per payment, it cannot exceed the value in maxTotalAmountOfAllPayments
+    'ipnNotificationUrl' => $ipnNotificationUrl
     //'pinType' => 'REQUIRED'
 
 );

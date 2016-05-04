@@ -66,7 +66,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			$freequota_exceeded = \OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceeded', false);
 			// bytes to gigabytes
 			$freequotaBytes = (float) \OCP\Util::computerFileSize($personalStorage['freequota']);
-			if($personalStorage['files_usage'] > $freequotaBytes){
+			if($personalStorage['files_usage'] > $freequotaBytes && $freequotaBytes > 0){
 				// Usage above free and user has not yet been notified
 				if(!$freequota_exceeded){
 					\OCA\Files_Accounting\Storage_Lib::addQuotaExceededNotification($user, $personalStorage['freequota']);
@@ -127,11 +127,17 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$referenceHash = md5($user.$this->billingYear.$this->billingMonth);
 		$reference_id = $this->billingYear.'-'.$this->billingMonth.'-'.substr($referenceHash, 0, 8);
 
+		// user who has a preapproval not expired key is charged. 
+		// TODO
+		// It would be better if the user was charged 10 days after receiving the invoice instead of the same date. 
+		$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user, $totalSumDue);
+
 		// This goes to master
-		\OCA\Files_Accounting\Storage_Lib::updateMonth($user, \OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
-				$this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
-				$charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
-				$charge['site_backup'], $totalSumDue, $reference_id);
+		\OCA\Files_Accounting\Storage_Lib::updateMonth($user, 
+				$hasPreapprovalKey ? \OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID : \OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
+                                $this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
+                                $charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
+                                $charge['site_backup'], $totalSumDue, $reference_id);
 
 		if($totalSumDue==0){
 			\OCP\Util::writeLog('Files_Accounting', 'Not billing 0 of user: '.$user, \OCP\Util::WARN);
@@ -151,12 +157,16 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 
 		// Notify
 		ActivityHooks::invoiceCreate($user, $this->billingMonthName);
-		// If there's a non-zero bill, email the user regardless of activity settings
+		
+		// If there's a non-zero bill, email the user regardless of activity settings}		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
 		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
-
 	}
 
 	public function sendNotificationMail($user, $amount, $filename, $senderName) {
+		$userEmail = \OCP\Config::getUserValue($user, 'settings', 'email');
+		if(!empty($userEmail)){
+			return;
+		}
 		$realName = User::getDisplayName($user);
 		$url = \OCA\Files_Accounting\Storage_Lib::getBillingURL($user);
 		$path = \OCA\Files_Accounting\Storage_Lib::getInvoiceDir($user);
@@ -168,7 +178,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				$this->billingCurrency.". An invoice is attached.\n".
 				(empty($url)?"Please complete payment in your account settings":"To complete payment please visit ".
 						$url).".\n\nThank you for using our services.";
-		Mail::send($user, $username, $subject, $message, $senderEmail, $senderName, $file);
+		Mail::send($user, $realName, $subject, $message, $senderEmail, $senderName, $file);
 	}
 
 	private function invoice($user, $reference, $homeGB, $backupGB, $totalAmountDue,

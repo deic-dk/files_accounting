@@ -1,6 +1,5 @@
 <fieldset id='storageSettings' class='section'>
 	<h2>Storage Use</h2>
-	<?php \OCA\Files_Accounting\Storage_Lib::adaptivePaymentStatus(\OCP\User::getUser()); ?>
 	<select id="years">
 	<?php
 	include "billing.php";
