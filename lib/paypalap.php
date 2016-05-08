@@ -102,7 +102,7 @@ class PayPalAP
 		if(!isset($options['maxNumberOfPaymentsPerPeriod'])) $options['maxNumberOfPaymentsPerPeriod'] = '';
 		if(!isset($options['pinType'])) $options['pinType'] = '';
 		if(!isset($options['ipnNotificationUrl'])) $options['ipnNotificationUrl'] = '';		
-
+		
 		$resArray = self::CallPreapproval($options['returnUrl'], $options['cancelUrl'], $options['currencyCode'], $options['startingDate'], $options['endingDate'], $options['maxTotalAmountOfAllPayments'], $options['senderEmail'], $options['maxNumberOfPayments'], $options['paymentPeriod'], $options['dateOfMonth'], $options['dayOfWeek'], $options['maxAmountPerPayment'], $options['maxNumberOfPaymentsPerPeriod'], $options['pinType'], $options['ipnNotificationUrl']);
 		$ack = strtoupper($resArray["responseEnvelope.ack"]);
 		if($ack=="SUCCESS")

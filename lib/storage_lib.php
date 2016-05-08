@@ -2,7 +2,6 @@
 
 namespace OCA\Files_Accounting;
 
-require_once 'phpass/PasswordHash.php';
 use \OC_DB;
 
 class Storage_Lib {

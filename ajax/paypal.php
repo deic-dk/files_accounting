@@ -9,7 +9,7 @@ define("LOG_FILE", \OC::$SERVERROOT."/apps/files_accounting/ajax/ipn.log");
 
 $paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
 $mail_From = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
-$user = \OCP\User::getUser();
+$user = $_GET["user"];
 $mail_To = \OCP\Config::getUserValue($user, 'settings', 'email');
 
 // Read POST data
@@ -25,12 +25,10 @@ foreach ($raw_post_array as $keyval) {
 }
 $verifiedIpn = \PayPalAP::handleIpn($myPost, USE_SANDBOX);
 // IPN for preapproved payments registration
-if (isset($_POST["preapproval_key"])) {
+if (isset($_POST["preapproval_key"]) && isset($user)) {
         if ($verifiedIpn == true) {
 		if ($_POST['approved'] == true) {
-			// TODO
-			// User::getUser() does not work for IPN. Need to find another way to get userid
-			\OCA\Files_Accounting\Storage_Lib::setPreapprovalKey($user, $_POST["preapproval_key"], $_POST["ending_date"]);		
+			\OCA\Files_Accounting\Storage_Lib::setPreapprovalKey(urldecode($user), $_POST["preapproval_key"], $_POST["ending_date"]);		
 		}
 	}
 }

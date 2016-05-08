@@ -4,6 +4,7 @@ OCP\JSON::checkLoggedIn();
 OCP\JSON::checkAppEnabled('files_accounting');
 OCP\JSON::callCheck();
 
+$user = \OCP\User::getUser();
 $cancelUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/settings/personal?cancel=true#userapps'; 
 $returnUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/settings/personal?success=true#userapps';
 $currencyCode = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
@@ -12,7 +13,7 @@ $maxNumberOfPayments = '12'; // TODO
 $paymentPeriod = 'MONTHLY'; // TODO
 $maxAmountPerPayment = '1.0'; // TODO
 $dateOfMonth =  \OCA\Files_Accounting\Storage_Lib::getBillingDayOfMonth();
-$ipnNotificationUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/apps/files_accounting/ajax/paypal.php';
+$ipnNotificationUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/apps/files_accounting/ajax/paypal.php?user='.urlencode($user);
 
 $paypalCredentials = \OCA\Files_Accounting\Storage_Lib::getPayPalApiCredentials();
 
