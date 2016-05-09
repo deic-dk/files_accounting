@@ -18,9 +18,12 @@
 	
 	<div id="adaptive-payments">	
 		<a data-paypal-button="true" class="inlineblock button">
-			Preapprove Future Payments
+			 Preapprove Future Payments
 		</a>
+	<p>powered by <img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/pp-acceptance-small.png" alt="Buy now with PayPal" />
+	</p>
 	</div>
+
 	<table id="billingtable" class="panel">
 		<thead class="panel-heading"> 
 		<tr>

@@ -79,6 +79,8 @@ class Bill_Activity implements IExtension {
 				return (string) $this->l->t('You have successfully completed a payment: <strong>%1$s</strong>', $params);
 			case 'exceeded_space':
 				return (string) $this->l->t('You are now exceeding your free space of <strong>%1$s</strong>', $params);
+			case 'preapproved_payments':
+				return (string) $this->l->t('Your preapproval agreement has been successfully created');
 			default:
 				return false;
 		}

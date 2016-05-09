@@ -10,7 +10,6 @@ define("LOG_FILE", \OC::$SERVERROOT."/apps/files_accounting/ajax/ipn.log");
 $paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
 $mail_From = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
 $user = $_GET["user"];
-$mail_To = \OCP\Config::getUserValue($user, 'settings', 'email');
 
 // Read POST data
 // reading posted data directly from $_POST causes serialization
@@ -28,7 +27,9 @@ $verifiedIpn = \PayPalAP::handleIpn($myPost, USE_SANDBOX);
 if (isset($_POST["preapproval_key"]) && isset($user)) {
         if ($verifiedIpn == true) {
 		if ($_POST['approved'] == true) {
-			\OCA\Files_Accounting\Storage_Lib::setPreapprovalKey(urldecode($user), $_POST["preapproval_key"], $_POST["ending_date"]);		
+			$user = urldecode($user);
+			\OCA\Files_Accounting\Storage_Lib::setPreapprovalKey($user, $_POST["preapproval_key"], $_POST["ending_date"]);		
+			\OCA\Files_Accounting\ActivityHooks::preapprovedPayments($user);
 		}
 	}
 }
@@ -71,25 +72,25 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
 			elseif ($data['payment_status'] === 'Declined') {
 				\OCP\Util::writeLog('IPN Testing', "Payment with transaction ID ".$data['txn_id']." is declined. ", 3);
 				$mail_Body  = "Payment with transaction id ".$data['txn_id']." was declined.";
-				mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+				mail($paypalAccount, $mail_Subject, $mail_Body, $mail_From);
 			}
 			else {
 				\OCP\Util::writeLog('IPN Testing', "Payment with transaction ID ".$data['txn_id']." is pending. ", 3);
 				$mail_Body  = "Payment with transaction id ".$data['txn_id']." is pending.";
-				mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+				mail($paypalAccount, $mail_Subject, $mail_Body, $mail_From);
 			}
 		}
  		else {
 			\OCP\Util::writeLog('IPN Testing', "Payment with transaction ID ".$data['txn_id']." was made, but data has been changed. ", 3);
 			$mail_Subject = "Error during payment";
 			$mail_Body = "Payment with transaction ID ".$data['txn_id']." was made, but data has been changed.";
-			mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+			mail($paypalAccount, $mail_Subject, $mail_Body, $mail_From);
 		}
 	
 		// Send an email announcing the IPN message is VERIFIED
 		$mail_Subject = "VERIFIED IPN";
 		$mail_Body    = $req;
-		mail($mail_To, $mail_Subject, $mail_Body, $mail_From);
+		mail($paypalAccount, $mail_Subject, $mail_Body, $mail_From);
 	}
 }
 ?>

@@ -28,6 +28,10 @@ class ActivityHooks {
 		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'exceeded_space'); 
 	}
 	
+	public static function preapprovedPayments($user) {
+		ActivityHooks::addNotificationsForAction($user, '', \Bill_Activity::TYPE_INVOICE, 'preapproved_payments');
+	}
+
 	public static function addNotificationsForAction($user, $bill, $activityType, $subject) {
 		ActivityHooks::addNotificationsForUser(
 			$user, $subject,
