@@ -37,7 +37,7 @@ if (isset($_POST["preapproval_key"]) && isset($user)) {
 	}
 }
 // IPN for basic payments
-if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
+if (isset($_POST["txn_id"]) && isset($_POST["txn_type"]) && isset($_POST["item_name"])){
 	if ($verifiedIpn == true) {
 		// check whether the payment_status is Completed
 		// check that txn_id has not been previously processed
