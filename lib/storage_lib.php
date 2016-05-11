@@ -600,7 +600,7 @@ class Storage_Lib {
 		}
 	}
 
-	public static function setPreapprovalKey($user, $preapprovalKey, $expiration) {
+	public static function dbSetPreapprovalKey($user, $preapprovalKey, $expiration) {
 		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute ( array ($user) );
 		if ($result->fetchRow ()) {
@@ -610,6 +610,19 @@ class Storage_Lib {
 		$result = $query->execute( array ($user, $preapprovalKey, $expiration));
 		return $result ? true : false;
 	}
+
+	public static function setPreapprovalKey($user, $preapprovalKey, $expiration) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+			$result = self::dbSetPreapprovalKey($user, $preapprovalKey, $expiration);
+		}
+		else{
+			$result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user, 'key'=>'setPreapprovalKey',
+					'preapproval_key'=>$preapprovalKey, 'expiration'=>$expiration),
+					false, true, null, 'files_accounting');
+		}
+		return $result;
+	}
+
 	private static function deletePreapprovalKey($user, $preapprovalKey) {
 		$stmt = \OC_DB::prepare ("DELETE FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ? AND `preapproval_key` = ?");
 		$result = $stmt->execute(array($user, $preapprovalKey));		
@@ -645,7 +658,7 @@ class Storage_Lib {
 			
 		}	
 	}
-	public static function getPreapprovalKey($user, $amount){
+	public static function dbGetPreapprovalKey($user, $amount){
 		$stmt = \OC_DB::prepare ( "SELECT `preapproval_key`, `expiration` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute(array($user));
 		$row = $result->fetchRow ();	
@@ -666,5 +679,17 @@ class Storage_Lib {
 			return false;
 		} 
 	}
+
+	public static function getPreapprovalKey($user, $amount) {
+                if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+                        $result = self::dbGetPreapprovalKey($user, $amount);
+                }
+                else{
+                        $result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user, 
+                                        'key'=>'getPreapprovalKey', 'amount'=>$amount),
+                                        false, true, null, 'files_accounting');
+                }
+                return $result;
+        }
 }
 
