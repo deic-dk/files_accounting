@@ -22,14 +22,17 @@ foreach ($raw_post_array as $keyval) {
 	if (count($keyval) == 2)
 		$myPost[$keyval[0]] = urldecode($keyval[1]);
 }
-$verifiedIpn = \PayPalAP::handleIpn($myPost, USE_SANDBOX);
+$verifiedIpn = \OCA\Files_Accounting\PayPalAP::handleIpn($myPost, USE_SANDBOX);
+
 // IPN for preapproved payments registration
 if (isset($_POST["preapproval_key"]) && isset($user)) {
         if ($verifiedIpn == true) {
 		if ($_POST['approved'] == true) {
 			$user = urldecode($user);
-			\OCA\Files_Accounting\Storage_Lib::setPreapprovalKey($user, $_POST["preapproval_key"], $_POST["ending_date"]);		
-			\OCA\Files_Accounting\ActivityHooks::preapprovedPayments($user);
+			$result = \OCA\Files_Accounting\Storage_Lib::setPreapprovalKey($user, $_POST["preapproval_key"], $_POST["ending_date"]);		
+			if ($result == true) {
+				\OCA\Files_Accounting\ActivityHooks::preapprovedPayments($user);
+			}
 		}
 	}
 }
@@ -87,10 +90,6 @@ if (isset($_POST["txn_id"]) && isset($_POST["txn_type"])){
 			mail($paypalAccount, $mail_Subject, $mail_Body, $mail_From);
 		}
 	
-		// Send an email announcing the IPN message is VERIFIED
-		$mail_Subject = "VERIFIED IPN";
-		$mail_Body    = $req;
-		mail($paypalAccount, $mail_Subject, $mail_Body, $mail_From);
 	}
 }
 ?>

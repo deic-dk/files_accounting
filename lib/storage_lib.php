@@ -619,7 +619,7 @@ class Storage_Lib {
 		$paypalCredentials = self::getPayPalApiCredentials();
 		$receiverEmail = self::getPayPalAccount();
 		$currencyCode = self::getBillingCurrency();
-		\PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
+		PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
 		
 		$options = array(
     			'currencyCode' => $currencyCode,
@@ -629,7 +629,7 @@ class Storage_Lib {
     			'preapprovalKey' => $preapprovalKey,
 		);
 		
-		$response = \PayPalAP::doPayment($options);
+		$response = PayPalAP::doPayment($options);
 		
 		if ($response['success'] == true) {
 			return true;

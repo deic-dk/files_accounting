@@ -33,7 +33,7 @@ $options = array(
 
 );
 
-PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
-$response = PayPalAP::preApproval($options);
+\OCA\Files_Accounting\PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
+$response = \OCA\Files_Accounting\PayPalAP::preApproval($options);
 
 OC_JSON::success(array('data' => array('url'=>$response)));

@@ -3,6 +3,9 @@
 * PayPal Adaptive Payments PHP Class
 * Author: Simon W. Henriksen
 **********************************************************/
+
+namespace OCA\Files_Accounting;
+
 class PayPalAP
 {
 	private static $__apiUsername;
