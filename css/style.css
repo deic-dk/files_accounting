@@ -92,3 +92,6 @@ table#billingtable th .columntitle.name, .paypal_btn input {
 	padding-left: 12px;
 }
 
+.paypal-text {
+	font-size: 80%;
+}

@@ -11,7 +11,7 @@ $currencyCode = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
 $maxTotalAmountOfAllPayments = '2000'; // TODO
 $maxNumberOfPayments = '12'; // TODO
 $paymentPeriod = 'MONTHLY'; // TODO
-$maxAmountPerPayment = '1.0'; // TODO
+$maxAmountPerPayment = '10.0'; // TODO
 $dateOfMonth =  \OCA\Files_Accounting\Storage_Lib::getBillingDayOfMonth();
 $ipnNotificationUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/apps/files_accounting/ajax/paypal.php?user='.urlencode($user);
 

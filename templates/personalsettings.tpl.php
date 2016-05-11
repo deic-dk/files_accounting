@@ -17,11 +17,11 @@
 	</div>
 	
 	<div id="adaptive-payments">	
-		<a data-paypal-button="true" class="inlineblock button">
+		<div data-paypal-button="true" class="inlineblock button">
 			 Preapprove Future Payments
-		</a>
-	<p>powered by <img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/pp-acceptance-small.png" alt="Buy now with PayPal" />
-	</p>
+		</div>
+		<p class="paypal-text">powered by <img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/pp-acceptance-small.png"/>
+		</p>
 	</div>
 
 	<table id="billingtable" class="panel">
