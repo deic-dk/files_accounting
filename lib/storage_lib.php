@@ -623,10 +623,11 @@ class Storage_Lib {
 		return $result;
 	}
 
-	private static function deletePreapprovalKey($user, $preapprovalKey) {
+	public static function deletePreapprovalKey($user, $preapprovalKey) {
 		$stmt = \OC_DB::prepare ("DELETE FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ? AND `preapproval_key` = ?");
 		$result = $stmt->execute(array($user, $preapprovalKey));		
 	}
+
 	public static function setAutomaticCharge($user, $amount, $preapprovalKey) {
 		$keyErrors = array(569013, 569017, 569018, 579024);	
 		$paypalCredentials = self::getPayPalApiCredentials();
