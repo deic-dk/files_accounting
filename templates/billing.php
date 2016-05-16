@@ -4,6 +4,7 @@ function getBills($status=null, $year=null){
 	if(empty($year)){
 		$year = date('Y');
 	}
+	$billingCurrency = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
 	$paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
 	$bills = \OCA\Files_Accounting\Storage_Lib::getBills(OC_User::getUser (), $year, $status);
 	if(empty($bills)){
@@ -14,10 +15,16 @@ function getBills($status=null, $year=null){
 
 	foreach(array_reverse($bills) as $bill){
 		$year = $bill['year'];
-  	$month = $bill['month'];
+  		$month = $bill['month'];
 		$monthName = date('F', strtotime("2000-$month-01"));
-  	$issueDate = date("F j, Y", $bill['timestamp']);
-  	$dueDate = date("F j, Y", $bill['time_due']);
+  		$issueDate = date("F j, Y", $bill['timestamp']);
+  		$dueDate = date("F j, Y", $bill['time_due']);
+		$billStatus = $bill['status'];
+		if ($billStatus == \OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID 
+		&& !isset($status)){
+			$ret = "";
+			continue;
+		}
 		$amount = (float)$bill['amount_due'];
 		$user = OC_User::getUser();
 		if($bill['reference_id'] != ""){
@@ -26,8 +33,7 @@ function getBills($status=null, $year=null){
 		else{
 			$invoice = "";
 		}
-		$i ++;
-		$statusStr = $status==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID?
+		$statusStr = $billStatus==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING?
 			'<div class="pending">Pending</div>':
 			'<div class="paid">Paid</div>';
 		$ret = "<tr>
@@ -38,11 +44,11 @@ function getBills($status=null, $year=null){
 		<td class='column-display'>$monthName</td>
 		<td class='column-display'><a class='invoice-link'>$invoice</a></td>
 		<td class='paypal_btn'>";
-		if(!isset($status) || $status==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING){
+		if($billStatus==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING){
 			$ret .= '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
 				<input type="hidden" name="cmd" value="_xclick">
 				<input type="hidden" name="business" value="'.$paypalAccount.'">
-				<input type="hidden" name="item_name" value="Storage Use for '.$fullmonth.'">
+				<input type="hidden" name="item_name" value="Storage Use for '.$monthName.'">
 				<input type="hidden" name="amount" value="'.$amount.'">
 				<input type="hidden" name="item_number" value="'.substr($invoice, 0, -4).'">
 				<input type="hidden" name="currency_code" value="'.$billingCurrency.'">

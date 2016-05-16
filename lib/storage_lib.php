@@ -483,7 +483,7 @@ class Storage_Lib {
 		$query = \OCP\DB::prepare("SELECT * FROM `*PREFIX*files_accounting_payments` WHERE `txnid` = '$tnxid'");
 		$result = $query->execute( array ($tnxid));
 		$row = $result->fetchRow ();
-		return empty($row)?false:true;
+		return empty($row)?true:false;
 	}
 	
 	public static function checkTxnId($txnid) {
@@ -499,10 +499,10 @@ class Storage_Lib {
 	
 	public static function dbCheckPrice($price, $id) {
 		$valid_price = false;
-		$query = \OCP\DB::prepare("SELECT `bill` FROM `*PREFIX*files_accounting` WHERE `reference_id` = '$id'");
+		$query = \OCP\DB::prepare("SELECT `amount_due` FROM `*PREFIX*files_accounting` WHERE `reference_id` = '$id'");
 		$result = $query->execute(array($id));
 		while ( $row = $result->fetchRow () ) {
-			$bill = (float)$row["bill"];
+			$bill = (float)$row["amount_due"];
 			if ($bill == $price) {
 				$valid_price = true;
 			}
