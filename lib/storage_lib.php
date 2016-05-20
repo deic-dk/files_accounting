@@ -677,8 +677,8 @@ class Storage_Lib {
 				return false;
 			}else {
 				// charge user
-                                $result = self::setAutomaticCharge($user, $amount, $preapprovalKey);
-                                return $result;
+				$result = self::setAutomaticCharge($user, $amount, $preapprovalKey);	
+				return $result;
 			}
 		}else{
 			// user has not signed up for preapproved payments

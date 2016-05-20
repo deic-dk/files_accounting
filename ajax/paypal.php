@@ -10,6 +10,7 @@ define("LOG_FILE", \OC::$SERVERROOT."/apps/files_accounting/ajax/ipn.log");
 $paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
 $mail_From = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
 $user = isset($_GET["user"])?$_GET["user"]:null;
+$reference_id = isset($_GET["reference_id"])?$_GET["reference_id"]:null;
 
 // Read POST data
 // reading posted data directly from $_POST causes serialization
@@ -36,6 +37,25 @@ if (isset($_POST["preapproval_key"]) && isset($user) && $verifiedIpn && $_POST["
 		\OCA\Files_Accounting\Storage_Lib::deletePreapprovalKey($user, $_POST["preapproval_key"]);	
 	}
 }
+
+// IPN for automatic payment
+if ($verifiedIpn && isset($_POST["txn_id"]) && isset($_POST["txn_type"]) && isset($reference_id) ){
+	$data['item_number'] = $reference_id;
+	$data['txn_id'] = $_POST['txn_id'];
+	$data['payment_amount'] = $_POST['mc_gross'];
+	$data['receiver_email'] = $_POST['receiver_email'];	
+
+	$valid_txnid = \OCA\Files_Accounting\Storage_Lib::checkTxnId($data['txn_id']);
+	if ($data['receiver_email'] === $paypalAccount) {
+		if ($data['payment_status'] === 'Completed' && $valid_txnid) {
+			$orderid = \OCA\Files_Accounting\Storage_Lib::updatePayments($data);
+			 \OCP\Util::writeLog('IPN Testing', "Payment inserted into DB ", 3);
+		}else {
+			\OCP\Util::writeLog('IPN Testing', "Error inserting into DB ", 3);
+		}
+	}
+}
+
 // IPN for basic payments
 if ($verifiedIpn && isset($_POST["txn_id"]) && isset($_POST["txn_type"]) && !empty($_POST["item_name"]) ){
 	// check whether the payment_status is Completed
