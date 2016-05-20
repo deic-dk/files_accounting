@@ -1,5 +1,6 @@
 var PAYMENT_STATUS_PAID = 1;
 var PAYMENT_STATUS_PENDING = 2;
+var YEARLY_HISTORY = 3;
 
 function add_download_links() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
@@ -50,18 +51,19 @@ $(document).ready(function() {
 		$.ajax(OC.linkTo('files_accounting', 'ajax/getBills.php'), {
 			type: 'GET',
 			data: {
-				status: PAYMENT_STATUS_PENDING,
+				status: YEARLY_HISTORY,
 				year: year
 			},
 			dataType:'json',
 			success: function(data){
-				if(jsondata.status == 'success' ) {
+				if(data) {
 					$("#billingtable tr").not(':first').not(':last').remove();
 					$('#billingtable tr:first').after(data);
+					$('.centertr').hide();
 					add_download_links();
 				}
 			},
-			error: function(jsondata) {
+			error: function(data) {
 				alert("Unexpected error!");
 			}
 		});
