@@ -431,6 +431,11 @@ class Storage_Lib {
 			$average, $averageTrash, $averageBackup,
 			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,
 			$amountDue, $referenceId){
+		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting` WHERE `month` = ? AND `year` = ?" );
+		$result = $stmt->execute ( array ($month, $year) );
+		if ($result->fetchRow ()) {
+			return;
+		}
 		$stmt = \OCP\DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `year`, `month`, `timestamp`, `time_due`, `home_files_usage`, `home_trash_usage`, `backup_files_usage`, `home_id`, `backup_id`, `home_url`, `backup_url`, `home_site`, `backup_site`, `amount_due`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 		$result = $stmt->execute ( array (
 				$user,
