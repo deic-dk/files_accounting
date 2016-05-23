@@ -633,11 +633,13 @@ class Storage_Lib {
 		$result = $stmt->execute(array($user, $preapprovalKey));		
 	}
 
-	public static function setAutomaticCharge($user, $amount, $preapprovalKey) {
+	public static function setAutomaticCharge($user, $amount, $preapprovalKey, $reference_id) {
 		$keyErrors = array(569013, 569017, 569018, 579024);	
 		$paypalCredentials = self::getPayPalApiCredentials();
 		$receiverEmail = self::getPayPalAccount();
 		$currencyCode = self::getBillingCurrency();
+		$ipnNotificationUrl = 'https://test.data.deic.dk/index.php/apps/files_accounting/ajax/paypal.php?reference_id='.urlencode($reference_id);
+		//$ipnNotificationUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/apps/files_accounting/ajax/paypal.php?reference_id='.urlencode($reference_id);
 		PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
 		
 		$options = array(
@@ -646,6 +648,7 @@ class Storage_Lib {
     			'receiverAmountArray' => array($amount),
     			'actionType' => 'PAY',
     			'preapprovalKey' => $preapprovalKey,
+			'ipnNotificationUrl' => $ipnNotificationUrl
 		);
 		
 		$response = PayPalAP::doPayment($options);
@@ -664,7 +667,7 @@ class Storage_Lib {
 			
 		}	
 	}
-	public static function dbGetPreapprovalKey($user, $amount){
+	public static function dbGetPreapprovalKey($user, $amount, $reference_id){
 		$stmt = \OC_DB::prepare ( "SELECT `preapproval_key`, `expiration` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute(array($user));
 		$row = $result->fetchRow ();	
@@ -676,9 +679,17 @@ class Storage_Lib {
 				self::deletePreapprovalKey($user, $preapprovalKey);
 				return false;
 			}else {
-				// charge user
-				$result = self::setAutomaticCharge($user, $amount, $preapprovalKey);	
-				return $result;
+				// check if the payment has already been executed
+				$stmt = \OC_DB::prepare ( "SELECT `payment_status` FROM `*PREFIX*files_accounting_payments` WHERE `itemid` = ?" );	
+				$result = $stmt->execute(array($reference_id));
+				$row = $result->fetchRow ();
+				if ($row) {
+					return false;
+				}else {			
+					// charge user
+					$result = self::setAutomaticCharge($user, $amount, $preapprovalKey, $reference_id);	
+					return $result;
+				}
 			}
 		}else{
 			// user has not signed up for preapproved payments
@@ -686,13 +697,13 @@ class Storage_Lib {
 		} 
 	}
 
-	public static function getPreapprovalKey($user, $amount) {
+	public static function getPreapprovalKey($user, $amount, $reference_id) {
                 if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-                        $result = self::dbGetPreapprovalKey($user, $amount);
+                        $result = self::dbGetPreapprovalKey($user, $amount, $reference_id);
                 }
                 else{
                         $result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user, 
-                                        'key'=>'getPreapprovalKey', 'amount'=>$amount),
+                                        'key'=>'getPreapprovalKey', 'amount'=>$amount, 'reference_id'=>$reference_id),
                                         false, true, null, 'files_accounting');
                 }
                 return $result;

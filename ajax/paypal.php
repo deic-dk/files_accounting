@@ -11,6 +11,7 @@ $paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
 $mail_From = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
 $user = isset($_GET["user"])?$_GET["user"]:null;
 $reference_id = isset($_GET["reference_id"])?$_GET["reference_id"]:null;
+$automatic_pay = isset($_GET["automatic_pay"])?$_GET["automatic_pay"]:false;
 
 // Read POST data
 // reading posted data directly from $_POST causes serialization
@@ -24,6 +25,7 @@ foreach ($raw_post_array as $keyval) {
 		$myPost[$keyval[0]] = urldecode($keyval[1]);
 }
 $verifiedIpn = \OCA\Files_Accounting\PayPalAP::handleIpn($myPost, USE_SANDBOX);
+OCP\Util::writeLog('IPN Testing', "reference_id: ".$reference_id, 3);
 
 // IPN for preapproved payments registration
 if (isset($_POST["preapproval_key"]) && isset($user) && $verifiedIpn && $_POST["approved"]) {
@@ -37,14 +39,14 @@ if (isset($_POST["preapproval_key"]) && isset($user) && $verifiedIpn && $_POST["
 		\OCA\Files_Accounting\Storage_Lib::deletePreapprovalKey($user, $_POST["preapproval_key"]);	
 	}
 }
-
+OCP\Util::writeLog('IPN Testing', "txn_id: ".$_POST['transaction'], 3);
 // IPN for automatic payment
-if ($verifiedIpn && isset($_POST["txn_id"]) && isset($_POST["txn_type"]) && isset($reference_id) ){
+if ($verifiedIpn && isset($_POST["transaction[0].id"]) && isset($_POST["transaction_type"]) && isset($reference_id)){
 	$data['item_number'] = $reference_id;
-	$data['txn_id'] = $_POST['txn_id'];
-	$data['payment_amount'] = $_POST['mc_gross'];
-	$data['receiver_email'] = $_POST['receiver_email'];	
-
+	$data['txn_id'] = $_POST['transaction_id'];
+	$data['payment_amount'] = $_POST['amount'];
+	$data['receiver_email'] = $_POST['transaction0_receiver'];	
+	$data['payment_status'] = $_POST['transaction0_status'];
 	$valid_txnid = \OCA\Files_Accounting\Storage_Lib::checkTxnId($data['txn_id']);
 	if ($data['receiver_email'] === $paypalAccount) {
 		if ($data['payment_status'] === 'Completed' && $valid_txnid) {

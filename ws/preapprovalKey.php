@@ -15,7 +15,8 @@ switch ($key) {
 		break;
 	case "getPreapprovalKey":
 		$amount = isset($_GET['amount'])?$_GET['amount']:'';
-		$result = \OCA\Files_Accounting\Storage_Lib::dbGetPreapprovalKey($user, $amount);
+		$reference_id = isset($_GET['reference_id'])?$_GET['reference_id']:'';
+		$result = \OCA\Files_Accounting\Storage_Lib::dbGetPreapprovalKey($user, $amount, $reference_id);
 		break;
 }
 OCP\JSON::encodedPrint($result);
