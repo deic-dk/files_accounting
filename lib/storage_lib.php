@@ -534,7 +534,7 @@ class Storage_Lib {
 					$data['txn_id'],
 					$data['item_number'],
 					$data['payment_amount'],
-					$data['payment_status'],
+					ucfirst(strtolower($data['payment_status'])),
 					date("c")
 			));
 			return true;

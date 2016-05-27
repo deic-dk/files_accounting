@@ -17,14 +17,8 @@ $automatic_pay = isset($_GET["automatic_pay"])?$_GET["automatic_pay"]:false;
 // reading posted data directly from $_POST causes serialization
 // issues with array data in POST. Reading raw POST data from input stream instead.
 $raw_post_data = file_get_contents('php://input');
-$raw_post_array = explode('&', $raw_post_data);
-$myPost = array();
-foreach ($raw_post_array as $keyval) {
-	$keyval = explode ('=', $keyval);
-	if (count($keyval) == 2)
-		$myPost[$keyval[0]] = urldecode($keyval[1]);
-}
-$verifiedIpn = \OCA\Files_Accounting\PayPalAP::handleIpn($myPost, USE_SANDBOX);
+$verifiedIpn = \OCA\Files_Accounting\PayPalAP::handleIpn($raw_post_data, USE_SANDBOX);
+$myPost = \OCA\Files_Accounting\PayPalAP::decodePayPalIPN($raw_post_data);
 OCP\Util::writeLog('IPN Testing', "reference_id: ".$reference_id, 3);
 
 // IPN for preapproved payments registration
@@ -39,22 +33,24 @@ if (isset($_POST["preapproval_key"]) && isset($user) && $verifiedIpn && $_POST["
 		\OCA\Files_Accounting\Storage_Lib::deletePreapprovalKey($user, $_POST["preapproval_key"]);	
 	}
 }
-OCP\Util::writeLog('IPN Testing', "txn_id: ".$_POST['transaction'], 3);
+
 // IPN for automatic payment
-if ($verifiedIpn && isset($_POST["transaction[0].id"]) && isset($_POST["transaction_type"]) && isset($reference_id)){
+if ($verifiedIpn && isset($myPost['transaction'][0]['id']) && isset($_POST["transaction_type"]) && isset($reference_id)){
 	$data['item_number'] = $reference_id;
-	$data['txn_id'] = $_POST['transaction_id'];
-	$data['payment_amount'] = $_POST['amount'];
-	$data['receiver_email'] = $_POST['transaction0_receiver'];	
-	$data['payment_status'] = $_POST['transaction0_status'];
+	$data['txn_id'] = $myPost['transaction'][0]['id'];
+	$data['payment_amount'] = explode(' ', $myPost['transaction'][0]['amount'])[1];
+	$data['receiver_email'] = $myPost['transaction'][0]['receiver'];	
+	$data['payment_status'] = $_POST['status'];
 	$valid_txnid = \OCA\Files_Accounting\Storage_Lib::checkTxnId($data['txn_id']);
 	if ($data['receiver_email'] === $paypalAccount) {
-		if ($data['payment_status'] === 'Completed' && $valid_txnid) {
+		if ($data['payment_status'] === 'COMPLETED' && $valid_txnid) {
 			$orderid = \OCA\Files_Accounting\Storage_Lib::updatePayments($data);
 			 \OCP\Util::writeLog('IPN Testing', "Payment inserted into DB ", 3);
 		}else {
 			\OCP\Util::writeLog('IPN Testing', "Error inserting into DB ", 3);
 		}
+	}else {
+		\OCP\Util::writeLog('IPN Testing', "wrong email ", 3);
 	}
 }
 

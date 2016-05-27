@@ -191,7 +191,7 @@ class PayPalAP
 	*	If VERIFIED: true
 	*	If UNVERIFIED: false
 	*/
-	public static function handleIpn($data_array, $sandbox) {
+	public static function handleIpn($data, $sandbox) {
 		if ($sandbox == true) 
 		{
 			$paypal_url = "https://www.sandbox.paypal.com/cgi-bin/webscr";
@@ -201,18 +201,8 @@ class PayPalAP
 			$paypal_url = "https://www.paypal.com/cgi-bin/webscr";
 		}
 		
-		$req = 'cmd=_notify-validate';
-        	if(function_exists('get_magic_quotes_gpc')) {
-                	$get_magic_quotes_exists = true;
-        	}
-        	foreach ($data_array as $key => $value) {
-                	if($get_magic_quotes_exists == true && get_magic_quotes_gpc() == 1) {
-                        	$value = urlencode(stripslashes($value));
-                	} else {
-                        	$value = urlencode($value);
-                	}
-                	$req .= "&$key=$value";
-        	}
+		$req = 'cmd=_notify-validate&'.$data;
+
 		// Post IPN data back to PayPal to validate the IPN data is genuine
 		// Without this step anyone can fake IPN data
 		
@@ -669,5 +659,47 @@ class PayPalAP
 			}
 		}
 		return $errors;
+	}
+
+	public static function decodePayPalIPN($raw_post) {  
+    		if (empty($raw_post)) {
+        		return array();
+    		} 
+    		$post = array();
+    		$pairs = explode('&', $raw_post);
+    		foreach ($pairs as $pair) {
+        		list($key, $value) = explode('=', $pair, 2);
+        		$key = urldecode($key);
+        		$value = urldecode($value);
+        		// This looks for a key as simple as 'return_url' or as complex as 'somekey[x].property'
+        		preg_match('/(\w+)(?:\[(\d+)\])?(?:\.(\w+))?/', $key, $key_parts);
+        		switch (count($key_parts)) {
+            			case 4:
+                			// Original key format: somekey[x].property
+                			// Converting to $post[somekey][x][property]
+                			if (!isset($post[$key_parts[1]])) {
+                    				$post[$key_parts[1]] = array($key_parts[2] => array($key_parts[3] => $value));
+                			} else if (!isset($post[$key_parts[1]][$key_parts[2]])) {
+                    				$post[$key_parts[1]][$key_parts[2]] = array($key_parts[3] => $value);
+                			} else {
+                    				$post[$key_parts[1]][$key_parts[2]][$key_parts[3]] = $value;
+                			}
+               				break;
+            			case 3:
+                			// Original key format: somekey[x]
+                			// Converting to $post[somkey][x] 
+                			if (!isset($post[$key_parts[1]])) {
+                    				$post[$key_parts[1]] = array();
+                			}
+                			$post[$key_parts[1]][$key_parts[2]] = $value;
+                			break;
+            			default:
+                			// No special format
+                			$post[$key] = $value;
+                			break;
+        		}
+    		}
+
+    		return $post;
 	}
 }
