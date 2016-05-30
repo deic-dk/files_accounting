@@ -26,6 +26,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	public function __construct() {
 		$this->billingCurrency = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
 		$this->billingDay = \OCA\Files_Accounting\Storage_Lib::getBillingDayOfMonth();
+		$this->automaticPayDay = $this->billingDay + 5;
 		$this->netDays = \OCA\Files_Accounting\Storage_Lib::getBillingNetDays();
 		$this->timestamp = time();
 		$this->dueTimestamp = $this->timestamp + 60*60*24*$this->netDays;
@@ -81,7 +82,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 		
 		// Only run billing on the billing day
-		if(date("j", $this->timestamp) != $this->billingDay){
+		if(date("j", $this->timestamp) != $this->billingDay && date("j", $this->timestamp) != $this->automaticPayDay ){
 			\OCP\Util::writeLog('Files_Accounting', 'Not billing user: '.$user.' today', \OCP\Util::WARN);
 			return;
 		}
@@ -127,16 +128,21 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$referenceHash = md5($user.$this->billingYear.$this->billingMonth);
 		$reference_id = $this->billingYear.'-'.$this->billingMonth.'-'.substr($referenceHash, 0, 8);
 
-		// user who has a preapproval not expired key is charged. 
-		// TODO
-		// It would be better if the user was charged 10 days after receiving the invoice instead of the same date. 
-		if($totalSumDue!=0){
+		// user who has a not expired  preapproval key is charged. 
+		// The payment is executed no sooner than 5 days after receiving the invoice. 
+		if($totalSumDue!=0 && date("j", $this->timestamp) == $this->automaticPayDay){
 			$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user, $totalSumDue);
+			if ($hasPreapprovalKey) {
+				\OCA\Files_Accounting\Storage_Lib::updateStatus($reference_id);
+				ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
+				return;
+			}
+				
 		}
 
 		// This goes to master
 		\OCA\Files_Accounting\Storage_Lib::updateMonth($user, 
-				$hasPreapprovalKey ? \OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID : \OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
+				\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
                                 $this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
                                 $charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
                                 $charge['site_backup'], $totalSumDue, $reference_id);
@@ -159,9 +165,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 
 		// Notify
 		ActivityHooks::invoiceCreate($user, $this->billingMonthName);
-		if ($hasPreapprovalKey) {
-			ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
-		}
 		
 		// If there's a non-zero bill, email the user regardless of activity settings}		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
 		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
