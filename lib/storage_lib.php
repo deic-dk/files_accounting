@@ -604,6 +604,13 @@ class Storage_Lib {
 			\OCP\Util::writeLog('Files_Accounting', 'A problem occurred while sending e-mail. '.$e, \OCP\Util::ERROR);
 		}
 	}
+	
+	public static function getCurrentMonthBill($user, $month, $year) {
+		$stmt = \OC_DB::prepare ( "SELECT `amount_due`, `reference_id` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ? AND `month` = ? AND `year` = ?" );
+		$result = $stmt->execute ( array ($user, $month, $year) );
+		$row = $result->fetchRow();
+		return $row;
+	}
 
 	public static function dbSetPreapprovalKey($user, $preapprovalKey, $expiration) {
 		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
@@ -667,7 +674,7 @@ class Storage_Lib {
 			
 		}	
 	}
-	public static function dbGetPreapprovalKey($user, $amount, $reference_id){
+	public static function dbGetPreapprovalKey($user){
 		$stmt = \OC_DB::prepare ( "SELECT `preapproval_key`, `expiration` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute(array($user));
 		$row = $result->fetchRow ();	
@@ -687,8 +694,17 @@ class Storage_Lib {
 					return false;
 				}else {			
 					// charge user
-					$result = self::setAutomaticCharge($user, $amount, $preapprovalKey, $reference_id);	
-					return $result;
+					$currentBill = self::getCurrentMonthBill($user, date('m'), date('Y'));
+					if (isset($currentBill)) {
+						$result = self::setAutomaticCharge($user, $currentBill['amount_due'], $preapprovalKey, $currentBill['reference_id']);	
+						if ($result) {
+							// update months status
+							self::updateStatus($currentBill['reference_id']);
+						}
+						return $result;
+					} else {
+						return false;
+					}
 				}
 			}
 		}else{

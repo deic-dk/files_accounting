@@ -87,6 +87,17 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			return;
 		}
 		
+		// user who has a not expired  preapproval key is charged.
+                // The payment is executed no sooner than 5 days after receiving the invoice.
+                if(date("j", $this->timestamp) == $this->automaticPayDay){
+                        $hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user);
+                        if ($hasPreapprovalKey) {
+                                ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
+                                return;
+                        }
+
+                }
+
 		// Check if already logged and billed monthly
 		$path = \OCA\Files_Accounting\Storage_Lib::getInvoiceDir($user);
 		if(!file_exists($path)){
@@ -127,18 +138,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 		$referenceHash = md5($user.$this->billingYear.$this->billingMonth);
 		$reference_id = $this->billingYear.'-'.$this->billingMonth.'-'.substr($referenceHash, 0, 8);
-
-		// user who has a not expired  preapproval key is charged. 
-		// The payment is executed no sooner than 5 days after receiving the invoice. 
-		if($totalSumDue!=0 && date("j", $this->timestamp) == $this->automaticPayDay){
-			$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user, $totalSumDue);
-			if ($hasPreapprovalKey) {
-				\OCA\Files_Accounting\Storage_Lib::updateStatus($reference_id);
-				ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
-				return;
-			}
-				
-		}
 
 		// This goes to master
 		\OCA\Files_Accounting\Storage_Lib::updateMonth($user, 
