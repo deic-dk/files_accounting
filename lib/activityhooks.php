@@ -32,6 +32,9 @@ class ActivityHooks {
 		ActivityHooks::addNotificationsForAction($user, '', \Bill_Activity::TYPE_INVOICE, 'preapproved_payments');
 	}
 
+	public static function automaticPaymentComplete($user, $params) {
+		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'automatic_payment_complete'); 
+	}
 	public static function addNotificationsForAction($user, $bill, $activityType, $subject) {
 		ActivityHooks::addNotificationsForUser(
 			$user, $subject,

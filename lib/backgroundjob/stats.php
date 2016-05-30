@@ -130,7 +130,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		// user who has a preapproval not expired key is charged. 
 		// TODO
 		// It would be better if the user was charged 10 days after receiving the invoice instead of the same date. 
-		$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user, $totalSumDue);
+		if($totalSumDue!=0){
+			$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user, $totalSumDue);
+		}
 
 		// This goes to master
 		\OCA\Files_Accounting\Storage_Lib::updateMonth($user, 
@@ -157,6 +159,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 
 		// Notify
 		ActivityHooks::invoiceCreate($user, $this->billingMonthName);
+		if ($hasPreapprovalKey) {
+			ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
+		}
 		
 		// If there's a non-zero bill, email the user regardless of activity settings}		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
 		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
