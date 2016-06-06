@@ -216,14 +216,10 @@ class Storage_Lib {
 	}
 	
 	public static function personalStorage($userid, $trashbin=true) {
-		$defaultQuotas = self::getDefaultQuotas();
-		$defaultQuota = $defaultQuotas['default_quota'];
-		$defaultFreeQuota = $defaultQuotas['default_freequota'];
-		
+		$ret = self::dbGetQuotas($userid);
 		$usage = self::getLocalUsage($userid, $trashbin);
 		$ret['files_usage'] = $usage['files_usage'];
 		$ret['trash_usage'] = $trashbin?$usage['trash_usage']:0;
-		
 		if(\OCP\App::isEnabled('files_sharding')){
 						$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
 								\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
@@ -234,14 +230,20 @@ class Storage_Lib {
 					$ret['backup_usage'] = $personalStorageBackup['files_usage'];
 				}
 		}
-
-		// Prefs have been set on login (by user_saml+files_sharding)
-		$ret['freequota'] = 
-			\OC_Preferences::getValue($userid, 'files_accounting', 'freequota', $defaultFreeQuota);
-		$ret['quota'] =
-			\OC_Preferences::getValue($userid, 'files', 'quota', $defaultQuota);
-
 		return $ret;
+	}
+
+	public static function dbGetQuotas($userid){
+		$defaultQuotas = self::getDefaultQuotas();
+		$defaultQuota = $defaultQuotas['default_quota'];
+		$defaultFreeQuota = $defaultQuotas['default_freequota'];
+		// Prefs have been set on login (by user_saml+files_sharding)
+		$ret['freequota'] =
+		\OC_Preferences::getValue($userid, 'files_accounting', 'freequota', $defaultFreeQuota);
+		$ret['quota'] =
+		\OC_Preferences::getValue($userid, 'files', 'quota', $defaultQuota);
+		return $ret;
+		
 	}
 
 	public static function dbGetBills($user=null, $year=null, $status=null) {
@@ -369,7 +371,7 @@ class Storage_Lib {
 					$firstMonth = (int)$row[2];
 				}
 				// We will calculate the average from this day last month to today.
-				if(((int)$row[1])==$year && (empty($month) || ((int)$row[2])==$month ||
+				if(((int)$row[1])==$year && (empty($month) || ((int)$row[2])==$month && ((int)$row[3])<$todayDay ||
 						(((int)$row[2])==$month-1 || ((int)$row[2])==12 && $month==1) && ((int)$row[3])>=$todayDay)){
 					$dailyUsage[] = array('day'=>(int)$row[3], 'files_usage' => (int)$row[5],
 							'trash_usage' => (int)$row[6]);
