@@ -26,7 +26,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	public function __construct() {
 		$this->billingCurrency = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
 		$this->billingDay = \OCA\Files_Accounting\Storage_Lib::getBillingDayOfMonth();
-		$this->automaticPayDay = $this->billingDay + 5;
 		$this->netDays = \OCA\Files_Accounting\Storage_Lib::getBillingNetDays();
 		$this->timestamp = time();
 		$this->dueTimestamp = $this->timestamp + 60*60*24*$this->netDays;
@@ -82,21 +81,17 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 		
 		// Only run billing on the billing day
-		if(date("j", $this->timestamp) != $this->billingDay && date("j", $this->timestamp) != $this->automaticPayDay ){
+		if(date("j", $this->timestamp) != $this->billingDay){
 			\OCP\Util::writeLog('Files_Accounting', 'Not billing user: '.$user.' today', \OCP\Util::WARN);
 			return;
 		}
 		
 		// user who has a not expired  preapproval key is charged.
-                // The payment is executed no sooner than 5 days after receiving the invoice.
-                if(date("j", $this->timestamp) == $this->automaticPayDay){
-                        $hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user);
-                        if ($hasPreapprovalKey) {
-                                ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
-                                return;
-                        }
-
-                }
+		$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user);
+		if($hasPreapprovalKey){
+			ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
+			return;
+		}
 
 		// Check if already logged and billed monthly
 		$path = \OCA\Files_Accounting\Storage_Lib::getInvoiceDir($user);
@@ -142,9 +137,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		// This goes to master
 		\OCA\Files_Accounting\Storage_Lib::updateMonth($user, 
 				\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
-                                $this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
-                                $charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
-                                $charge['site_backup'], $totalSumDue, $reference_id);
+				$this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
+				$charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
+				$charge['site_backup'], $totalSumDue, $reference_id);
 
 		if($totalSumDue==0){
 			\OCP\Util::writeLog('Files_Accounting', 'Not billing 0 of user: '.$user, \OCP\Util::WARN);
@@ -165,7 +160,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		// Notify
 		ActivityHooks::invoiceCreate($user, $this->billingMonthName);
 		
-		// If there's a non-zero bill, email the user regardless of activity settings}		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
 		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
 	}
 
@@ -185,7 +179,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				$this->billingCurrency.". An invoice is attached.\n".
 				(empty($url)?"Please complete payment in your account settings":"To complete payment please visit ".
 						$url).".\n\nThank you for using our services.";
-		Mail::send($user, $realName, $subject, $message, $senderEmail, $senderName, $file);
+		Mail::send($userEmail, $realName, $subject, $message, $senderEmail, $senderName, $file);
 	}
 
 	private function invoice($user, $reference, $homeGB, $backupGB, $totalAmountDue,

@@ -1,6 +1,5 @@
 var PAYMENT_STATUS_PAID = 1;
 var PAYMENT_STATUS_PENDING = 2;
-var YEARLY_HISTORY = 3;
 
 function add_download_links() {
 	$('#billingtable').find('a.invoice-link').on('click', function () {
@@ -51,7 +50,6 @@ $(document).ready(function() {
 		$.ajax(OC.linkTo('files_accounting', 'ajax/getBills.php'), {
 			type: 'GET',
 			data: {
-				status: YEARLY_HISTORY,
 				year: year
 			},
 			dataType:'json',

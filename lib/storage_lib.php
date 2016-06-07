@@ -85,8 +85,11 @@ class Storage_Lib {
 	public static function getInvoiceDir($user){
 		return self::getAppDir($user)."/bills";
 	}
-	
+
 	public static function getChargeForUserServers($userid){
+		// Allow functioning without files_sharding.
+		// Allow local override of charge set in DB on master.
+		$localCharge = \OCP\Config::getSystemValue('chargepergb', null);
 		if(!\OCP\App::isEnabled('files_sharding')){
 			$chargeHome = array();
 			$chargeHome['charge_per_gb'] = $localCharge;
@@ -110,11 +113,11 @@ class Storage_Lib {
 				}
 			}
 			if($isMaster){
-				$chargeHome = self::dbGetCharge($homeServerID);
+				$chargeHome = isset($localCharge)?$localCharge:self::dbGetCharge($homeServerId);
 			}
 			else{
 				$chargeHome = \OCA\FilesSharding\Lib::ws('getCharge', array('server_id'=>$homeServerID),
-					false, true, null, 'files_accounting');
+						false, true, null, 'files_accounting');
 			}
 			$backupServerID = \OCA\FilesSharding\Lib::lookupServerIdForUser($userid,
 					\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
@@ -139,27 +142,16 @@ class Storage_Lib {
 	}
 
 	public static function dbGetCharge($serverid) {
-		// Allow functioning without files_sharding.
-		// Allow local override of charge set in DB or via defaultchargepergb on master.
-		$localChargePerGB = \OCP\Config::getSystemValue('chargepergb', null);
-		// defaultchargepergb is the default for servers
-		// with no charge def in DB on master and no local setting of chargepergb
-		$globalDefaultChargePerGB = \OCP\Config::getSystemValue('defaultchargepergb', null);
-		
-		if(isset($serverid) && \OCP\App::isEnabled('files_sharding')){
+		if(isset($serverid)){
 			$query = \OC_DB::prepare('SELECT * FROM `*PREFIX*files_sharding_servers` WHERE `id` = ?');
 			$result = $query->execute(Array($serverid));
-			$row = $result->fetchRow();
-		}
-		
-		if(isset($row)){
-			if(!empty($localChargePerGB)){
-				$row['charge_per_gb'] = $localChargePerGB;
+			while ( $row = $result->fetchRow () ) {
+				return $row;
 			}
-			return $row;
 		}
-		
-		return array('charge_per_gb'=> $globalDefaultChargePerGB);
+		// defaultchargepergb is the default for servers
+		// with no charge def in DB on master and no local setting of chargepergb
+		return array('charge_per_gb'=> \OCP\Config::getSystemValue('defaultchargepergb', 0));
 	}
 
 	public static function currentUsageAverage($userid, $year, $month) {
@@ -433,11 +425,6 @@ class Storage_Lib {
 			$average, $averageTrash, $averageBackup,
 			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,
 			$amountDue, $referenceId){
-		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting` WHERE `month` = ? AND `year` = ?" );
-		$result = $stmt->execute ( array ($month, $year) );
-		if ($result->fetchRow ()) {
-			return;
-		}
 		$stmt = \OCP\DB::prepare ( "INSERT INTO `*PREFIX*files_accounting` ( `user`, `status`, `year`, `month`, `timestamp`, `time_due`, `home_files_usage`, `home_trash_usage`, `backup_files_usage`, `home_id`, `backup_id`, `home_url`, `backup_url`, `home_site`, `backup_site`, `amount_due`, `reference_id`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 		$result = $stmt->execute ( array (
 				$user,
@@ -490,7 +477,7 @@ class Storage_Lib {
 		$query = \OCP\DB::prepare("SELECT * FROM `*PREFIX*files_accounting_payments` WHERE `txnid` = '$tnxid'");
 		$result = $query->execute( array ($tnxid));
 		$row = $result->fetchRow ();
-		return empty($row)?true:false;
+		return empty($row);
 	}
 	
 	public static function checkTxnId($txnid) {

@@ -1,17 +1,13 @@
 <?php
 
-const YEARLY_HISTORY = 3;
 function getBills($status=null, $year=null){
 	if(empty($year)){
 		$year = date('Y');
 	}
 	$billingCurrency = \OCA\Files_Accounting\Storage_Lib::getBillingCurrency();
 	$paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
-	if ($status == YEARLY_HISTORY) {
-		$bills = \OCA\Files_Accounting\Storage_Lib::getBills(OC_User::getUser (), $year, null);
-	}else {
-		$bills = \OCA\Files_Accounting\Storage_Lib::getBills(OC_User::getUser (), $year, $status);
-	}
+	$bills = \OCA\Files_Accounting\Storage_Lib::getBills(OC_User::getUser (), $year, $status);
+	
 	if(empty($bills)){
 	  return "<tr><td class='empty' colspan=7>You don't have any ".
 	  (isset($status)&&$status==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID?"old ":"").
