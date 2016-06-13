@@ -66,6 +66,42 @@ $(document).ready(function() {
 			}
 		});
 	});
+
+	$("#storageSettings #pay-info").on("click", function () {
+		var html = "<div><div>How to pay</div>\
+				<a class='oc-dialog-close close svg'></a>\
+				<div class='pay-instructions'></div>\
+				</div>";
+		$(html).dialog({
+			  dialogClass: "oc-dialog",
+			  resizeable: false,
+			  draggable: false,
+			  height: 600,
+			  width: 720
+			});
+
+		$('body').append('<div class="modalOverlay">');
+
+		$('.oc-dialog-close').live('click', function() {
+			$(".oc-dialog").remove();
+			$('.modalOverlay').remove();
+		});
+
+		$('.ui-helper-clearfix').css("display", "none");
+
+		$.ajax(OC.linkTo('files_accounting', 'ajax/getInstructions.php'), {
+			type: 'GET',
+			success: function(jsondata){
+				if(jsondata) {
+					$('.pay-instructions').html(jsondata.data.page);
+				}
+			},
+			error: function(data) {
+				alert("Unexpected error!");
+			}
+		});
+	}); 
+
 	add_download_links();
 });
 
