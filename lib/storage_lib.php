@@ -559,14 +559,14 @@ class Storage_Lib {
 		readfile($file);
 	}
 	
-	public static function addQuotaExceededNotification($user, $free_quota) {
+	public static function addQuotaExceededNotification($user, $freequota) {
 		$charge = self::getChargeForUserServers($user);
 		$name = \OCP\User::getDisplayName($user);
 		$subject = 'Free quota exceeded';
 		$currency = self::getBillingCurrency();
 		
 		$message = "Dear ".$name.",\n \nOn ".date('l jS \of F Y h:i:s A').
-		" you have exceeded your free space " . $free_quota .
+		" you have exceeded your free space " . $freequota .
 		". From now on, you will be charged ".$charge['charge_home']." ".$currency."/GB on ".
 		$charge['site_home'];
 		if(isset($serverNames['backup'])){
@@ -575,7 +575,7 @@ class Storage_Lib {
 		}
 		$message .= ".\n\nThanks for using our services.\n\n";
 		
-		\OCA\Files_Accounting\ActivityHooks::spaceExceed($user, $free_quota);
+		\OCA\Files_Accounting\ActivityHooks::spaceExceed($user, $freequota);
 		
 		// Send long email regardless of the user's notification settings.
 		$userEmail = \OCP\Config::getUserValue($user, 'settings', 'email');

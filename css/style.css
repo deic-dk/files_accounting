@@ -95,3 +95,23 @@ table#billingtable th .columntitle.name, .paypal_btn input {
 .paypal-text {
 	font-size: 80%;
 }
+
+.pay-popup {
+	overflow-y: scroll;
+	margin-top: 4%;
+	font-family: inherit;
+	font-size: 85%
+}
+.pay-popup h1 {
+	font-size: 120%;
+	font-weight: bold;
+}
+
+.pay-popup li {
+    margin-left: 5%;
+    list-style-type: circle;
+ }
+
+.pay-popup a {
+    color: #0376a3;
+}
