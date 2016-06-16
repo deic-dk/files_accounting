@@ -181,9 +181,9 @@ class Storage_Lib {
 		//https://github.com/owncloud/core/issues/5740
 		$user = \OC::$server->getUserManager()->get($userid);
 		$storage = new \OC\Files\Storage\Home(array('user'=>$user));
+		$ret = array();
 		$ret['free_space'] = $storage->free_space('/');
 		$filesInfo = $storage->getCache()->get('files');
-		$ret = array();
 		$ret['files_usage'] = trim($filesInfo['size']);
 		\OCP\Util::writeLog('Files_Accounting', 'Files usage for '.$userid. ': '.$ret['files_usage'], \OCP\Util::WARN);
 		if($trash){
@@ -210,6 +210,7 @@ class Storage_Lib {
 	public static function personalStorage($userid, $trashbin=true) {
 		$ret = self::dbGetQuotas($userid);
 		$usage = self::getLocalUsage($userid, $trashbin);
+		$ret['free_space'] = $usage['free_space'];
 		$ret['files_usage'] = $usage['files_usage'];
 		$ret['trash_usage'] = $trashbin?$usage['trash_usage']:0;
 		if(\OCP\App::isEnabled('files_sharding')){
@@ -229,11 +230,13 @@ class Storage_Lib {
 		$defaultQuotas = self::getDefaultQuotas();
 		$defaultQuota = $defaultQuotas['default_quota'];
 		$defaultFreeQuota = $defaultQuotas['default_freequota'];
+		$ret['default_quota'] = $defaultQuotas['default_quota'];
+		$ret['default_freequota'] = $defaultQuotas['default_freequota'];
 		// Prefs have been set on login (by user_saml+files_sharding)
 		$ret['freequota'] =
-		\OC_Preferences::getValue($userid, 'files_accounting', 'freequota', $defaultFreeQuota);
+			\OC_Preferences::getValue($userid, 'files_accounting', 'freequota', $defaultFreeQuota);
 		$ret['quota'] =
-		\OC_Preferences::getValue($userid, 'files', 'quota', $defaultQuota);
+			\OC_Preferences::getValue($userid, 'files', 'quota', $defaultQuota);
 		return $ret;
 		
 	}
