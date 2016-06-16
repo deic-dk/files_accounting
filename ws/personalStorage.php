@@ -18,7 +18,10 @@ switch ($key) {
 	case "quotas":
 		$quota = \OC_Preferences::getValue($userid, 'files', 'quota');
 		$freeQuota = \OC_Preferences::getValue($userid, 'files_accounting', 'freequota');
-		$result = array('quota'=>$quota, 'freequota'=>$freeQuota);
+		$defaultQuota = OC_Appconfig::getValue('files', 'default_quota');
+		$defaultFreeQuota = OC_Appconfig::getValue('files_accounting', 'default_freequota');
+		$result = array('quota'=>$quota, 'freequota'=>$freeQuota,
+				'default_quota'=>$defaultQuota, 'default_freequota'=>$defaultFreeQuota);
 		break;
 	case "defaultQuotas":
 		$defaultQuota = OC_Appconfig::getValue('files', 'default_quota');
