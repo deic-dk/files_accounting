@@ -12,7 +12,12 @@ if(isset($_GET['search'])){
 	$offset = 0;
 	while ($count < 4 && count($groups) == $limit) {
 		$limit = 4 - $count;
-		$groups = OC_Group::getGroups($_GET['search'].'%', $limit, $offset);
+		if(\OCP\App::isEnabled('user_group_admin')){
+			$groups = OC_User_Group_Admin_Util::getGroups($_GET['search'].'%', $limit, $offset);
+		}
+		else{
+			$groups = OC_Group::getGroups($_GET['search'].'%', $limit, $offset);
+		}
 		$offset += $limit;
 		foreach($groups as $group){
 			$data[] = $group;

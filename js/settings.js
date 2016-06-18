@@ -17,13 +17,13 @@ OC.Groups = {
 				event.preventDefault();
 			},
 			select : function(event, selected) {
-				var group = selected.item;
-				var groupFreeQuota = $('#groupFreeQuota').val();
-				$.post(OC.filePath('files_accounting', 'ajax', 'setFreeQuota.php'), {group : group, groupFreeQuota : groupFreeQuota},
+				var group = selected.item.value;
+				$.post(OC.filePath('user_group_admin', 'ajax', 'actions.php'), {group : group, action : 'getinfo'},
 					function ( jsondata ){
 						if(jsondata.status == 'success' ) {
-							$('.ui-autocomplete-input').val('');
-							OC.Groups.initDropDown() ;
+							$('.ui-autocomplete-input').val(jsondata.data.gid);
+							$('#groupFreeQuota').val(jsondata.data.user_freequota)
+							//OC.Groups.initDropDown() ;
 						}
 						else{
 							OC.dialogs.alert( jsondata.data.message , jsondata.data.title ) ;
