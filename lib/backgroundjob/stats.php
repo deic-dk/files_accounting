@@ -44,9 +44,20 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$users = \OC_User::getUsers();
 		foreach ($users as $user) {
 			// Add a line to usage-201*.txt locally.
-			// logDailyUsage checks if the line already exists and bails of so.
+			// logDailyUsage checks if the line already exists and bails if so.
 			\OCP\Util::writeLog('Files_Accounting', 'Logging usage of user: '.$user, \OCP\Util::WARN);
 			\OCA\Files_Accounting\Storage_Lib::logDailyUsage($user);
+			// Log group folders usage. This will not be billed to group members, but, collected, to the group owner
+			if(\OCP\App::isEnabled('user_group_admin')){
+				$memberGroups = \OC_User_Group_Admin_Util::getUserGroups($user, true, true, true);
+				if(!empty($memberGroups)){
+					foreach($memberGroups as $group){
+						if(!empty($group['user_freequota'])){
+							\OCA\Files_Accounting\Storage_Lib::logDailyUsage($user, false, $group['gid']);
+						}
+					}
+				}
+			}
 			// Update DB on master and bill
 			if(\OCP\App::isEnabled('files_sharding') && !\OCA\FilesSharding\Lib::onServerForUser($user)){
 				\OC_Log::write('files_accounting',"Not billing on non-home server for ".$user, \OC_Log::WARN);
@@ -86,11 +97,10 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			return;
 		}
 		
-		// user who has a not expired  preapproval key is charged.
+		// A user who has a not expired  preapproval key is charged.
 		$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user);
 		if($hasPreapprovalKey){
 			ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
-			return;
 		}
 
 		// Check if already logged and billed monthly
@@ -104,7 +114,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			\OCP\Util::writeLog('Files_Accounting', 'Already billed user: '.$user.' for '.$this->billingMonthName, \OCP\Util::WARN);
 			return;
 		}
-		
+
 		// Log monthly average to DB on master
 		$charge = \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
 		$monthlyUsageAverage = \OCA\Files_Accounting\Storage_Lib::currentUsageAverage(
@@ -131,26 +141,48 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				$totalSumDue = round($monthlyUsageAverage['home']['days']/28*$totalSumDue);
 			}
 		}
+		
 		$referenceHash = md5($user.$this->billingYear.$this->billingMonth);
 		$reference_id = $this->billingYear.'-'.$this->billingMonth.'-'.substr($referenceHash, 0, 8);
 
 		// This goes to master
 		\OCA\Files_Accounting\Storage_Lib::updateMonth($user, 
-				\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
+				$hasPreapprovalKey?\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID:
+					\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
 				$this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
 				$charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
 				$charge['site_backup'], $totalSumDue, $reference_id);
 
+		// Get current collected group usage for owned groups
+		// TODO: calculate averages here too...
+		$ownerGroups = \OC_User_Group_Admin_Util::getOwnerGroups($user, true);
+		$groupUsages = array();
+		$groupCharges = array();
+		if(!empty($ownerGroups)){
+			foreach($ownerGroups as $group){
+				if(!empty($group['user_freequota'])){
+					$groupUsage = \OC_User_Group_Admin_Util::getGroupUsage($group['gid']);
+					if(!empty($groupUsage)){
+						$groupUsageGB = round($groupUsage/pow(1024, 3), 2);
+						$groupUsagesGB[$group['gid']] = $groupUsageGB;
+						$groupCharges[$group['gid']] = \OC_User_Group_Admin_Util::getGroupUsageCharge($group['gid']);
+						$totalSumDue += (int)$groupCharges[$group['gid']];
+					}
+				}
+			}
+		}
+		
 		if($totalSumDue==0){
 			\OCP\Util::writeLog('Files_Accounting', 'Not billing 0 of user: '.$user, \OCP\Util::WARN);
 			return;
 		}
-
+		
 		// Create invoice and store locally. It can always be recreated from DB on master.
 		$filename = $this->invoice($user, $reference_id,
 				$homeGB+$trashGB, $backupGB, $totalSumDue,
 				$homeDue, $backupDue,
-				$charge['site_home'], $charge['site_backup']);
+				$charge['site_home'], $charge['site_backup'],
+				$groupUsagesGB, $groupCharges);
 
 		if(empty($filename)){
 			\OCP\Util::writeLog('Files_Accounting', 'ERROR: could not create invoice for '.$user.', '.$this->billingMonth.', '.$totalSumDue, \OCP\Util::ERROR);
@@ -183,7 +215,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	}
 
 	private function invoice($user, $reference, $homeGB, $backupGB, $totalAmountDue,
-			$homeAmountDue, $backupAmountDue, $homeSite, $backupSite){
+			$homeAmountDue, $backupAmountDue, $homeSite, $backupSite, $groupUsagesGB, $groupCharges){
 		
 		\OCP\Util::writeLog('Files_Accounting', 'Billing user: '.$user.' for '.$this->billingMonthName, \OCP\Util::WARN);
 
@@ -191,12 +223,18 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$vat = $vat*0.01;
 
 		$articles = array(
-				array('item'=>$homeGB.' GB cloud storage, '.$this->billingMonthName.' '.$this->billingYear.' at '.$homeSite,
-						'price'=>$homeAmountDue)
+				array('item'=>$homeGB.' GB cloud storage, '.$this->billingMonthName.' '.$this->billingYear.
+						' at '.$homeSite, 'price'=>$homeAmountDue)
 		);
 		if(!empty($backupSite) && isset($backupGB)){
-			array_push($articles, array('item'=>$backupGB. ' GB cloud storage, '.$this->billingMonthName.' - '.$this->billingYear.' at '.$backupSite,
-			'price'=>$backupAmountDue)
+			array_push($articles, array('item'=>$backupGB. ' GB cloud storage, '.$this->billingMonthName.
+				' - '.$this->billingYear.' at '.$backupSite, 'price'=>$backupAmountDue)
+			);
+		}
+		foreach($groupUsagesGB as $group=>$groupUsageGB){
+			array_push($articles, array('item'=>$groupUsageGB. ' GB cloud storage of group '.$group.
+			', '.$this->billingMonthName.' - '.$this->billingYear.' at '.$backupSite,
+			'price'=>$groupCharges[$group])
 			);
 		}
 		\OCP\Util::writeLog('Files_Accounting', 'HOME: '.$homeGB.' '.$homeAmountDue.' '.$homeSite, \OCP\Util::WARN);

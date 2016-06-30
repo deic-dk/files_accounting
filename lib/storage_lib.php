@@ -77,9 +77,9 @@ class Storage_Lib {
 		return $fs->getLocalFile('/');
 	}
 	
-	public static function getUsageFilePath($user, $year){
+	public static function getUsageFilePath($user, $year, $group=null){
 		$dir = self::getAppDir($user);
-		return $dir."/usage-".$year.".txt";
+		return $dir."/usage".(empty($group)?'_'.$group:"")."-".$year.".txt";
 	}
 	
 	public static function getInvoiceDir($user){
@@ -89,7 +89,7 @@ class Storage_Lib {
 	public static function getChargeForUserServers($userid){
 		// Allow functioning without files_sharding.
 		// Allow local override of charge set in DB on master.
-		$localCharge = \OCP\Config::getSystemValue('chargepergb', null);
+		$localCharge = \OCP\Config::getSystemValue('chargepergb');
 		if(!\OCP\App::isEnabled('files_sharding')){
 			$chargeHome = array();
 			$chargeHome['charge_per_gb'] = $localCharge;
@@ -113,7 +113,11 @@ class Storage_Lib {
 				}
 			}
 			if($isMaster){
-				$chargeHome = isset($localCharge)?$localCharge:self::dbGetCharge($homeServerId);
+				\OCP\Util::writeLog('Files_Accounting', 'HOME SERVER: '.$homeServerID, \OCP\Util::WARN);
+				$chargeHome = self::dbGetCharge($homeServerID);
+				if(isset($localCharge)){
+					$chargeHome['charge_per_gb'] = $localCharge;
+				}
 			}
 			else{
 				$chargeHome = \OCA\FilesSharding\Lib::ws('getCharge', array('server_id'=>$homeServerID),
@@ -132,8 +136,8 @@ class Storage_Lib {
 			}
 		}
 		$ret = Array(
-				'charge_home' => $chargeHome['charge_per_gb'],
-				'charge_backup' => isset($chargeBackup['charge_per_gb'])?$chargeBackup['charge_per_gb']:0,
+				'charge_home' => !empty($chargeHome['charge_per_gb'])?$chargeHome['charge_per_gb']:0,
+				'charge_backup' => !empty($chargeBackup['charge_per_gb'])?$chargeBackup['charge_per_gb']:0,
 				'id_home' => $homeServerID, 'id_backup' => !empty($backupServerID)?$backupServerID:'',
 				'url_home'=>$chargeHome['url'], 'url_backup'=>isset($chargeBackup['url'])?$chargeBackup['url']:'',
 				'site_home'=>$chargeHome['site'], 'site_backup'=>isset($chargeBackup['site'])?$chargeBackup['site']:'');
@@ -146,6 +150,7 @@ class Storage_Lib {
 			$query = \OC_DB::prepare('SELECT * FROM `*PREFIX*files_sharding_servers` WHERE `id` = ?');
 			$result = $query->execute(Array($serverid));
 			while ( $row = $result->fetchRow () ) {
+			\OCP\Util::writeLog('Files_Accounting', 'charge on '.$serverid.': '.$row['charge_per_gb'], \OCP\Util::WARN);
 				return $row;
 			}
 		}
@@ -176,17 +181,22 @@ class Storage_Lib {
 		return array('home'=>$homeUsageAverage, 'backup'=>$backupUsageAverage);
 	}
 
-	public static function getLocalUsage($userid, $trash=true) {
+	public static function getLocalUsage($userid, $trash=true, $group=null) {
 		//solution to work with ws based on
 		//https://github.com/owncloud/core/issues/5740
 		$user = \OC::$server->getUserManager()->get($userid);
 		$storage = new \OC\Files\Storage\Home(array('user'=>$user));
 		$ret = array();
 		$ret['free_space'] = $storage->free_space('/');
-		$filesInfo = $storage->getCache()->get('files');
+		if(\OCP\App::isEnabled('user_group_admin') && !empty($group)){
+			$filesInfo = $storage->getCache()->get('user_group_admin/'.$group);
+		}
+		else{
+			$filesInfo = $storage->getCache()->get('files');
+		}
 		$ret['files_usage'] = trim($filesInfo['size']);
 		\OCP\Util::writeLog('Files_Accounting', 'Files usage for '.$userid. ': '.$ret['files_usage'], \OCP\Util::WARN);
-		if($trash){
+		if($trash && empty($group)){
 			$trashInfo = $storage->getCache()->get('files_trashbin/files');
 			$ret['trash_usage'] = isset($trashInfo)&&isset($trashInfo['size'])?$trashInfo['size']:0;
 		}
@@ -214,14 +224,14 @@ class Storage_Lib {
 		$ret['files_usage'] = $usage['files_usage'];
 		$ret['trash_usage'] = $trashbin?$usage['trash_usage']:0;
 		if(\OCP\App::isEnabled('files_sharding')){
-						$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
+			$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
 								\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
-				if(!empty($backupServerInternalUrl)){
-					$personalStorageBackup = \OCA\FilesSharding\Lib::ws('personalStorage',
-							array('userid'=>$userid, 'key'=>'usage', 'trashbin'=>false),
-							false, true, $backupServerInternalUrl, 'files_accounting');
-					$ret['backup_usage'] = $personalStorageBackup['files_usage'];
-				}
+			if(!empty($backupServerInternalUrl)){
+				$personalStorageBackup = \OCA\FilesSharding\Lib::ws('personalStorage',
+						array('userid'=>$userid, 'key'=>'usage', 'trashbin'=>false),
+						false, true, $backupServerInternalUrl, 'files_accounting');
+				$ret['backup_usage'] = $personalStorageBackup['files_usage'];
+			}
 		}
 		return $ret;
 	}
@@ -285,13 +295,13 @@ class Storage_Lib {
 	 * Columns of usage-201*.txt:
 	 * 0/user_id 1/year 2/month 3/day 4/time 5/files_usage 6/trash_usage
 	 */
-	public static function logDailyUsage($user, $overwrite=false) {
+	public static function logDailyUsage($user, $overwrite=false, $group=null) {
 		$timestamp = time();
 		$year = date('Y', $timestamp);
 		$month = date('n', $timestamp);
 		$day = date('j', $timestamp);
 		$time = date('H:i:s', $timestamp);
-		$usageFilePath = self::getUsageFilePath($user, $year);
+		$usageFilePath = self::getUsageFilePath($user, $year, $group);
 		if(!file_exists($usageFilePath)){
 			touch($usageFilePath);
 		}
@@ -314,9 +324,13 @@ class Storage_Lib {
 				return;
 			}
 		}
-		$usage = self::getLocalUsage($user, true);
+		$usage = self::getLocalUsage($user, false, $group);
 		$line = $user." ".$year." ".$month." ".$day." ".$time." ".$usage['files_usage']." ".$usage['trash_usage']."\n";
 		file_put_contents($usageFilePath, $line, FILE_APPEND | LOCK_EX);
+		// For group usage, update DB on server to allow billing owner
+		if(!empty($group) && \OCP\App::isEnabled('user_group_admin')){
+			\OC_User_Group_Admin_Util::updateGroupUsage($user, $group, $usage['files_usage']);
+		}
 	}
 	
 	public static function localUsageData($user, $year, $month=null){

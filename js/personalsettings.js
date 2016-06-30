@@ -68,16 +68,23 @@ $(document).ready(function() {
 	});
 
 	$("#storageSettings #pay-info").on("click", function () {
-		var html = "<div><div>How to pay</div>\
+		var html = "<div><h3>How to pay</h3>\
 				<a class='oc-dialog-close close svg'></a>\
-				<div class='pay-instructions'></div>\
-				</div>";
+				<div class='pay-instructions'></div></div>";
 		$(html).dialog({
 			  dialogClass: "oc-dialog",
-			  resizeable: false,
-			  draggable: false,
+			  resizeable: true,
+			  draggable: true,
+			  modal: false,
 			  height: 600,
-			  width: 720
+			  width: 720,
+				buttons: [{
+					"id": "payinfo",
+					"text": "OK",
+					"click": function() {
+						$( this ).dialog( "close" );
+					}
+				}]
 			});
 
 		$('body').append('<div class="modalOverlay">');
@@ -101,6 +108,13 @@ $(document).ready(function() {
 			}
 		});
 	}); 
+	
+	$(document).click(function(e){
+		if (!$(e.target).parents().filter('.oc-dialog').length && !$(e.target).filter('#pay-info').length ) {
+			$(".oc-dialog").remove();
+			$('.modalOverlay').remove();
+		}
+	});
 
 	add_download_links();
 });

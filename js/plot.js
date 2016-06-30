@@ -46,7 +46,7 @@ function drawGraph(data, year) {
 	dataTable.addColumn('number', 'files');
 	dataTable.addColumn('number', 'trashbin');
 	for (var i=0; i<data.length; i++) {
-		date = data[i]['month']+'-'+data[i]['day'];
+		date = data[i]['day']+'-'+data[i]['month']+'-'+data[i]['year'];
 		files_usage = parseInt(data[i]['files_usage'])/usageUnit;
 		trash_usage = parseInt(data[i]['trash_usage'])/usageUnit;
 		dataTable.addRow([date, files_usage, trash_usage]);
@@ -70,3 +70,12 @@ $(window).on('resizeEnd', function() {
 	//alert(options.width);
 	chart.draw(dataTable, options);
 });
+
+$(document).ready(function(){
+	$('a[href="#userapps"]').click(function(e){
+		options.width = 0.9* $('#content').innerWidth();
+		//alert(options.width);
+		chart.draw(dataTable, options);
+	});
+});
+

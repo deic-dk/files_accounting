@@ -38,9 +38,16 @@ tr.unpaid {
 	z-index: 0;
 }
 
+#pay-info {
+	float: right;
+	margin-right: 8px;
+	margin-top: 9px;
+}
+
 #billingtable.panel: {
 	width:100%;
 	margin-top:12px;
+	margin-botto: 28px;
 }
 
 .column-display{
@@ -94,13 +101,14 @@ table#billingtable th .columntitle.name, .paypal_btn input {
 
 .paypal-text {
 	font-size: 80%;
+	margin-left: 24px;
 }
 
 .pay-popup {
-	overflow-y: scroll;
 	margin-top: 4%;
 	font-family: inherit;
-	font-size: 85%
+	font-size: 85%;
+	overflow-y: hidden;
 }
 .pay-popup h1 {
 	font-size: 120%;
@@ -115,3 +123,16 @@ table#billingtable th .columntitle.name, .paypal_btn input {
 .pay-popup a {
     color: #0376a3;
 }
+
+#adaptive-payments{
+	margin-left: 2px;
+}
+
+.pay-instructions {
+		overflow-y: hidden;
+}
+
+.quotarow {
+	margin-left: 12px;
+}
+
