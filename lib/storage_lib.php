@@ -79,7 +79,7 @@ class Storage_Lib {
 	
 	public static function getUsageFilePath($user, $year, $group=null){
 		$dir = self::getAppDir($user);
-		return $dir."/usage".(empty($group)?'_'.$group:"")."-".$year.".txt";
+		return $dir."/usage".(!empty($group)?'_'.$group:"")."-".$year.".txt";
 	}
 	
 	public static function getInvoiceDir($user){
@@ -218,9 +218,10 @@ class Storage_Lib {
 	}
 	
 	public static function personalStorage($userid, $trashbin=true) {
-		$ret = self::dbGetQuotas($userid);
+		$ret = self::getQuotas($userid);
 		$usage = self::getLocalUsage($userid, $trashbin);
-		$ret['free_space'] = $usage['free_space'];
+		$ret['free_space'] = !empty($ret['quota'])?$ret['quota']:
+			(!empty($ret['default_quota'])?$ret['default_quota']:$usage['free_space']);
 		$ret['files_usage'] = $usage['files_usage'];
 		$ret['trash_usage'] = $trashbin?$usage['trash_usage']:0;
 		if(\OCP\App::isEnabled('files_sharding')){
@@ -236,7 +237,7 @@ class Storage_Lib {
 		return $ret;
 	}
 
-	public static function dbGetQuotas($userid){
+	public static function getQuotas($userid){
 		$defaultQuotas = self::getDefaultQuotas();
 		$defaultQuota = $defaultQuotas['default_quota'];
 		$defaultFreeQuota = $defaultQuotas['default_freequota'];

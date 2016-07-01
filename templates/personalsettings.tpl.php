@@ -94,7 +94,7 @@
 		if(!empty($group['user_freequota'])){
 			$usageStats = \OCA\FilesSharding\Lib::buildFileStorageStatistics('/', $user, null, $group['gid']);
 			$usedSpace = \OCP\Util::humanFileSize($usageStats['usedSpace']);
-			echo "<div class='quotarow'>".$group['gid'].":<b>".$usedSpace."</b> of ".$group['user_freequota']."</div>";
+			echo "<div class='quotarow'>".$group['gid'].":<b> ".$usedSpace."</b> of ".$group['user_freequota']."</div>";
 		}
 	}?>	<?php endif;?>
 	<?php if(!empty($ownerGroups)):?>
