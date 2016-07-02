@@ -220,10 +220,19 @@ class Storage_Lib {
 	public static function personalStorage($userid, $trashbin=true) {
 		$ret = self::getQuotas($userid);
 		$usage = self::getLocalUsage($userid, $trashbin);
-		$ret['free_space'] = !empty($ret['quota'])?$ret['quota']:
-			(!empty($ret['default_quota'])?$ret['default_quota']:$usage['free_space']);
+		$quota = !empty($ret['quota'])?\OCP\Util::computerFileSize($ret['quota']):
+			(!empty($ret['default_quota'])?\OCP\Util::computerFileSize($ret['default_quota']):
+					null);
+		if(!empty($ret['freequota']) && !empty($quota) && $quota!==0 && $quota!=='0' &&
+				$quota<\OCP\Util::computerFileSize($ret['freequota'])){
+			$quota = \OCP\Util::computerFileSize($ret['freequota']);
+		}
+		$ret['total_space'] = $quota!==0 && $quota!=='0'?$quota:$ret['free_space'];
+		\OCP\Util::writeLog('Files_Accounting', 'Total space: '.$ret['total_space'].':'.
+				$ret['quota'].':'.$ret['freequota'].':'.$ret['default_quota'], \OCP\Util::DEBUG);
 		$ret['files_usage'] = $usage['files_usage'];
 		$ret['trash_usage'] = $trashbin?$usage['trash_usage']:0;
+		$ret['free_space'] = $ret['total_space'] - $ret['files_usage'] - $ret['trash_usage'];
 		if(\OCP\App::isEnabled('files_sharding')){
 			$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
 								\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
