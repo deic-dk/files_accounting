@@ -195,7 +195,7 @@ class Storage_Lib {
 			$filesInfo = $storage->getCache()->get('files');
 		}
 		$ret['files_usage'] = trim($filesInfo['size']);
-		\OCP\Util::writeLog('Files_Accounting', 'Files usage for '.$userid. ': '.$ret['files_usage'], \OCP\Util::WARN);
+		\OCP\Util::writeLog('Files_Accounting', 'Files usage for '.$userid. ': '.$ret['files_usage'], \OCP\Util::DEBUG);
 		if($trash && empty($group)){
 			$trashInfo = $storage->getCache()->get('files_trashbin/files');
 			$ret['trash_usage'] = isset($trashInfo)&&isset($trashInfo['size'])?$trashInfo['size']:0;
@@ -217,9 +217,9 @@ class Storage_Lib {
 		return array('default_quota'=>$defaultQuota, 'default_freequota'=>$defaultFreeQuota);
 	}
 	
-	public static function personalStorage($userid, $trashbin=true) {
+	public static function personalStorage($userid, $trashbin=true, $group=null) {
 		$ret = self::getQuotas($userid);
-		$usage = self::getLocalUsage($userid, $trashbin);
+		$usage = self::getLocalUsage($userid, $trashbin, $group);
 		$quota = !empty($ret['quota'])?\OCP\Util::computerFileSize($ret['quota']):
 			(!empty($ret['default_quota'])?\OCP\Util::computerFileSize($ret['default_quota']):
 					null);
