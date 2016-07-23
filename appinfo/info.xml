@@ -3,9 +3,15 @@
 	<id>files_accounting</id>
 	<name>Storage Use</name>
 	<description>Enable users to see their storage statistics</description>
-	<version>0.1</version>
+	<version>0.4</version>
 	<licence>AGPL</licence>
 	<author>Ioanna Psylla</author>
 	<require>4.93</require>
+	<types>
+		<type>filesystem</type>
+	</types>
+	<remote>
+		<bills>appinfo/remote.php</bills>
+	</remote>
 </info>
 

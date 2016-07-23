@@ -325,8 +325,10 @@ class Storage_Lib {
 		if(!empty($lastLine) && $lastLineArr[0]==$user &&
 				$lastLineArr[1]==$year && $lastLineArr[2]==$month && $lastLineArr[3]==$day){
 			if($overwrite){
+				$i = 0;
 				foreach ($lines as $line) {
-					file_put_contents($usageFilePath, $line, LOCK_EX);
+				 file_put_contents($usageFilePath, $line, $i==0?LOCK_EX:FILE_APPEND | LOCK_EX);
+					++$i;
 				}
 			}
 			else{

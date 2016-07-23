@@ -87,7 +87,7 @@ $(document).ready(function() {
 				}]
 			});
 
-		$('body').append('<div class="modalOverlay">');
+		$('body').append('<div class="modalOverlay"></div>');
 
 		$('.oc-dialog-close').live('click', function() {
 			$(".oc-dialog").remove();

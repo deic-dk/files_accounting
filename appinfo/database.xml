@@ -195,6 +195,9 @@
 	</table>
 
 	<table>
+	
+		<name>*dbprefix*files_accounting_adaptive_payments</name>
+	
 		<declaration>
 
 			<field>
@@ -213,7 +216,7 @@
 
 			<field>
 				<name>expiration</name>
-				<type>text</text>
+				<type>text</type>
 				<notnull>true</notnull>
 				<length>64</length>
 			</field>
