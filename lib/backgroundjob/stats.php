@@ -97,10 +97,15 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			return;
 		}
 		
+		$referenceHash = md5($user.$this->billingYear.$this->billingMonth);
+		$reference_id = $this->billingYear.'-'.$this->billingMonth.'-'.substr($referenceHash, 0, 8);
+		
 		// A user who has a not expired  preapproval key is charged.
-		$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user);
+		$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user, $this->billingMonth,
+				$this->billingYear);
 		if($hasPreapprovalKey){
-			ActivityHooks::automaticPaymentComplete($user, $this->billingMonthName);
+			ActivityHooks::automaticPaymentComplete($user,
+			array('month'=>$this->billingMonthName, 'year'=>$this->billingYear, 'item_number'=>$reference_id));
 		}
 
 		// Check if already logged and billed monthly
@@ -125,13 +130,17 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$trash = (float)$monthlyUsageAverage['home']['trash_usage'];
 
 		// kilobytes to gigabytes
-		$homeGB = round($filesHome/pow(1024, 3), 2);
-		$backupGB = round($filesBackup/pow(1024, 3), 2);
-		$trashGB = round($trash/pow(1024, 3), 2);
+		$homeGB = round($filesHome/pow(1024, 3), 3);
+		$backupGB = round($filesBackup/pow(1024, 3), 3);
+		$trashGB = round($trash/pow(1024, 3), 3);
 
 		$homeDue = round(($homeGB+$trashGB)*$charge['charge_home'], 2);
 		$backupDue = round($backupGB*$charge['charge_backup'], 2);
 		$totalSumDue = $homeDue + $backupDue;
+		
+		\OCP\Util::writeLog('Files_Accounting', 'Personal due of user: '.$user.': '.
+				$filesHome.': '.$homeGB.': '.$charge['charge_home'].
+				' : '.$backupGB.' : '.$trashGB.': '.$homeDue.' : '.$backupDue.': '.$totalSumDue.' : '.$totalSumDue, \OCP\Util::WARN);
 		
 		if($this->billingMonth==$monthlyUsageAverage['home']['first_month']){
 			if($this->billingDay<$monthlyUsageAverage['home']['first_day']){
@@ -141,41 +150,41 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				$totalSumDue = round($monthlyUsageAverage['home']['days']/28*$totalSumDue);
 			}
 		}
-		
-		$referenceHash = md5($user.$this->billingYear.$this->billingMonth);
-		$reference_id = $this->billingYear.'-'.$this->billingMonth.'-'.substr($referenceHash, 0, 8);
-
-		// This goes to master
-		\OCA\Files_Accounting\Storage_Lib::updateMonth($user, 
-				$hasPreapprovalKey?\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID:
-					\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
-				$this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
-				$charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
-				$charge['site_backup'], $totalSumDue, $reference_id);
 
 		// Get current collected group usage for owned groups
 		// TODO: calculate averages here too...
 		$ownerGroups = \OC_User_Group_Admin_Util::getOwnerGroups($user, true);
 		$groupUsages = array();
+		$groupUsagesGB = array();
 		$groupCharges = array();
 		if(!empty($ownerGroups)){
 			foreach($ownerGroups as $group){
 				if(!empty($group['user_freequota'])){
 					$groupUsage = \OC_User_Group_Admin_Util::getGroupUsage($group['gid']);
 					if(!empty($groupUsage)){
-						$groupUsageGB = round($groupUsage/pow(1024, 3), 2);
+						$groupUsageGB = round($groupUsage/pow(1024, 3), 3);
 						$groupUsagesGB[$group['gid']] = $groupUsageGB;
 						$groupCharges[$group['gid']] = \OC_User_Group_Admin_Util::getGroupUsageCharge($group['gid']);
-						$totalSumDue += (int)$groupCharges[$group['gid']];
+						$totalSumDue += round((int)$groupCharges[$group['gid']], 2);
+						\OCP\Util::writeLog('Files_Accounting', 'Usage  of group: '.$group['gid'].
+								': '.$groupUsage.' : '.$groupUsagesGB[$group['gid']], \OCP\Util::WARN);
 					}
 				}
 			}
 		}
 		
 		if($totalSumDue==0){
-			\OCP\Util::writeLog('Files_Accounting', 'Not billing 0 of user: '.$user, \OCP\Util::WARN);
-			return;
+			\OCP\Util::writeLog('Files_Accounting', 'Usage charge 0 for user: '.$user, \OCP\Util::WARN);
+			//return; // Nope - Invoices of 0 could be needed by some - they will contain non-zero usage.
 		}
+		
+		// This goes to master
+		\OCA\Files_Accounting\Storage_Lib::updateMonth($user,
+				$hasPreapprovalKey||$totalSumDue==0?\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID:
+				\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
+				$this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
+				$charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
+				$charge['site_backup'], $totalSumDue, $reference_id);
 		
 		// Create invoice and store locally. It can always be recreated from DB on master.
 		$filename = $this->invoice($user, $reference_id,
@@ -190,9 +199,11 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 
 		// Notify
-		ActivityHooks::invoiceCreate($user, $this->billingMonthName);
+		ActivityHooks::invoiceCreate($user,
+			array('month'=>$this->billingMonthName, 'year'=>$this->billingYear, 'item_number'=>$reference_id));
 		
-		$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
+		// TODO: uncomment when this goes into production
+		//$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
 	}
 
 	public function sendNotificationMail($user, $amount, $filename, $senderName) {
@@ -233,7 +244,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 		foreach($groupUsagesGB as $group=>$groupUsageGB){
 			array_push($articles, array('item'=>$groupUsageGB. ' GB cloud storage of group '.$group.
-			', '.$this->billingMonthName.' - '.$this->billingYear.' at '.$backupSite,
+			', '.$this->billingMonthName.' - '.$this->billingYear,
 			'price'=>$groupCharges[$group])
 			);
 		}
@@ -303,17 +314,17 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$pdf->Cell(0,20,'',0,1,'R');
 		$pdf->SetFillColor(211,211,211);
 		$pdf->SetDrawColor(192,192,192);
-		$pdf->Cell(170,7,'Item',1,0,'L');
-		$pdf->Cell(20,7,'Price',1,1,'C');
+		$pdf->Cell(150,7,'Item',1,0,'L');
+		$pdf->Cell(40,7,'Price',1,1,'L');
 		foreach($articles as $article){
-			$pdf->Cell(170,7,$article['item'],1,0,'L',0);
-			$pdf->Cell(20,7,$article['price']." ".$this->billingCurrency,1,1,'R',0);
+			$pdf->Cell(150,7,$article['item'],1,0,'L',0);
+			$pdf->Cell(40,7,$article['price']." ".$this->billingCurrency,1,1,'R',0);
 		}
 		$pdf->Cell(0,0,'',0,1,'R');
-		$pdf->Cell(170,7,'VAT',1,0,'R',0);
-		$pdf->Cell(20,7,$vat,1,1,'R',0);
-		$pdf->Cell(170,7,'Total',1,0,'R',0);
-		$pdf->Cell(20,7,$total." ".$this->billingCurrency,1,0,'R',0);
+		$pdf->Cell(150,7,'VAT',1,0,'R',0);
+		$pdf->Cell(40,7,$vat,1,1,'R',0);
+		$pdf->Cell(150,7,'Total',1,0,'R',0);
+		$pdf->Cell(40,7,$total." ".$this->billingCurrency,1,0,'R',0);
 		$pdf->Cell(0,20,'',0,1,'R');
 		$pdf->Cell(190,40,$comment,0,0,'C');
 

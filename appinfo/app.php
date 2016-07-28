@@ -27,3 +27,4 @@ OC::$CLASSPATH['PersonalUtil'] = OC::$SERVERROOT.'/themes/deic_theme_oc7/setting
 	);
 });
 
+OCP\Util::addScript('files_accounting', 'files_accounting_notification');

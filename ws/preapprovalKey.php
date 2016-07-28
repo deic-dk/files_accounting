@@ -5,18 +5,18 @@ if(!OCA\FilesSharding\Lib::checkIP()){
 	http_response_code(401);
 	exit;
 }
-$key = isset($_GET['key'])?$_GET['key']:null;
+$action = isset($_GET['action'])?$_GET['action']:null;
 $user = isset($_GET['userid'])?$_GET['userid']:'';
-switch ($key) {
+switch ($action) {
 	case "setPreapprovalKey":
 		$preapprovalKey = isset($_GET['preapproval_key'])?$_GET['preapproval_key']:'';
 		$expiration = isset($_GET['expiration'])?$_GET['expiration']:'';
 		$result = \OCA\Files_Accounting\Storage_Lib::dbSetPreapprovalKey($user, $preapprovalKey, $expiration);
 		break;
 	case "getPreapprovalKey":
-		$amount = isset($_GET['amount'])?$_GET['amount']:'';
-		$reference_id = isset($_GET['reference_id'])?$_GET['reference_id']:'';
-		$result = \OCA\Files_Accounting\Storage_Lib::dbGetPreapprovalKey($user, $amount, $reference_id);
+		$month = isset($_GET['month'])?$_GET['month']:'';
+		$year = isset($_GET['year'])?$_GET['year']:'';
+		$result = \OCA\Files_Accounting\Storage_Lib::dbGetPreapprovalKey($user, $month, $year);
 		break;
 }
 OCP\JSON::encodedPrint($result);

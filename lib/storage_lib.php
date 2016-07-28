@@ -194,12 +194,14 @@ class Storage_Lib {
 		else{
 			$filesInfo = $storage->getCache()->get('files');
 		}
-		$ret['files_usage'] = trim($filesInfo['size']);
-		\OCP\Util::writeLog('Files_Accounting', 'Files usage for '.$userid. ': '.$ret['files_usage'], \OCP\Util::DEBUG);
+		$ret['files_usage'] = empty($filesInfo['size'])||$filesInfo['size']=="-1"?0:
+			trim($filesInfo['size']);
 		if($trash && empty($group)){
 			$trashInfo = $storage->getCache()->get('files_trashbin/files');
-			$ret['trash_usage'] = isset($trashInfo)&&isset($trashInfo['size'])?$trashInfo['size']:0;
+			$ret['trash_usage'] = isset($trashInfo)&&!empty($trashInfo['size'])&&$trashInfo['size']!="-1"?
+			trim($trashInfo['size']):0;
 		}
+		\OCP\Util::writeLog('Files_Accounting', 'Usage for '.$userid. ': '.serialize($ret), \OCP\Util::WARN);
 		return $ret;
 	}
 	
@@ -336,8 +338,9 @@ class Storage_Lib {
 				return;
 			}
 		}
-		$usage = self::getLocalUsage($user, false, $group);
-		$line = $user." ".$year." ".$month." ".$day." ".$time." ".$usage['files_usage']." ".$usage['trash_usage']."\n";
+		$usage = self::getLocalUsage($user, true, $group);
+		$line = $user." ".$year." ".$month." ".$day." ".$time." ".$usage['files_usage']." ".
+			(empty($usage['trash_usage'])?"0":$usage['trash_usage'])."\n";
 		file_put_contents($usageFilePath, $line, FILE_APPEND | LOCK_EX);
 		// For group usage, update DB on server to allow billing owner
 		if(!empty($group) && \OCP\App::isEnabled('user_group_admin')){
@@ -624,7 +627,7 @@ class Storage_Lib {
 	}
 	
 	public static function getCurrentMonthBill($user, $month, $year) {
-		$stmt = \OC_DB::prepare ( "SELECT `amount_due`, `reference_id` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ? AND `month` = ? AND `year` = ?" );
+		$stmt = \OC_DB::prepare ( "SELECT `amount_due`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ? AND `year` = ?" );
 		$result = $stmt->execute ( array ($user, $month, $year) );
 		$row = $result->fetchRow();
 		return $row;
@@ -646,7 +649,7 @@ class Storage_Lib {
 			$result = self::dbSetPreapprovalKey($user, $preapprovalKey, $expiration);
 		}
 		else{
-			$result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user, 'key'=>'setPreapprovalKey',
+			$result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user, 'action'=>'setPreapprovalKey',
 					'preapproval_key'=>$preapprovalKey, 'expiration'=>$expiration),
 					false, true, null, 'files_accounting');
 		}
@@ -658,13 +661,16 @@ class Storage_Lib {
 		$result = $stmt->execute(array($user, $preapprovalKey));		
 	}
 
-	public static function setAutomaticCharge($user, $amount, $preapprovalKey, $reference_id) {
+	public static function setAutomaticCharge($user, $amount, $preapprovalKey, $reference_id, $month, $year) {
 		$keyErrors = array(569013, 569017, 569018, 579024);	
 		$paypalCredentials = self::getPayPalApiCredentials();
 		$receiverEmail = self::getPayPalAccount();
 		$currencyCode = self::getBillingCurrency();
-		$ipnNotificationUrl = 'https://test.data.deic.dk/index.php/apps/files_accounting/ajax/paypal.php?reference_id='.urlencode($reference_id);
-		//$ipnNotificationUrl = 'https://'.$_SERVER['SERVER_NAME'].'/index.php/apps/files_accounting/ajax/paypal.php?reference_id='.urlencode($reference_id);
+		$ipnNotificationUrl = \OC::$WEBROOT.'/index.php/apps/files_accounting/ajax/paypal.php?reference_id='.
+			urlencode($reference_id).'&month='.$month.'&user='.$user;
+		if(\OCP\App::isEnabled('files_sharding') && !\OCA\FilesSharding\Lib::isMaster()){
+			$ipnNotificationUrl = \OCA\FilesSharding\Lib::getMasterURL() . $ipnNotificationUrl;
+		}
 		PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
 		
 		$options = array(
@@ -678,9 +684,10 @@ class Storage_Lib {
 		
 		$response = PayPalAP::doPayment($options);
 		
-		if ($response['success'] == true) {
+		if($response['success'] == true){
 			return true;
-		}else {
+		}
+		else{
 			$errors = $response['errors'];
 			foreach ($errors as $error) {
 				if (in_array((int)$error['errorId'], $keyErrors) ) {
@@ -692,55 +699,63 @@ class Storage_Lib {
 			
 		}	
 	}
-	public static function dbGetPreapprovalKey($user){
+	
+	/**
+	 * 
+	 * @param $user
+	 * @return true if preapproval was set up ok, false otherwise
+	 */
+	public static function dbGetPreapprovalKey($user, $month, $year){
 		$stmt = \OC_DB::prepare ( "SELECT `preapproval_key`, `expiration` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute(array($user));
 		$row = $result->fetchRow ();	
-		if($row) {
-			$expiration = strtotime($row["expiration"]);
-			$preapprovalKey = $row["preapproval_key"];
-			if (time()  > $expiration) {
-				// key has expired. Delete user from the table.
-				self::deletePreapprovalKey($user, $preapprovalKey);
-				return false;
-			}else {
-				// check if the payment has already been executed
-				$stmt = \OC_DB::prepare ( "SELECT `payment_status` FROM `*PREFIX*files_accounting_payments` WHERE `itemid` = ?" );	
-				$result = $stmt->execute(array($reference_id));
-				$row = $result->fetchRow ();
-				if ($row) {
-					return false;
-				}else {			
-					// charge user
-					$currentBill = self::getCurrentMonthBill($user, date('m'), date('Y'));
-					if (isset($currentBill)) {
-						$result = self::setAutomaticCharge($user, $currentBill['amount_due'], $preapprovalKey, $currentBill['reference_id']);	
-						if ($result) {
-							// update months status
-							self::updateStatus($currentBill['reference_id']);
-						}
-						return $result;
-					} else {
-						return false;
-					}
-				}
-			}
-		}else{
+		if(!$row){
 			// user has not signed up for preapproved payments
 			return false;
-		} 
+		}
+		$expiration = strtotime($row["expiration"]);
+		$preapprovalKey = $row["preapproval_key"];
+		if(time()  > $expiration){
+			// key has expired. Delete user from the table.
+			self::deletePreapprovalKey($user, $preapprovalKey);
+			return false;
+		}
+
+		// get current amount due
+		$currentBill = self::getCurrentMonthBill($user, $month, $year);
+		if(empty($currentBill)){
+			return false;
+		}
+		
+		// check if the payment has already been executed
+		$stmt = \OC_DB::prepare ( "SELECT `payment_status` FROM `*PREFIX*files_accounting_payments` WHERE `itemid` = ?" );
+		$result = $stmt->execute(array($currentBill['reference_id']));
+		$row = $result->fetchRow();
+		if($row){
+			return false;
+		}
+		
+		// charge user
+		$result = self::setAutomaticCharge($user, $currentBill['amount_due'],
+				$preapprovalKey, $currentBill['reference_id'], $month, $year);
+		if($result){
+			// update months status
+			self::updateStatus($currentBill['reference_id']);
+		}
+		return $result;
 	}
 
-	public static function getPreapprovalKey($user, $amount, $reference_id) {
-                if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-                        $result = self::dbGetPreapprovalKey($user, $amount, $reference_id);
-                }
-                else{
-                        $result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user, 
-                                        'key'=>'getPreapprovalKey', 'amount'=>$amount, 'reference_id'=>$reference_id),
-                                        false, true, null, 'files_accounting');
-                }
-                return $result;
-        }
+	public static function getPreapprovalKey($user, $month, $year) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+			$result = self::dbGetPreapprovalKey($user, $month, $year);
+		}
+		else{
+			$result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user, 
+					'action'=>'getPreapprovalKey', 'month'=>$month, 'year'=>$year),
+					false, true, null, 'files_accounting');
+		}
+		return $result;
+	}
+
 }
 

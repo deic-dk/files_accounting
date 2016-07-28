@@ -35,19 +35,19 @@ class ActivityHooks {
 	public static function automaticPaymentComplete($user, $params) {
 		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'automatic_payment_complete'); 
 	}
-	public static function addNotificationsForAction($user, $bill, $activityType, $subject) {
+	public static function addNotificationsForAction($user, $params, $activityType, $subject) {
 		ActivityHooks::addNotificationsForUser(
 			$user, $subject,
-			$bill,
+			$params,
 			\OCA\UserNotification\Data::PRIORITY_MEDIUM,
 			$activityType
 		);
 	}
 	
-	protected static function addNotificationsForUser($user, $subject, $path, $priority , $type ) {
+	protected static function addNotificationsForUser($user, $subject, $params, $priority , $type ) {
 		$app = 'files_accounting';	
 		$link = $url = \OCA\Files_Accounting\Storage_Lib::getBillingURL($user, false);
-		ActivityHooks::send($app, $subject, array($path), '', array(), '', $link, $user, $type, $priority);
+		ActivityHooks::send($app, $subject, $params, '', array(), '', $link, $user, $type, $priority);
 	}
 	
 	public static function send($app, $subject, $subjectparams = array(), $message = '', $messageparams = array(), $file = '', $link = '', $affecteduser = '', $type = '', $prio) {
