@@ -87,28 +87,33 @@
 	</span>
 	<a id="pay-info">What's this?</a>
 	
-	<?php if(!empty($memberGroups)):?>
-	<hr>
-	<h3><b>Group usage</b></h3>
-	<?php foreach($memberGroups as $group){
+	<?php if(!empty($memberGroups)):
+	$i = 0;
+	foreach($memberGroups as $group){
 		if(!empty($group['user_freequota'])){
+			if($i==0){
+				echo "<hr><h3><b>Group usage</b></h3>";
+			}
 			$usageStats = \OCA\FilesSharding\Lib::buildFileStorageStatistics('/', $user, null, $group['gid']);
 			$usedSpace = \OCP\Util::humanFileSize($usageStats['usedSpace']);
 			echo "<div class='quotarow'>".$group['gid'].":<b> ".$usedSpace."</b> of ".$group['user_freequota']."</div>";
+			++$i;
 		}
 	}?>	<?php endif;?>
 	<?php if(!empty($ownerGroups)):?>
-	<hr>
-	<h3><b>Total usage of owned groups</b></h3>
-	<?php foreach($ownerGroups as $group){
+	<?php
+	$i = 0;
+	foreach($ownerGroups as $group){
 		if(!empty($group['user_freequota'])){
+			if($i==0){
+				echo "<hr><h3><b>Total usage of owned groups</b></h3>";
+			}
 			echo "<div class='quotarow'>".$group['gid'].":<b> ".
 			\OC_User_Group_Admin_Util::getGroupUsage($group['gid'])."</b></div>";
+			++$i;
 		}
-	}?>
+	}
+	?>
 	<?php endif;?>
-
-	
-	
 
 </fieldset>

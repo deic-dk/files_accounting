@@ -5,10 +5,10 @@ namespace OCA\Files_Accounting;
 use \OC_DB;
 
 class Storage_Lib {
-	
+
 	const PAYMENT_STATUS_PAID = 1;
 	const PAYMENT_STATUS_PENDING = 2;
-	
+
 	public static function getBillingDayOfMonth(){
 		return \OCP\Config::getSystemValue('billingdayofmonth', 1);
 	}
@@ -24,30 +24,30 @@ class Storage_Lib {
 	public static function getBillingCurrency(){
 		return \OCP\Config::getSystemValue('billingcurrency', 'EUR');
 	}
-	
+
 	public static function getIssuerAddress(){
 		return \OCP\Config::getSystemValue('fromaddress', '');
 	}
-	
+
 	public static function getIssuerEmail(){
 		return \OCP\Config::getSystemValue('fromemail', '');
 	}
-	
+
 	public static function getPayPalHostedButtonID(){
 		return \OCP\Config::getSystemValue('paypalhostedbuttonid', '');
 	}
-	
+
 	public static function getPayPalAccount(){
 		return \OCP\Config::getSystemValue('paypalaccount', '');
 	}
-	
+
 	public static function getPayPalApiCredentials(){
 		$username = \OCP\Config::getSystemValue('paypalusername', '');
 		$password = \OCP\Config::getSystemValue('paypalpassword', '');
 		$signature = \OCP\Config::getSystemValue('paypalsignature', '');
 		return array($username, $password, $signature);
 	}
-	
+
 	public static function getBillingURL($user, $fq=true){
 		$homeServer = "";
 		if(\OCP\App::isEnabled('files_sharding')){
@@ -65,7 +65,7 @@ class Storage_Lib {
 		}
 		return $url;
 	}
-	
+
 	private static function getAppDir($user){
 		\OC_User::setUserId($user);
 		\OC_Util::setupFS($user);
@@ -76,12 +76,12 @@ class Storage_Lib {
 		}
 		return $fs->getLocalFile('/');
 	}
-	
+
 	public static function getUsageFilePath($user, $year, $group=null){
 		$dir = self::getAppDir($user);
 		return $dir."/usage".(!empty($group)?'_'.$group:"")."-".$year.".txt";
 	}
-	
+
 	public static function getInvoiceDir($user){
 		return self::getAppDir($user)."/bills";
 	}
@@ -150,7 +150,7 @@ class Storage_Lib {
 			$query = \OC_DB::prepare('SELECT * FROM `*PREFIX*files_sharding_servers` WHERE `id` = ?');
 			$result = $query->execute(Array($serverid));
 			while ( $row = $result->fetchRow () ) {
-			\OCP\Util::writeLog('Files_Accounting', 'charge on '.$serverid.': '.$row['charge_per_gb'], \OCP\Util::WARN);
+				\OCP\Util::writeLog('Files_Accounting', 'charge on '.$serverid.': '.$row['charge_per_gb'], \OCP\Util::WARN);
 				return $row;
 			}
 		}
@@ -169,11 +169,11 @@ class Storage_Lib {
 		}
 		else{
 			$homeUsageAverage = \OCA\FilesSharding\Lib::ws('currentUsageAverage', array('userid'=>$userid, 'month'=>$month, 'year'=>$year),
-				false, true, $homeInternalUrl, 'files_accounting');
+					false, true, $homeInternalUrl, 'files_accounting');
 		}
 		if(!empty($backupServerInternalUrl)){
 			$backupUsageAverage = \OCA\FilesSharding\Lib::ws('currentUsageAverage', array('userid'=>$userid, 'month'=>$month, 'year'=>$year),
-				false, true, $backupServerInternalUrl, 'files_accounting');
+					false, true, $backupServerInternalUrl, 'files_accounting');
 		}
 		else{
 			$backupUsageAverage = 0;
@@ -195,16 +195,16 @@ class Storage_Lib {
 			$filesInfo = $storage->getCache()->get('files');
 		}
 		$ret['files_usage'] = empty($filesInfo['size'])||$filesInfo['size']=="-1"?0:
-			trim($filesInfo['size']);
+		trim($filesInfo['size']);
 		if($trash && empty($group)){
 			$trashInfo = $storage->getCache()->get('files_trashbin/files');
 			$ret['trash_usage'] = isset($trashInfo)&&!empty($trashInfo['size'])&&$trashInfo['size']!="-1"?
 			trim($trashInfo['size']):0;
 		}
-		\OCP\Util::writeLog('Files_Accounting', 'Usage for '.$userid. ': '.serialize($ret), \OCP\Util::WARN);
+		\OCP\Util::writeLog('Files_Accounting', 'Usage for '.$userid.': '.$group.': '.$trash. ': '.serialize($ret), \OCP\Util::WARN);
 		return $ret;
 	}
-	
+
 	public static function getDefaultQuotas(){
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$defaultQuota = \OC_Appconfig::getValue('files', 'default_quota', INF);
@@ -218,26 +218,51 @@ class Storage_Lib {
 		}
 		return array('default_quota'=>$defaultQuota, 'default_freequota'=>$defaultFreeQuota);
 	}
-	
+
 	public static function personalStorage($userid, $trashbin=true, $group=null) {
 		$ret = self::getQuotas($userid);
 		$usage = self::getLocalUsage($userid, $trashbin, $group);
-		$quota = !empty($ret['quota'])?\OCP\Util::computerFileSize($ret['quota']):
-			(!empty($ret['default_quota'])?\OCP\Util::computerFileSize($ret['default_quota']):
-					null);
-		if(!empty($ret['freequota']) && !empty($quota) && $quota!==0 && $quota!=='0' &&
-				$quota<\OCP\Util::computerFileSize($ret['freequota'])){
-			$quota = \OCP\Util::computerFileSize($ret['freequota']);
+		$valid_quota = empty($ret['quota']) || $ret['quota']==="default"?
+		$ret['default_quota']:$ret['quota'];
+		$valid_freequota = empty($ret['freequota']) || $ret['freequota']==="default"?
+			$ret['default_freequota']:$ret['freequota'];
+		// Bump up quota if smaller than freequota
+		$quota = !empty($valid_quota)?\OCP\Util::computerFileSize($valid_quota):INF;
+		$freequota = !empty($valid_freequota)?\OCP\Util::computerFileSize($valid_freequota):0;
+		if(!empty($freequota) && (!empty($quota) || $quota===0) && $quota<$freequota){
+			$ret['quota'] = $valid_freequota;
 		}
-		$ret['total_space'] = $quota!==0 && $quota!=='0'?$quota:$ret['free_space'];
+		if(!empty($quota) || $quota===0 || $quota==='0'){
+			$ret['total_space'] = $quota;
+			$ret['free_space'] = $quota - (int)$usage['files_usage'] -
+				(empty($usage['trash_usage'])?0:(int)$usage['trash_usage']);
+		}
+		else{
+			$loggedin_user = \OCP\USER::getUser();
+			if(empty($loggedin_user) || $userid!=$loggedin_user){
+				$old_user = $loggedin_user;
+				\OC_Util::teardownFS();
+				\OC_User::setUserId($userid);
+				\OC_Util::setupFS($userid);
+			}
+			$storageInfo = \OC_Helper::getStorageInfo("/");
+			$ret['free_space'] = (int)$storageInfo['free'];
+			//$ret['files_usage'] = (int)$storageInfo['used'];
+			$ret['total_space'] = (int)$storageInfo['total'];
+			if(!empty($old_user)){
+				\OC_Util::teardownFS();
+				\OC_User::setUserId($old_user);
+				\OC_Util::setupFS($old_user);
+				
+			}
+		}
 		\OCP\Util::writeLog('Files_Accounting', 'Total space: '.$ret['total_space'].':'.
-				$ret['quota'].':'.$ret['freequota'].':'.$ret['default_quota'], \OCP\Util::DEBUG);
+				$ret['quota'].':'.$ret['freequota'].':'.$ret['default_quota'], \OCP\Util::WARN);
 		$ret['files_usage'] = $usage['files_usage'];
 		$ret['trash_usage'] = $trashbin?$usage['trash_usage']:0;
-		$ret['free_space'] = $ret['total_space'] - $ret['files_usage'] - $ret['trash_usage'];
 		if(\OCP\App::isEnabled('files_sharding')){
 			$backupServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($userid, true,
-								\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
+					\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
 			if(!empty($backupServerInternalUrl)){
 				$personalStorageBackup = \OCA\FilesSharding\Lib::ws('personalStorage',
 						array('userid'=>$userid, 'key'=>'usage', 'trashbin'=>false),
@@ -259,8 +284,9 @@ class Storage_Lib {
 			\OC_Preferences::getValue($userid, 'files_accounting', 'freequota', $defaultFreeQuota);
 		$ret['quota'] =
 			\OC_Preferences::getValue($userid, 'files', 'quota', $defaultQuota);
+		\OCP\Util::writeLog('files_accounting', 'Quotas: '.$userid.':'.$ret['quota'].'<' .$ret['freequota'], \OC_Log::INFO);
 		return $ret;
-		
+
 	}
 
 	public static function dbGetBills($user=null, $year=null, $status=null) {
@@ -282,7 +308,7 @@ class Storage_Lib {
 		$result = $stmt->execute($arr);
 		return $result->fetchAll();
 	}
-	
+
 	public static function getBills($user=null, $year=null, $status=null) {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$result = self::dbGetBills($user, $year, $status);
@@ -302,7 +328,7 @@ class Storage_Lib {
 		}
 		return $result;
 	}
-	
+
 	/**
 	 * Columns of usage-201*.txt:
 	 * 0/user_id 1/year 2/month 3/day 4/time 5/files_usage 6/trash_usage
@@ -340,14 +366,14 @@ class Storage_Lib {
 		}
 		$usage = self::getLocalUsage($user, true, $group);
 		$line = $user." ".$year." ".$month." ".$day." ".$time." ".$usage['files_usage']." ".
-			(empty($usage['trash_usage'])?"0":$usage['trash_usage'])."\n";
+				(empty($usage['trash_usage'])?"0":$usage['trash_usage'])."\n";
 		file_put_contents($usageFilePath, $line, FILE_APPEND | LOCK_EX);
 		// For group usage, update DB on server to allow billing owner
 		if(!empty($group) && \OCP\App::isEnabled('user_group_admin')){
 			\OC_User_Group_Admin_Util::updateGroupUsage($user, $group, $usage['files_usage']);
 		}
 	}
-	
+
 	public static function localUsageData($user, $year, $month=null){
 		$dailyUsage = array();
 		$usageFilePath = self::getUsageFilePath($user, $year);
@@ -366,16 +392,16 @@ class Storage_Lib {
 		}
 		return $dailyUsage;
 	}
-	
+
 	public static function localCurrentUsageAverage($user, $year, $month=null, $timestamp=null) {
-		
+
 		if(empty($timestamp)){
 			$todayDay = (int)date("j");
 		}
 		else{
 			$todayDay = (int)date("j", $timestamp);
 		}
-		
+
 		$usageFilePath = self::getUsageFilePath($user, $year);
 		if(!file_exists($usageFilePath)){
 			return array('files_usage'=>0, 'trash_usage'=>0);
@@ -408,11 +434,11 @@ class Storage_Lib {
 			$averageToday = array_sum(array_column($dailyUsage, 'files_usage')) / $i;
 			$averageTodayTrash = array_sum(array_column($dailyUsage, 'trash_usage')) / $i;
 		}
-	
+
 		return array('days'=>$i, 'first_day'=>$firstDay, 'first_month'=>$firstMonth,
 				'files_usage'=>$averageToday, 'trash_usage'=>$averageTodayTrash);
 	}
-	
+
 	public static function dbAccountedYears($user) {
 		$year = date('Y');
 		$stmt = \OCP\DB::prepare ( "SELECT DISTINCT `year`  FROM `*PREFIX*files_accounting` WHERE `user` = ?" );
@@ -421,10 +447,10 @@ class Storage_Lib {
 		while($row = $result->fetchRow()){
 			$years[]= $row['year'];
 		}
-	
+
 		return array_reverse(array_unique($years));
 	}
-	
+
 	public static function accountedYears($user) {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$result = self::dbAccountedYears($user);
@@ -435,13 +461,13 @@ class Storage_Lib {
 		}
 		return $result;
 	}
-	
+
 	public static function dbUpdateStatus($id) {
 		$query = \OCP\DB::prepare ( "UPDATE `*PREFIX*files_accounting` SET `status` = ".self::PAYMENT_STATUS_PAID." WHERE `reference_id` = ?" );
 		$result = $query->execute ( array ($id) );
 		return $result;
 	}
-	
+
 	public static function updateStatus($id) {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$result = self::dbUpdateStatus($id);
@@ -452,7 +478,7 @@ class Storage_Lib {
 		}
 		return $result;
 	}
-	
+
 	public static function dbUpdateMonth($user, $status, $year, $month, $timestamp, $timedue,
 			$average, $averageTrash, $averageBackup,
 			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,
@@ -477,10 +503,10 @@ class Storage_Lib {
 				$amountDue,
 				$referenceId
 		) );
-	
+
 		return $result;
 	}
-	
+
 	public static function updateMonth($user, $status, $year, $month, $timestamp, $timedue,
 			$average, $averageTrash, $averageBackup,
 			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,
@@ -504,14 +530,14 @@ class Storage_Lib {
 		}
 		return $result;
 	}
-	
+
 	public static function dbCheckTxnId($tnxid) {
 		$query = \OCP\DB::prepare("SELECT * FROM `*PREFIX*files_accounting_payments` WHERE `txnid` = '$tnxid'");
 		$result = $query->execute( array ($tnxid));
 		$row = $result->fetchRow ();
 		return empty($row);
 	}
-	
+
 	public static function checkTxnId($txnid) {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$result = self::dbCheckTxnId($txnid);
@@ -522,7 +548,7 @@ class Storage_Lib {
 		}
 		return $result;
 	}
-	
+
 	public static function dbCheckPrice($price, $id) {
 		$valid_price = false;
 		$query = \OCP\DB::prepare("SELECT `amount_due` FROM `*PREFIX*files_accounting` WHERE `reference_id` = '$id'");
@@ -535,7 +561,7 @@ class Storage_Lib {
 		}
 		return $valid_price;
 	}
-	
+
 	public static function checkPrice($price, $id) {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$result = self::dbCheckPrice($price, $id);
@@ -545,9 +571,9 @@ class Storage_Lib {
 					false, true, null, 'files_accounting');
 		}
 		return $result;
-	
+
 	}
-	
+
 	public static function dbUpdatePayments($data) {
 		if(is_array($data)){
 			$query = \OCP\DB::prepare("INSERT INTO `*PREFIX*files_accounting_payments` ( `txnid`, `itemid`, `payment_amount`, `payment_status`, `created_time`) VALUES (?, ?, ?, ?, ?)");
@@ -564,7 +590,7 @@ class Storage_Lib {
 			return false;
 		}
 	}
-	
+
 	public static function updatePayments($data) {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$result = self::dbUpdatePayments($data);
@@ -577,7 +603,7 @@ class Storage_Lib {
 		}
 		return $result;
 	}
-	
+
 	public static function getInvoice($filename, $user) {
 		$dir = self::getInvoiceDir($user);
 		$file = $dir . "/" . $filename;
@@ -590,13 +616,13 @@ class Storage_Lib {
 		header("Content-Disposition: attachment;filename=$filename");
 		readfile($file);
 	}
-	
+
 	public static function addQuotaExceededNotification($user, $freequota) {
 		$charge = self::getChargeForUserServers($user);
 		$name = \OCP\User::getDisplayName($user);
 		$subject = 'Free quota exceeded';
 		$currency = self::getBillingCurrency();
-		
+
 		$message = "Dear ".$name.",\n \nOn ".date('l jS \of F Y h:i:s A').
 		" you have exceeded your free space " . $freequota .
 		". From now on, you will be charged ".$charge['charge_home']." ".$currency."/GB on ".
@@ -606,9 +632,9 @@ class Storage_Lib {
 					$charge['site_backup'];
 		}
 		$message .= ".\n\nThanks for using our services.\n\n";
-		
+
 		\OCA\Files_Accounting\ActivityHooks::spaceExceed($user, $freequota);
-		
+
 		// Send long email regardless of the user's notification settings.
 		$userEmail = \OCP\Config::getUserValue($user, 'settings', 'email');
 		$userRealName = \OCP\User::getDisplayName($user);
@@ -625,7 +651,7 @@ class Storage_Lib {
 			\OCP\Util::writeLog('Files_Accounting', 'A problem occurred while sending e-mail. '.$e, \OCP\Util::ERROR);
 		}
 	}
-	
+
 	public static function getCurrentMonthBill($user, $month, $year) {
 		$stmt = \OC_DB::prepare ( "SELECT `amount_due`, `reference_id` FROM `*PREFIX*files_accounting` WHERE `user` = ? AND `month` = ? AND `year` = ?" );
 		$result = $stmt->execute ( array ($user, $month, $year) );
@@ -658,32 +684,32 @@ class Storage_Lib {
 
 	public static function deletePreapprovalKey($user, $preapprovalKey) {
 		$stmt = \OC_DB::prepare ("DELETE FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ? AND `preapproval_key` = ?");
-		$result = $stmt->execute(array($user, $preapprovalKey));		
+		$result = $stmt->execute(array($user, $preapprovalKey));
 	}
 
 	public static function setAutomaticCharge($user, $amount, $preapprovalKey, $reference_id, $month, $year) {
-		$keyErrors = array(569013, 569017, 569018, 579024);	
+		$keyErrors = array(569013, 569017, 569018, 579024);
 		$paypalCredentials = self::getPayPalApiCredentials();
 		$receiverEmail = self::getPayPalAccount();
 		$currencyCode = self::getBillingCurrency();
 		$ipnNotificationUrl = \OC::$WEBROOT.'/index.php/apps/files_accounting/ajax/paypal.php?reference_id='.
-			urlencode($reference_id).'&month='.$month.'&user='.$user;
+				urlencode($reference_id).'&month='.$month.'&user='.$user;
 		if(\OCP\App::isEnabled('files_sharding') && !\OCA\FilesSharding\Lib::isMaster()){
 			$ipnNotificationUrl = \OCA\FilesSharding\Lib::getMasterURL() . $ipnNotificationUrl;
 		}
 		PayPalAP::setAuth($paypalCredentials[0], $paypalCredentials[1], $paypalCredentials[2]);
-		
+
 		$options = array(
-    			'currencyCode' => $currencyCode,
-    			'receiverEmailArray' => array($receiverEmail),
-    			'receiverAmountArray' => array($amount),
-    			'actionType' => 'PAY',
-    			'preapprovalKey' => $preapprovalKey,
-			'ipnNotificationUrl' => $ipnNotificationUrl
+				'currencyCode' => $currencyCode,
+				'receiverEmailArray' => array($receiverEmail),
+				'receiverAmountArray' => array($amount),
+				'actionType' => 'PAY',
+				'preapprovalKey' => $preapprovalKey,
+				'ipnNotificationUrl' => $ipnNotificationUrl
 		);
-		
+
 		$response = PayPalAP::doPayment($options);
-		
+
 		if($response['success'] == true){
 			return true;
 		}
@@ -696,19 +722,19 @@ class Storage_Lib {
 				}
 			}
 			return false;
-			
-		}	
+				
+		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param $user
 	 * @return true if preapproval was set up ok, false otherwise
 	 */
 	public static function dbGetPreapprovalKey($user, $month, $year){
 		$stmt = \OC_DB::prepare ( "SELECT `preapproval_key`, `expiration` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );
 		$result = $stmt->execute(array($user));
-		$row = $result->fetchRow ();	
+		$row = $result->fetchRow ();
 		if(!$row){
 			// user has not signed up for preapproved payments
 			return false;
@@ -726,7 +752,7 @@ class Storage_Lib {
 		if(empty($currentBill)){
 			return false;
 		}
-		
+
 		// check if the payment has already been executed
 		$stmt = \OC_DB::prepare ( "SELECT `payment_status` FROM `*PREFIX*files_accounting_payments` WHERE `itemid` = ?" );
 		$result = $stmt->execute(array($currentBill['reference_id']));
@@ -734,7 +760,7 @@ class Storage_Lib {
 		if($row){
 			return false;
 		}
-		
+
 		// charge user
 		$result = self::setAutomaticCharge($user, $currentBill['amount_due'],
 				$preapprovalKey, $currentBill['reference_id'], $month, $year);
@@ -750,7 +776,7 @@ class Storage_Lib {
 			$result = self::dbGetPreapprovalKey($user, $month, $year);
 		}
 		else{
-			$result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user, 
+			$result = \OCA\FilesSharding\Lib::ws('preapprovalKey', array('userid'=>$user,
 					'action'=>'getPreapprovalKey', 'month'=>$month, 'year'=>$year),
 					false, true, null, 'files_accounting');
 		}
