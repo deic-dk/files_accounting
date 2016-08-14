@@ -231,6 +231,7 @@ class Storage_Lib {
 		$freequota = !empty($valid_freequota)?\OCP\Util::computerFileSize($valid_freequota):0;
 		if(!empty($freequota) && (!empty($quota) || $quota===0) && $quota<$freequota){
 			$ret['quota'] = $valid_freequota;
+			$quota = $freequota;
 		}
 		if(!empty($quota) || $quota===0 || $quota==='0'){
 			$ret['total_space'] = $quota;

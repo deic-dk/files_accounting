@@ -35,23 +35,36 @@ function drawGraph(data, year) {
 		usageUnit = Math.pow(1024, 3);
 		usageUnitStr = "GB";
 	}
- options = {
+	options = {
 			title: ' Storage History',
-			hAxis: {title: year,  titleTextStyle: {color: '#333'}},
+			hAxis: {title: year,  titleTextStyle: {color: '#333'}, ticks:[]},
 			vAxis: {title: usageUnitStr+' \n\n',  titleTextStyle: {color: '#333'}},
 			//width:  '100%'
+			width: 0.9* $('#content').innerWidth()
 	};
 	 dataTable = new google.visualization.DataTable();
 	dataTable.addColumn('string', 'dates');
 	dataTable.addColumn('number', 'files');
 	dataTable.addColumn('number', 'trashbin');
+	// We'll limit the number of ticks on the x-axis.
+	var divisor = Math.round(data.length/10*options.width/1200);
 	for (var i=0; i<data.length; i++) {
 		date = data[i]['day']+'-'+data[i]['month']+'-'+data[i]['year'];
 		files_usage = parseInt(data[i]['files_usage'])/usageUnit;
 		trash_usage = parseInt(data[i]['trash_usage'])/usageUnit;
-		dataTable.addRow([date, files_usage, trash_usage]);
+		//alert(i+'%'+divisor+'='+(i%divisor));
+		/*if(data[i]['day']==1){
+			dataTable.addRow([{v: date,  f: date}, files_usage, trash_usage]);
+		}
+		else */if(i%divisor===0){
+			dataTable.addRow([{v: date,  f: data[i]['day']+'-'+data[i]['month']}, files_usage, trash_usage]);
+		}
+		else{
+			dataTable.addRow([{v: date,  f: ''}, files_usage, trash_usage]);
+		}
 	}	
 	chart = new google.visualization.AreaChart(document.getElementById('chart_div'));
+	//alert(options.toSource());
 	chart.draw(dataTable, options);
 }
 //create trigger to resizeEnd event     
@@ -75,7 +88,7 @@ $(document).ready(function(){
 	$('a[href="#userapps"]').click(function(e){
 		options.width = 0.9* $('#content').innerWidth();
 		//alert(options.width);
-		chart.draw(dataTable, options);
+		//chart.draw(dataTable, options);
 	});
 });
 

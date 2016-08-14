@@ -109,7 +109,7 @@
 				echo "<hr><h3><b>Total usage of owned groups</b></h3>";
 			}
 			echo "<div class='quotarow'>".$group['gid'].":<b> ".
-			\OC_User_Group_Admin_Util::getGroupUsage($group['gid'])."</b></div>";
+			\OCP\Util::humanFileSize(\OC_User_Group_Admin_Util::getGroupUsage($group['gid']))."</b></div>";
 			++$i;
 		}
 	}
