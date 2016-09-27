@@ -3,7 +3,7 @@ google.setOnLoadCallback(getData);
 
 var dataTable;
 var chart;
-var options;
+var options = {};
 
 function getData() {
 	var year = $('#storageSettings #list').val();

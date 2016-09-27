@@ -717,6 +717,7 @@ class Storage_Lib {
 		else{
 			$errors = $response['errors'];
 			foreach ($errors as $error) {
+				\OCP\Util::writeLog('Files_Accounting', 'Error '.$error['errorId'].' during automatic payment for user: '.$user.'. Message: '.$error['message'].' Domain: '.$error['domain'].' Severity: '.$error['severity'].' Category: '.$error['category'], \OCP\Util::WARN);
 				if (in_array((int)$error['errorId'], $keyErrors) ) {
 					self::deletePreapprovalKey($user, $preapprovalKey);
 					break;
