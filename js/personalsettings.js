@@ -117,6 +117,9 @@ $(document).ready(function() {
 	});
 
 	add_download_links();
+
+	// Hide this from settings. User cannot modify stream/mail settings for billing.
+	$('td[data-select-group="invoice"]').parent().hide();
 });
 
 
