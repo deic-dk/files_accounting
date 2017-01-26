@@ -136,7 +136,22 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 
 		$homeDue = round(($homeGB+$trashGB)*$charge['charge_home'], 2);
 		$backupDue = round($backupGB*$charge['charge_backup'], 2);
-		$totalSumDue = $homeDue + $backupDue;
+		$sumDue = $homeDue + $backupDue;
+		$prePaid = \OCA\Files_Accounting\Storage_Lib::getPrePaid($user);
+		if($prePaid>$sumDue){
+			$totalSumDue = 0;
+			$newPrePaid = $prePaid - $sumDue;
+		}
+		elseif($prePaid>0){
+			$newPrePaid = 0;
+			$totalSumDue = $sumDue - $prePaid;
+		}
+		else{
+			$totalSumDue = $homeDue + $backupDue;
+		}
+		if(isset($newPrePaid)){
+			\OCA\Files_Accounting\Storage_Lib::setPrePaid($user, $newPrePaid);
+		}
 		
 		\OCP\Util::writeLog('Files_Accounting', 'Personal due of user: '.$user.': '.
 				$filesHome.': '.$homeGB.': '.$charge['charge_home'].

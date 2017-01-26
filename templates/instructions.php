@@ -6,10 +6,12 @@
 		$backupServerID = \OCA\FilesSharding\Lib::lookupServerIdForUser($user,
 				\OCA\FilesSharding\Lib::$USER_SERVER_PRIORITY_BACKUP_1);
 	?>
-	<p>When exceeding your free quota, you will be charged <?php echo $charge['charge_home']." ".$currency; ?>
+	<p>When your storage use exceeds your free quota, you will be charged <?php echo $charge['charge_home']." ".$currency; ?>
 	per GB used on this site<?php if(empty($backupServerID)):?>.<?php else:?>
 	and <?php echo $charge['charge_backup']." ".$currency; ?> per GB used on your backup server.
 	<?php endif;?>
+	If you have a prepaid amount active, e.g. from a gift code, this will be discounted when issuing
+	the next bill.
 	
 	The billing is done on day <?php echo \OCA\Files_Accounting\Storage_Lib::getBillingDayOfMonth(); ?>
 	of each month. Your payment is due after <?php echo \OCA\Files_Accounting\Storage_Lib::getBillingNetDays(); ?>

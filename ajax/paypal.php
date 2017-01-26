@@ -87,7 +87,8 @@ if($verifiedIpn && isset($_POST["txn_id"]) && isset($_POST["txn_type"]) &&
 		if($data['payment_status'] === 'Completed' && $valid_txnid){
 			$orderid = \OCA\Files_Accounting\Storage_Lib::updatePayments($data);
 			if($orderid){
-				\OCA\Files_Accounting\Storage_Lib::updateStatus($data['item_number']);	
+				\OCA\Files_Accounting\Storage_Lib::updateStatus($data['item_number'],
+						\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID);	
 				//\OCA\Files_Accounting\ActivityHooks::paymentComplete($data['custom'], $data['item_name']); 
 				\OCA\Files_Accounting\ActivityHooks::paymentComplete($user,
 						array('month'=>$month, 'item_number'=>$data['item_number'], 'custom'=>$data['custom'], 'item_name'=>$data['item_name'])); 

@@ -136,3 +136,51 @@ table#billingtable th .columntitle.name, .paypal_btn input {
 	margin-left: 12px;
 }
 
+#filesAccountingSettings {
+    display: inline-block;
+    overflow-x: auto;
+}
+
+.gift {
+	white-space: nowrap;
+}
+
+#gifts {
+    overflow-y: auto;
+}
+
+label.code {
+	color: #cccccc;
+}
+label.amount {
+	color: #cccccc ;
+}
+label.size {
+	color: #34495e;
+}
+label.site {
+	color: #34495e;
+}
+label.status {
+	color: #cccccc;
+}
+label.creation_time {
+	color: #cccccc;
+}
+label.claim_expiration_time {
+	color: #cccccc;
+}
+label.redemption_time {
+	color: #cccccc;
+}
+label.days {
+	color: #34495e;
+}
+label.user {
+	color: #cccccc;
+}
+
+input.codes {
+	width: 24px;
+}
+

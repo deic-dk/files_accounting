@@ -7,8 +7,10 @@ if(!OCA\FilesSharding\Lib::checkIP()){
         http_response_code(401);
         exit;
 }
-$id = !empty($_GET['id'])?$_GET['id']:null;
-$status = !empty($_GET['status'])?$_GET['status']:null;
-$ret = OCA\Files_Accounting\Storage_Lib::dbUpdateStatus($id, $status);
+
+$user = $_GET['user'];
+
+$ret = OCA\Files_Accounting\Storage_Lib::dbGetPrePaid($user);
+
 OCP\JSON::encodedPrint($ret);
 

@@ -81,7 +81,7 @@ $(window).resize(function() {
 $(window).on('resizeEnd', function() {
 	options.width = 0.9* $('#content').innerWidth();
 	//alert(options.width);
-	chart.draw(dataTable, options);
+	typeof chart!='undefined' && chart.draw(dataTable, options);
 });
 
 $(document).ready(function(){

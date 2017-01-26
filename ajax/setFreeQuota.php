@@ -5,7 +5,6 @@ OCP\JSON::callCheck();
 
 $user_id = isset($_POST["user_id"])?$_POST["user_id"]:"";
 $group = isset($_POST["group"])?$_POST["group"]:"";
-$default = isset($_POST["default"])?$_POST["default"]:"";
 
 $current_user = OC_User::getUser();
 
@@ -25,22 +24,15 @@ if(isset($freeQuota) && $freeQuota!=='none' && $freeQuota!=='default') {
 
 if(!empty($user_id)){
 	if(isset($freeQuota)){
-		if($freeQuota==='0' || $freeQuota==='' || $freeQuota==='none'){
-			OC_Preferences::deleteKey($user_id, 'files_accounting', 'freequota');
-		}
-		else{
-			OC_Preferences::setValue($user_id, 'files_accounting', 'freequota', $freeQuota);
-		}
+		\OCA\Files_Accounting\Storage_Lib::setFreeQuota($user_id, $freeQuota);
 	}
 }
 elseif(!empty($group) && isset($freeQuota)){
 	// When called by admin on master, no need for ws
-	if(\OCP\App::isEnabled('user_group_admin') && \OCA\FilesSharding\Lib::isMaster()){
-		OC_User_Group_Admin_Util::dbSetUserFreeQuota($group, $freeQuota);
-	}
-	else{
+	if(\OCP\App::isEnabled('user_group_admin')){
 		$groupInfo = OC_User_Group_Admin_Util::getGroupInfo($group);
-		if($groupInfo['owner']===$current_user && $groupInfo['user_freequota']!=$freeQuota){
+		if((OC_User::isAdminUser($current_user) || $groupInfo['owner']===$current_user) &&
+				$groupInfo['user_freequota']!=$freeQuota){
 			OC_User_Group_Admin_Util::setUserFreeQuota($group, $freeQuota);
 		}
 	}

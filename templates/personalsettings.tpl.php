@@ -13,6 +13,7 @@
 		$memberGroups = \OC_User_Group_Admin_Util::getUserGroups($user, true, true, true);
 		$ownerGroups = \OC_User_Group_Admin_Util::getOwnerGroups($user, true);
 	}
+	$prePaid = \OCA\Files_Accounting\Storage_Lib::getPrePaid($user);
 	$thisYear = date("Y");
 	foreach ($years as $year) {
 		echo "<option value=".$year.($year==$thisYear?"selected='selected'":"").">".$year."</option>";
@@ -115,5 +116,9 @@
 	}
 	?>
 	<?php endif;?>
-
+	<?php if($prePaid>0):?>
+	<hr><div><label>Prepaid:</label><label><?php echo($prePaid." ".$billingCurrency);?></label></div>";
+	<?php endif;?>
+	<hr><div><label>Gift code:</label><input type="text" id="giftCode" value="" placeholder="Enter gift code"></div>";
+	
 </fieldset>

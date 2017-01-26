@@ -63,6 +63,34 @@ function setGroupFreeQuota(group, quota){
 	});
 }
 
+function addAccountingScrollbar(){
+	$('#filesAccountingSettings').width($(window).innerWidth()*0.85);
+	$('#filesAccountingSettings .gift').width($(window).innerWidth()*0.85);
+	var giftsHeight = $('#filesAccountingSettings #gifts').innerHeight()<600?
+			$('#filesAccountingSettings #gifts').innerHeight():600;
+	$('#filesAccountingSettings #gifts').height(giftsHeight);
+}
+
+function addGifts(data){
+	$.post(OC.filePath('files_accounting', 'ajax', 'makeGifts.php'),
+		data,
+		function ( jsondata ){
+			if(jsondata.status == 'success' ) {
+				// Render new rows
+				location.reload();
+			}
+			else{
+				OC.dialogs.alert(data , 'Error') ;
+			}
+	});
+}
+
+function onQuotaSelect(ev) {
+	var $select = $(ev.target);
+	var quota = $select.val();
+	// Nothing...
+}
+
 $(document).ready(function() {
 
 	$('#filesAccountingSettings #defaultFreeQuotaSubmit').click(function() {
@@ -75,6 +103,37 @@ $(document).ready(function() {
 		quota = $('#filesAccountingSettings #groupFreeQuota').val();
 		setGroupFreeQuota(group, quota);
 	});
+	
+	$('#filesAccountingSettings .add_gifts').click(function(ev){
+		var form = $(this).closest('form');
+		if(!form.find('[name="codes"]').val()){
+			OC.dialogs.alert('You must fill in the number of gifts ' , 'Missing parameter') ;
+			return false;
+		}
+		else if(form.find('[name="amount"]').length && !form.find('[name="amount"]').val().length ||
+				form.find('[name="size"]').val()=='none' || !form.find('[name="site"]').val().length || !form.find('[name="days"]').val().length){
+			if(form.find('[name="amount"]').length){
+				OC.dialogs.alert('You must fill in the amount' , 'Missing parameters') ;
+			}
+			else{
+				OC.dialogs.alert('You must fill in size, site & days of validity ' , 'Missing parameters') ;
+			}
+			return false;
+		}
+		addGifts(form.serialize());
+	});
 
 	OC.Groups.initDropDown() ;
+	addAccountingScrollbar();
+	
+	$('#filesAccountingSettings select[name="size"]').singleSelect().on('change', onQuotaSelect);
+	
+	$('#filesAccountingSettings .delete_gift').click(function() {
+		
+	});
+
+});
+
+$(window).resize(function(){
+	addAccountingScrollbar();
 });
