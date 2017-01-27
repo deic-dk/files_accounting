@@ -8,7 +8,7 @@ $code = isset($_POST["code"])?$_POST["code"]:"";
 $ret = false;
 
 if(!empty($code)){
-	$ret = \OCA\Files_Accounting\Storage_Lib::deleteGift($code);
+	$ret = \OCA\Files_Accounting\Storage_Lib::dbDeleteGift($code);
 }
 
 //OCP\JSON::encodedPrint($ret);

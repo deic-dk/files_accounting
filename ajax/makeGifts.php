@@ -17,17 +17,17 @@ if(!empty($claimExpiresDays)){
 	$claimExpires = $now + 60*60*24*((int)$claimExpiresDays);
 }
 else{
-	$claimExpires = "";
+	$claimExpires = 0;
 }
 
 $ret = true;
 
 for($i=0; $i<$codes; ++$i){
 	if(!empty($amount)){
-		$ret = $ret && \OCA\Files_Accounting\Storage_Lib::makeCreditGift($amount, $claimExpires, $suffix);
+		$ret = $ret && \OCA\Files_Accounting\Storage_Lib::dbMakeCreditGift($amount, $claimExpires, $suffix);
 	}
 	elseif(!empty($size)){
-		$ret = $ret && \OCA\Files_Accounting\Storage_Lib::makeStorageGift($size, $site, $days, $claimExpires, $suffix);
+		$ret = $ret && \OCA\Files_Accounting\Storage_Lib::dbMakeStorageGift($size, $site, $days, $claimExpires, $suffix);
 	}
 }
 

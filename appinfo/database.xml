@@ -233,6 +233,7 @@
 
 			<field>
 				<name>code</name>
+				<primary>true</primary>
 				<type>text</type>
 				<notnull>true</notnull>
 				<length>255</length>

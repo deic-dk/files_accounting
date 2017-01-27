@@ -184,3 +184,12 @@ input.codes {
 	width: 24px;
 }
 
+#giftCodeRedeem {
+	vertical-align: top;
+	margin-top: 4px;
+}
+
+#giftCode {
+	width: 206px;
+}
+

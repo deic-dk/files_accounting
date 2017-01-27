@@ -820,10 +820,10 @@ class Storage_Lib {
 	
 	public static function dbSetPrePaid($user_id, $amount){
 		if($amount==='0' || $amount==='' || $amount==='none'){
-			\OC_Preferences::deleteKey($user_id, 'files_accounting', 'prepaid');
+			return \OC_Preferences::deleteKey($user_id, 'files_accounting', 'prepaid');
 		}
 		else{
-			\OC_Preferences::setValue($user_id, 'files_accounting', 'prepaid', $amount);
+			return \OC_Preferences::setValue($user_id, 'files_accounting', 'prepaid', $amount);
 		}
 	}
 	
@@ -884,7 +884,7 @@ class Storage_Lib {
 		$now = $nowDate->getTimestamp();
 		$results = self::getGiftInfos($code);
 		if(count($results)==1){
-				\OCP\Util::writeLog('files_accounting', 'Gift code accepted: '.$code.'. for user '.
+				\OCP\Util::writeLog('files_accounting', 'Gift code found: '.$code.'. for user '.
 						$user, \OCP\Util::WARN);
 				$gift = $results[0];
 		}
@@ -894,8 +894,9 @@ class Storage_Lib {
 			return false;
 		}
 		// Check expiration
-		if(!empty($gift['claim_expiration_time']) && $gift['claim_expiration_time']>$now){
-			\OCP\Util::writeLog('files_accounting', 'Gift code '.$code.' has expired.', \OCP\Util::WARN);
+		if(!empty($gift['claim_expiration_time']) && $now>$gift['claim_expiration_time']){
+			\OCP\Util::writeLog('files_accounting', 'Gift code '.$code.' has expired. '.
+					$now.'>'.$gift['claim_expiration_time'], \OCP\Util::WARN);
 			return false;
 		}
 		// Check if already redeemed
@@ -905,12 +906,29 @@ class Storage_Lib {
 			return false;
 		}
 		$gift = $results[0];
+		// Credit gift
 		if(!empty($gift['amount'])){
-			$prePaid = self::dbGetPrePaid($user);
+			$prePaid = self::getPrePaid($user);
 			$newPrePaid = $prePaid + ((float)$gift['amount']);
 			$result = self::setPrePaid($user, $newPrePaid);
 		}
+		// Storage gift
 		elseif(!empty($gift['size'])){
+			// A user can only cash in a storage gift to a site, if this site is his main site.
+			if(\OCP\App::isEnabled('files_sharding') && !empty($gift['site'])){
+				$userServerInfo = \OCA\FilesSharding\Lib::getUserServerInfo($user);
+				if(empty($userServerInfo['site'])){
+					$userSite = \OCA\FilesSharding\Lib::getMasterSite();
+				}
+				else{
+					$userSite = $userServerInfo['site'];
+				}
+				if($userSite!=$gift['site']){
+					\OCP\Util::writeLog('files_accounting', 'This gift is for users on site '.$gift['site'].
+							'. Home site of user '.$user.' is '.$userSite, \OCP\Util::ERROR);
+					return false;
+				}
+			}
 			$size = \OCP\Util::computerFileSize($gift['size']);
 			if(empty($size)){
 					\OCP\Util::writeLog('files_accounting', 'Gift code size '.$gift['size'].' not understood.', \OCP\Util::WARN);
@@ -928,8 +946,7 @@ class Storage_Lib {
 			$result = self::setFreeQuota($user, \OCP\Util::humanFileSize($newFreeQuota));
 		}
 		// Invalidate code
-		$query = \OCP\DB::prepare ("UPDATE `*PREFIX*files_accounting_gifts` SET `status` = ?, `user` = ?, `redemption_time` = ? WHERE `code` = ?");
-		$result = $result && $query->execute(array (self::GIFT_STATUS_REDEEMED, $user, $now, $code));
+		$result = self::updateGift($code, self::GIFT_STATUS_REDEEMED, $user, $now) && $result;
 		return $result;
 	}
 	
@@ -960,7 +977,7 @@ class Storage_Lib {
 			$days = (int)$row['days'];
 			$redemptionTime = (int)$row['redemption_time'];
 			if($now>=$days+$redemptionTime){
-				self::dbCloseStorageGift($user, $code);
+				self::dbUpdateGift($code, self::GIFT_STATUS_CLOSED);
 				$size = empty($row['size'])?0:\OCP\Util::computerFileSize($row['size']);
 				if($freeQuota>$size){
 					$newFreeQuota = $freeQuota- $size;
@@ -975,52 +992,59 @@ class Storage_Lib {
 		}
 	}
 	
-	private static function dbCloseStorageGift($user, $code){
-		$query = \OCP\DB::prepare ("UPDATE `*PREFIX*files_accounting_gifts` SET `status` = ? WHERE `user` = ? AND `code` = ?");
-		$result = $result && $query->execute(array (self::GIFT_STATUS_CLOSED, $user, $code));
-		return $result;
-	}
-	
-	public static function makeCreditGift($amount, $claimExpires=-1, $suffix='') {
+	public static function updateGift($code, $status, $user='', $redemptionTime='') {
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			$result = self::dbMakeCreditGift($amount, $claimExpires, $suffix);
+			$result = self::dbUpdateGift($code, $status, $user, $redemptionTime);
 		}
 		else{
-			$result = \OCA\FilesSharding\Lib::ws('makeCreditGift', array(
-					'amount'=>$amount, 'expires'=>$claimExpires, 'suffix'=>urlencode($suffix)),
+			$result = \OCA\FilesSharding\Lib::ws('updateGift', array(
+					'code'=>$code, 'status'=>$status, 'user'=>urlencode($user),
+					'redemption_time'=>$redemptionTime),
 					true, true, null, 'files_accounting');
 		}
 		return $result;
 	}
 
-	public static function dbMakeCreditGift($amount, $claimExpires=-1, $suffix=''){
+	public static function dbUpdateGift($code, $status, $user='', $redemptionTime=''){
+		$sql = "UPDATE `*PREFIX*files_accounting_gifts` SET `status` = ?";
+		$params = array($status);
+		if(!empty($user)){
+			$sql .= ", `user` = ?";
+			$params[] = $user;
+		}
+		if(!empty($redemptionTime)){
+			$sql .= ", `redemption_time` = ?";
+			$params[] = $redemptionTime;
+		}
+		$sql .= "WHERE `code` = ?";
+		$params[] = $code;
+		$query = \OCP\DB::prepare($sql);
+		$result = $query->execute($params);
+		return $result;
+	}
+	
+	public static function dbDeleteGift($code){
+		$query = \OCP\DB::prepare ("DELETE FROM `*PREFIX*files_accounting_gifts` WHERE `code` = ?");
+		$result =  $query->execute(array($code));
+		return $result;
+	}
+	
+	public static function dbMakeCreditGift($amount, $claimExpires=0, $suffix=''){
 		// Create code
-		$code = makeGiftCode($suffix);
+		$code = self::makeGiftCode($suffix);
 		// Check expiration time
-		if(!checkExpiresTime($expires)){
-			\OCP\Util::writeLog('files_accounting', 'expires not valid: '.$expires, \OCP\Util::WARN);
+		if(!self::checkExpiresTime($claimExpires)){
+			\OCP\Util::writeLog('files_accounting', 'expires not valid: '.$claimExpires, \OCP\Util::WARN);
 			return false;
 		}
 		// Store
 		$creationDate = new \DateTime();
 		$creationTimestamp = $creationDate->getTimestamp();
-		$query = \OCP\DB::prepare("INSERT INTO `*PREFIX*files_accounting_gifts` (`amount`, `code`, `status`, `creation_time`, `site`, `claim_expiration_time`) VALUES (?, ?, ?, ?, ?, ?)");
-		$ret = $query->execute(array($size, $code, self::GIFT_STATUS_OPEN, $creationTimestamp,  $site, $claimExpires));
+		$query = \OCP\DB::prepare("INSERT INTO `*PREFIX*files_accounting_gifts` (`amount`, `code`, `status`, `creation_time`, `claim_expiration_time`) VALUES (?, ?, ?, ?, ?)");
+		$ret = $query->execute(array($amount, $code, self::GIFT_STATUS_OPEN, $creationTimestamp, $claimExpires));
 		return $ret;
 	}
 	
-	public static function makeStorageGift($size, $site, $days, $claimExpires=0, $suffix='') {
-		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
-			$result = self::dbMakeStorageGift($size, $site, $days, $claimExpires, $suffix);
-		}
-		else{
-			$result = \OCA\FilesSharding\Lib::ws('makeStorageGift', array(
-					'size'=>$size, 'site'=>$site, 'days'=>$days, 'expires'=>$claimExpires,
-					'suffix'=>urlencode($suffix)), true, true, null, 'files_accounting');
-		}
-		return $result;
-	}
-
 	public static function dbMakeStorageGift($size, $site='', $days, $claimExpires=0, $suffix=''){
 		// Create code
 		$code = self::makeGiftCode($suffix);
@@ -1028,9 +1052,6 @@ class Storage_Lib {
 		if(!empty($claimExpires) && $claimExpires>-1 && !self::checkExpiresTime($claimExpires)){
 			\OCP\Util::writeLog('files_accounting', 'expires not valid: '.$claimExpires, \OCP\Util::ERROR);
 			return false;
-		}
-		if(!empty($claimExpires)){
-			$claimExpires = 0 ;
 		}
 		// Check storage size format
 		if(empty(\OCP\Util::computerFileSize($size))){
@@ -1047,14 +1068,14 @@ class Storage_Lib {
 	}
 	
 	private static function checkExpiresTime($expires){
-		if($expires!=-1){
-			$expiresDate = new \DateTime($expires);
-			$expiresTimestamp = $expiresDate->getTimestamp();
-			if($expiresTimestamp!=$expires){
-				\OCP\Util::writeLog('files_accounting', 'ERROR: Could not parse expiration date. '.$expires, \OCP\Util::WARN);
-				return false;
-			}
+		$expiresDate = new \DateTime();
+		$expiresDate->setTimeStamp($expires);
+		$expiresTimestamp = $expiresDate->getTimestamp();
+		if($expiresTimestamp===(int)$expires){
+			return true;
 		}
+		\OCP\Util::writeLog('files_accounting', 'ERROR: Could not parse expiration time. '.$expires, \OCP\Util::WARN);
+		return false;
 	}
 	
 	private static function makeGiftCode($suffix=''){
@@ -1112,7 +1133,7 @@ class Storage_Lib {
 			}
 		}
 		// If provided, convert Suffix
-		if(isset($suffix)){
+		if(!empty($suffix)){
 			if(is_numeric($suffix)) {   // Userid provided
 				$license_string .= '-'.strtoupper(base_convert($suffix,10,36));
 			}else{

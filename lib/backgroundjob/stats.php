@@ -72,6 +72,8 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			\OC_Log::write('files_accounting',"ERROR: Cannot bill non-existing user. ".$user, \OC_Log::ERROR);
 			return;
 		}
+		// First close any expired gifts
+		\OCA\Files_Accounting\Storage_Lib::expireStorageGifts($user);
 		$personalStorage = \OCA\Files_Accounting\Storage_Lib::personalStorage($user);
 		if(isset($personalStorage['freequota'])) {
 			$freequota_exceeded = \OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceeded', false);

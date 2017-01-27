@@ -25,8 +25,8 @@
 	function print_gift($code, $amount, $size, $site, $status, $creation_time,
 			$claim_expiration_time, $redemption_time, $days, $user, $currency){
 		print('<label name="code">'.$code.'</label> /
-		<label name="amount">'.$amount.'</label>
-		<label>'.$currency.'</label> / '.
+		<label name="amount">'.$amount.'</label>'.
+		(empty($amount)?' / ':'<label>'.$currency.'</label> / ').
 		'<label name="size">'.$size.'</label> /
 		<label name="site">'.$site.'</label> /
 		<label name="status">'.$status.'</label> /
@@ -104,7 +104,8 @@
 		print_gift($gift['code'], $gift['amount'], $gift['size'], $gift['site'],
 		$gift['status'], $gift['creation_time'], $gift['claim_expiration_time'],
 		$gift['redemption_time'], $gift['days'], $gift['user'], $_['currency']);
-		print('<label class="delete_gift btn btn-flat">Delete</label><div class="dialog" display="none"></div>');
+		print('<label code="'.$gift['code'].
+		'" class="delete_gift btn btn-flat">Delete</label><div class="dialog" display="none"></div>');
 		print('</div>');
 	}
 	?>

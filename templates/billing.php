@@ -75,5 +75,22 @@ function printTable($user, $billStatus, $paypalAccount, $monthName, $amount, $in
 if(isset($_['status']) && isset($_['year'])){
 	echo getBills($_['status'], $_['year']);
 }
+
+if(!empty($_GET['giftcode'])){
+	$code = $_GET['giftcode'];
+	$user = OC_User::getUser();
+	$ret = \OCA\Files_Accounting\Storage_Lib::redeemGiftCode($code, $user);
+	if($ret){
+		echo "<script type='text/javascript'>var url=window.location.href.replace('giftcode=','nocode='); ".
+				"OC.dialogs.alert('Your code was successfully redeemed!', ".
+				"'Congratulations', function(){window.location.href=url}, true);</script>";
+	}
+	else{
+		//echo "<script type='text/javascript'>OC.dialogs.alert('$code is not a valid code.', 'Invalid code');</script>";
+		echo "<script type='text/javascript'>var url=window.location.href.replace('giftcode=','nocode='); ".
+				"OC.dialogs.alert('$code is not a valid code.', 'Invalid code', function(){window.location.href=url}, true);</script>";
+	}
+}
+
 ?>
 

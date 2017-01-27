@@ -117,8 +117,13 @@
 	?>
 	<?php endif;?>
 	<?php if($prePaid>0):?>
-	<hr><div><label>Prepaid:</label><label><?php echo($prePaid." ".$billingCurrency);?></label></div>";
+	<hr><div><label>Prepaid:</label><label><?php echo($prePaid." ".$billingCurrency);?></label></div>
 	<?php endif;?>
-	<hr><div><label>Gift code:</label><input type="text" id="giftCode" value="" placeholder="Enter gift code"></div>";
+	<hr><div>
+	<label>Gift code:</label><input type="text" id="giftCode" value="" placeholder="Enter gift code">
+		<div id="giftCodeRedeem" class="inlineblock button">
+			Redeem
+		</div> 
+	</div>
 	
 </fieldset>

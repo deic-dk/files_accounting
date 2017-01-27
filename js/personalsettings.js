@@ -120,6 +120,18 @@ $(document).ready(function() {
 
 	// Hide this from settings. User cannot modify stream/mail settings for billing.
 	$('td[data-select-group="invoice"]').parent().hide();
+	
+	// Gift codes - #userapps is theme-specific, but does not harm...
+	$('#storageSettings #giftCodeRedeem').click(function(ev){
+		var code = $('#storageSettings #giftCode').val();
+		var url = window.location.href.replace('#userapps', '').
+		replace('#panel-userapps', '').replace(/\?.*$/, '')+
+			'?giftcode='+code+'#userapps';
+		$('#storageSettings #giftCode').val('');
+		window.location.href = url;
+		//window.location = url;
+	});
+	
 });
 
 

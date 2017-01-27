@@ -74,13 +74,13 @@ function addAccountingScrollbar(){
 function addGifts(data){
 	$.post(OC.filePath('files_accounting', 'ajax', 'makeGifts.php'),
 		data,
-		function ( jsondata ){
+		function( jsondata ){
 			if(jsondata.status == 'success' ) {
 				// Render new rows
 				location.reload();
 			}
 			else{
-				OC.dialogs.alert(data , 'Error') ;
+				OC.dialogs.alert(jsondata , 'Error') ;
 			}
 	});
 }
@@ -89,6 +89,25 @@ function onQuotaSelect(ev) {
 	var $select = $(ev.target);
 	var quota = $select.val();
 	// Nothing...
+}
+
+function deleteGift(code){
+	$.ajax(OC.linkTo('files_accounting','ajax/deleteGift.php'), {
+		 type:'POST',
+		 data:{ 'code': code},
+		 dataType:'json',
+		 success: function(jsondata){ 
+				if(jsondata.status == 'success' ) {
+					location.reload();
+				}
+				else{
+					OC.dialogs.alert(jsondata , 'Error') ;
+				}
+		 },
+		 error:function(data){
+			 alert("Unexpected error!");
+		 }
+	});
 }
 
 $(document).ready(function() {
@@ -111,7 +130,9 @@ $(document).ready(function() {
 			return false;
 		}
 		else if(form.find('[name="amount"]').length && !form.find('[name="amount"]').val().length ||
-				form.find('[name="size"]').val()=='none' || !form.find('[name="site"]').val().length || !form.find('[name="days"]').val().length){
+				form.find('[name="size"]').length && form.find('[name="size"]').val()=='none' ||
+				form.find('[name="site"]').lenth && !form.find('[name="site"]').val().length ||
+				form.find('[name="days"]').length && !form.find('[name="days"]').val().length){
 			if(form.find('[name="amount"]').length){
 				OC.dialogs.alert('You must fill in the amount' , 'Missing parameters') ;
 			}
@@ -128,8 +149,8 @@ $(document).ready(function() {
 	
 	$('#filesAccountingSettings select[name="size"]').singleSelect().on('change', onQuotaSelect);
 	
-	$('#filesAccountingSettings .delete_gift').click(function() {
-		
+	$('#filesAccountingSettings .delete_gift').click(function(ev) {
+		deleteGift($(ev.target).attr('code'));
 	});
 
 });
