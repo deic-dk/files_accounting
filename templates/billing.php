@@ -51,7 +51,7 @@ function printTable($user, $billStatus, $paypalAccount, $monthName, $amount, $in
         <td class='column-display'><a class='invoice-link'>$invoice</a></td>
         <td class='paypal_btn'>";
         if($billStatus==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING){
-                $ret .= '<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                $ret .= '<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
                         <input type="hidden" name="cmd" value="_xclick">
                         <input type="hidden" name="business" value="'.$paypalAccount.'">
                         <input type="hidden" name="item_name" value="Storage Use for '.$monthName.'">

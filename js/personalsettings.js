@@ -14,7 +14,15 @@ $(document).ready(function() {
 		type: 'POST',
 		dataType: 'json',
 		success: function(jsondata) {
-		  window.location.href = jsondata.data.url;
+			if(typeof jsondata.data.url=='undefined'){
+			  alert("Unexpected error!");
+			}
+			else if(typeof jsondata.data.url.success!=='undefined'){
+				alert("Unexpected error: "+ jsondata.data.url.toSource());
+			}
+			else{
+			  window.location.href = jsondata.data.url;
+			}
 		},
 		error: function(jsondata) {
 		  alert("Unexpected error!");

@@ -49,7 +49,9 @@ class Storage_Lib {
 		$username = \OCP\Config::getSystemValue('paypalusername', '');
 		$password = \OCP\Config::getSystemValue('paypalpassword', '');
 		$signature = \OCP\Config::getSystemValue('paypalsignature', '');
-		return array($username, $password, $signature);
+		$appid = \OCP\Config::getSystemValue('paypalappid', '');
+		return array('username'=>$username, 'password'=>$password, 'signature'=>$signature,
+				'appid'=>$appid);
 	}
 
 	public static function getBillingURL($user, $fq=true){

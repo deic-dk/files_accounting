@@ -36,7 +36,9 @@ class PayPalAP
 	* @return Nothing
 	*/
 	
-	public static function setAuth($apiUsername, $apiPassword, $apiSignature, $apiAppid = 'APP-80W284485P519543T', $env = 'sandbox', $useProxy = false, $proxyHost = '', $proxyPort = '') {
+	public static function setAuth($apiUsername, $apiPassword, $apiSignature,
+			$apiAppid = 'APP-80W284485P519543T', $env = 'sandbox', $useProxy = false,
+			$proxyHost = '', $proxyPort = '') {
 		if($env == 'sandbox')
 		{
 			self::$__apiEndpoint = 'https://svcs.sandbox.paypal.com/AdaptivePayments';
@@ -551,7 +553,7 @@ class PayPalAP
 		curl_setopt($ch, CURLOPT_POST, 1);
 		
 		// Set the HTTP Headers
-		curl_setopt($ch, CURLOPT_HTTPHEADER,  array(
+		$curlOptArr = array(
 		'X-PAYPAL-REQUEST-DATA-FORMAT: NV',
 		'X-PAYPAL-RESPONSE-DATA-FORMAT: NV',
 		'X-PAYPAL-SECURITY-USERID: ' . self::$__apiUsername,
@@ -559,7 +561,8 @@ class PayPalAP
 		'X-PAYPAL-SECURITY-SIGNATURE: ' . self::$__apiSignature,
 		'X-PAYPAL-SERVICE-VERSION: 1.3.0',
 		'X-PAYPAL-APPLICATION-ID: ' . self::$__apiAppid
-		));
+		);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $curlOptArr);
 	
 	    //if USE_PROXY constant set to TRUE in Constants.php, then only proxy will be enabled.
 		//Set proxy name to PROXY_HOST and port number to PROXY_PORT in constants.php 
@@ -573,6 +576,8 @@ class PayPalAP
 		$nvpreq .= "&$nvpStr";
 		//setting the nvpreq as POST FIELD to curl
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpreq);
+		\OCP\Util::writeLog('Files_Accounting', 'Calling PayPal with opts: '.serialize($curlOptArr).
+				"POST DATA: ".$nvpreq, \OCP\Util::WARN);
 		//getting response from server
 		$response = curl_exec($ch);
 		//converting NVPResponse to an Associative Array

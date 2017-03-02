@@ -4,7 +4,7 @@
 // Set this to 0 once you go live or don't require logging.
 define("DEBUG", 1);
 // Set to 0 once you're ready to go live
-define("USE_SANDBOX", 1);
+define("USE_SANDBOX", 0);
 define("LOG_FILE", \OC::$SERVERROOT."/apps/files_accounting/ajax/ipn.log");
 
 $paypalAccount = \OCA\Files_Accounting\Storage_Lib::getPayPalAccount();
