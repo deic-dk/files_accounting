@@ -49,6 +49,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			\OCA\Files_Accounting\Storage_Lib::logDailyUsage($user);
 			// Log group folders usage. This will not be billed to group members, but, collected, to the group owner
 			if(\OCP\App::isEnabled('user_group_admin')){
+				require_once 'apps/user_group_admin/lib/util.php';
 				$memberGroups = \OC_User_Group_Admin_Util::getUserGroups($user, true, true, true);
 				if(!empty($memberGroups)){
 					foreach($memberGroups as $group){
