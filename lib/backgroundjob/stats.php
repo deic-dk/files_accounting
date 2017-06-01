@@ -76,10 +76,10 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		// First close any expired gifts
 		\OCA\Files_Accounting\Storage_Lib::expireStorageGifts($user);
 		$personalStorage = \OCA\Files_Accounting\Storage_Lib::personalStorage($user);
+		$freequotaBytes = (float) \OCP\Util::computerFileSize($personalStorage['freequota']);
 		if(isset($personalStorage['freequota'])) {
 			$freequota_exceeded = \OC_Preferences::getValue($user, 'files_accounting', 'freequotaexceeded', false);
 			// bytes to gigabytes
-			$freequotaBytes = (float) \OCP\Util::computerFileSize($personalStorage['freequota']);
 			if($personalStorage['files_usage'] > $freequotaBytes && $freequotaBytes > 0){
 				// Usage above free and user has not yet been notified
 				if(!$freequota_exceeded){
@@ -132,14 +132,35 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$filesBackup = (float)$monthlyUsageAverage['backup']['files_usage'];
 		$trash = (float)$monthlyUsageAverage['home']['trash_usage'];
 
-		// kilobytes to gigabytes
-		$homeGB = round($filesHome/pow(1024, 3), 3);
-		$backupGB = round($filesBackup/pow(1024, 3), 3);
-		$trashGB = round($trash/pow(1024, 3), 3);
-
-		$homeDue = round(($homeGB+$trashGB)*$charge['charge_home'], 2);
-		$backupDue = round($backupGB*$charge['charge_backup'], 2);
+		
+		if($freequotaBytes > 0 && $filesHome+$trash >= $freequotaBytes){
+			$homeAndTrashBilledGB = round(($filesHome+$trash-$freequotaBytes)/pow(1024, 3), 3);
+			$backupGB = round($filesBackup/pow(1024, 3), 3);
+			$homeDue = round($homeAndTrashBilledGB*$charge['charge_home'], 2);
+			$backupDue = round($backupGB*$charge['charge_backup'], 2);
+		}
+		elseif($freequotaBytes > 0 && $filesHome+$trash < $freequotaBytes){
+			$homeDue = 0;
+			$remainingFreequotaBytes = $freequotaBytes - ($filesHome + $trash);
+			if($filesBackup > $remainingFreequotaBytes){
+				$backupBilledGB = round(($filesBackup-$remainingFreequotaBytes)/pow(1024, 3), 3);
+				$backupDue = round($backupBilledGB*$charge['charge_backup'], 2);
+			}
+			else{
+				$backupDue = 0;
+			}
+		}
+		else{
+			// kilobytes to gigabytes
+			$homeGB = round($filesHome/pow(1024, 3), 3);
+			$trashGB = round($trash/pow(1024, 3), 3);
+			$backupGB = round($filesBackup/pow(1024, 3), 3);
+			$homeDue = round(($homeGB+$trashGB)*$charge['charge_home'], 2);
+			$backupDue = round($backupGB*$charge['charge_backup'], 2);
+		}
+		
 		$sumDue = $homeDue + $backupDue;
+		
 		$prePaid = \OCA\Files_Accounting\Storage_Lib::getPrePaid($user);
 		if($prePaid>$sumDue){
 			$totalSumDue = 0;
