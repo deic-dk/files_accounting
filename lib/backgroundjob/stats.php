@@ -248,9 +248,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		
 		\OCP\Util::writeLog('Files_Accounting', 'Billing user: '.$user.' for '.$this->billingMonthName, \OCP\Util::WARN);
 
-		$vat = (float) \OCA\Files_Accounting\Storage_Lib::getBillingVAT();
-		$vat = $vat*0.01;
-
 		$articles = array(
 				array('item'=>$homeGB.' GB cloud storage, '.$this->billingMonthName.' '.$this->billingYear.
 						' at '.$homeSite, 'price'=>$homeAmountDue)
@@ -288,7 +285,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				date("F j, Y", $this->dueTimestamp), // due date
 				$reference,
 				$articles,
-				$vat,
 				$totalAmountDue,
 				"Thank you for using our services.",
 				$filename
@@ -297,7 +293,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	}
 
 	private function writeInvoice($user, $userEmail, $userRealName, $email, $address, $date, $dueDate, $ref,
-			$articles, $vat, $total, $comment, $filename){
+			$articles, $total, $comment, $filename){
 
 		$pdf = new PDF();
 		$pdf->AliasNbPages();
@@ -306,6 +302,8 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$logoUrl = \OCP\Config::getSystemValue('billinglogo', '');
 		$logoFileType = strtoupper(pathinfo(parse_url($logoUrl, PHP_URL_PATH) , PATHINFO_EXTENSION));
 		$pdf->Image($logoUrl, 10, 10, 30, 17.1, $logoFileType/*PNG*/);
+		
+		$vat = (float) \OCA\Files_Accounting\Storage_Lib::getBillingVAT();
 
 		$x=$pdf->GetX();
 		$y=$pdf->GetY();
@@ -339,8 +337,8 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			$pdf->Cell(40,7,$article['price']." ".$this->billingCurrency,1,1,'R',0);
 		}
 		$pdf->Cell(0,0,'',0,1,'R');
-		$pdf->Cell(150,7,'VAT',1,0,'R',0);
-		$pdf->Cell(40,7,$vat,1,1,'R',0);
+		$pdf->Cell(150,7,'VAT included',1,0,'R',0);
+		$pdf->Cell(40,7,$vat.'%',1,1,'R',0);
 		$pdf->Cell(150,7,'Total',1,0,'R',0);
 		$pdf->Cell(40,7,$total." ".$this->billingCurrency,1,0,'R',0);
 		$pdf->Cell(0,20,'',0,1,'R');
