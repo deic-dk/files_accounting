@@ -17,29 +17,34 @@ class ActivityHooks {
 	}
 
 	public static function invoiceCreate($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'new_invoice');
+		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'new_invoice',
+			\OCA\UserNotification\Data::PRIORITY_VERYHIGH);
 	}
 	
 	public static function paymentComplete($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'payment_complete');
+		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'payment_complete',
+			\OCA\UserNotification\Data::PRIORITY_MEDIUM);
 	}
 	
 	public static function spaceExceed($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'exceeded_space'); 
+		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'exceeded_space',
+			\OCA\UserNotification\Data::PRIORITY_HIGH); 
 	}
 	
 	public static function preapprovedPayments($user) {
-		ActivityHooks::addNotificationsForAction($user, '', \Bill_Activity::TYPE_INVOICE, 'preapproved_payments');
+		ActivityHooks::addNotificationsForAction($user, '', \Bill_Activity::TYPE_INVOICE, 'preapproved_payments',
+			\OCA\UserNotification\Data::PRIORITY_MEDIUM);
 	}
 
 	public static function automaticPaymentComplete($user, $params) {
-		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'automatic_payment_complete'); 
+		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'automatic_payment_complete',
+			\OCA\UserNotification\Data::PRIORITY_MEDIUM); 
 	}
-	public static function addNotificationsForAction($user, $params, $activityType, $subject) {
+	public static function addNotificationsForAction($user, $params, $activityType, $subject, $priority) {
 		ActivityHooks::addNotificationsForUser(
 			$user, $subject,
 			$params,
-			\OCA\UserNotification\Data::PRIORITY_MEDIUM,
+			$priority,
 			$activityType
 		);
 	}
