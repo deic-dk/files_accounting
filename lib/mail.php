@@ -52,7 +52,13 @@ class Mail {
 			if($ccaddress<>'') $mailo->AddCC($ccaddress, $ccname);
 			if($bcc<>'') $mailo->AddBCC($bcc);
 
-			$mailo->AddReplyTo($fromaddress, $fromname);
+			//$mailo->AddReplyTo($fromaddress, $fromname);
+			if($replyTo !== '') {
+				$mailo->addReplyTo($replyTo);
+			}
+			else{
+				$mailo->addReplyTo($fromaddress, $fromname);
+			}
 
 			$mailo->WordWrap = 50;
 			if($html==1) $mailo->IsHTML(true); else $mailo->IsHTML(false);
