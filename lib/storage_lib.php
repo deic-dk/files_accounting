@@ -214,6 +214,7 @@ class Storage_Lib {
 	public static function getDefaultQuotas(){
 		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
 			$defaultQuota = \OC_Appconfig::getValue('files', 'default_quota', INF);
+			$defaultQuota = strtolower($defaultQuota)=='none'?INF:$defaultQuota;
 			$defaultFreeQuota = \OC_Appconfig::getValue('files_accounting', 'default_freequota', 0);
 		}
 		else{
@@ -243,6 +244,8 @@ class Storage_Lib {
 			$ret['total_space'] = $quota;
 			$ret['free_space'] = $quota - (int)$usage['files_usage'] -
 				(empty($usage['trash_usage'])?0:(int)$usage['trash_usage']);
+				\OCP\Util::writeLog('files_accounting', 'Free space: '.$ret['free_space'].
+						' Total space: '.$ret['total_space'], \OCP\Util::WARN);
 		}
 		else{
 			$loggedin_user = \OCP\USER::getUser();
@@ -252,10 +255,14 @@ class Storage_Lib {
 				\OC_User::setUserId($userid);
 				\OC_Util::setupFS($userid);
 			}
+			// No quota - set free space to total free disk space
 			$storageInfo = \OC_Helper::getStorageInfo("/");
-			$ret['free_space'] = (int)$storageInfo['free'];
+			//$ret['free_space'] = (int)$storageInfo['free']; // With empty quota, getStorageInfo returns 0 free space
 			//$ret['files_usage'] = (int)$storageInfo['used'];
-			$ret['total_space'] = (int)$storageInfo['total'];
+			//$ret['total_space'] = (int)$storageInfo['total'];
+			$dataDir = \OC_Config::getValue("datadirectory", \OC::$SERVERROOT . "/data");
+			$ret['free_space'] = @disk_free_space($dataDir."/".$loggedin_user);
+			$ret['total_space'] = @disk_total_space($dataDir."/".$loggedin_user);
 			if(!empty($old_user)){
 				\OC_Util::teardownFS();
 				\OC_User::setUserId($old_user);
