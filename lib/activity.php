@@ -75,20 +75,22 @@ class Bill_Activity implements IExtension {
 		switch ($text) {
 			case 'new_invoice':
 				return isset($params['item_number'])?
-					(string) $this->l->t('<div class="unpaid_invoice" item_number="%2$s">You have a new invoice for: <strong>%1$s</strong></div>',
-						array($params['month'], $params['item_number'])):
-					(string) $this->l->t('<div class="unpaid_invoice">You have a new invoice for: <strong>%1$s</strong></div>',
-						$params);
+					(string) '<div class="unpaid_invoice" item_number="%2$s">' .
+										$this->l->t('You have a new invoice for: <strong>%1$s</strong>',
+										array($this->l->t($params['month']), $params['item_number'])).'</div>':
+					(string) '<div class="unpaid_invoice">' .
+					$this->l->t('You have a new invoice for: <strong>%1$s</strong>',
+					array($this->l->t($params[0]))) . '</div>';
 			case 'payment_complete':
 				return (string) $this->l->t('You have successfully completed a payment for: <strong>%1$s</strong>',
-					array($params['month']));
+					array($this->l->t($params['month'])));
 			case 'exceeded_space':
 				return (string) $this->l->t('You are now exceeding your free space of <strong>%1$s</strong>', $params);
 			case 'preapproved_payments':
 				return (string) $this->l->t('Your preapproval agreement has been successfully created');
 			case 'automatic_payment_complete':
 				return (string) $this->l->t('An automatic payment was made for: <strong>%1$s</strong>',
-					array($params['month']));
+					array($this->l->t($params['month'])));
 			default:
 				return false;
 		}

@@ -36,7 +36,7 @@ function drawGraph(data, year) {
 		usageUnitStr = "GB";
 	}
 	options = {
-			title: ' Storage History',
+			title: t('files_accounting', 'Storage history'),
 			hAxis: {title: year,  titleTextStyle: {color: '#333'}, ticks:[]},
 			vAxis: {title: usageUnitStr+' \n\n',  titleTextStyle: {color: '#333'}},
 			//width:  '100%'
@@ -44,8 +44,8 @@ function drawGraph(data, year) {
 	};
 	 dataTable = new google.visualization.DataTable();
 	dataTable.addColumn('string', 'dates');
-	dataTable.addColumn('number', 'files');
-	dataTable.addColumn('number', 'trashbin');
+	dataTable.addColumn('number', t('files_accounting','files'));
+	dataTable.addColumn('number', t('files_accounting','trashbin'));
 	// We'll limit the number of ticks on the x-axis.
 	var divisor = Math.round(data.length/10*options.width/1200);
 	for (var i=0; i<data.length; i++) {

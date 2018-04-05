@@ -39,9 +39,10 @@ function getBills($status=null, $year=null){
 	return $ret;
 }
 function printTable($user, $billStatus, $paypalAccount, $monthName, $amount, $invoice, $billingCurrency, $issueDate, $dueDate) {
+	$l = OC_L10N::get('files_accounting');
 	$statusStr = $billStatus==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING?
-                '<div class="pending">Pending</div>':
-                '<div class="paid">Paid</div>';
+                '<div class="pending">'.$l->t('Pending').'</div>':
+                '<div class="paid">'.$l->t('Paid').'</div>';
         $ret = "<tr>
         <td class='column-display name'>$statusStr</td>
         <td class='column-display'>$amount</td>
@@ -64,7 +65,9 @@ function printTable($user, $billStatus, $paypalAccount, $monthName, $amount, $in
                         <input type="hidden" name="no_shipping" value="2">
                         <input type="hidden" name="custom" value="'.$user.'">
                         <input type="hidden" name="bn" value="PP-BuyNowBF:btn_paynow_SM.gif:NonHosted">
-                        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_paynow_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+                        <input type="image" src="https://www.paypalobjects.com/'.
+                        ($l->getLanguageCode()=='da'?'da_DK':'en_US').
+                        '/i/btn/btn_paynow_LG.gif" border="0" name="submit" alt="PayPal">
                         <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
                         </form>';
         }

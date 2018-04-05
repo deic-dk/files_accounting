@@ -76,7 +76,7 @@ $(document).ready(function() {
 	});
 
 	$("#storageSettings #pay-info").on("click", function () {
-		var html = "<div><h3>How to pay</h3>\
+		var html = "<div><h3>"+t("files_accounting", "Information on automatic payments")+"</h3>\
 				<a class='oc-dialog-close close svg'></a>\
 				<div class='pay-instructions'></div></div>";
 		$(html).dialog({
