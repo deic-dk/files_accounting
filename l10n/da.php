@@ -1,6 +1,6 @@
 <?php
 $TRANSLATIONS = array(
-		'You have a new invoice for: <strong>%1$s</strong>' => 'Du har en ny regning for <strong>%1$s</strong>',
+		'You have a new invoice for: %1$s' => 'Du har en ny regning for %1$s',
 		'You have successfully completed a payment for: <strong>%1$s</strong>' => 'Du har betalt for <strong>%1$s</strong>',
 		'You are now exceeding your free space of <strong>%1$s</strong>' => 'Du overskrider nu dine gratis <strong>%1$s</strong>',
 		'Your preapproval agreement has been successfully created' => 'Din forhåndsgodkendte aftale er nu aktiv',
@@ -42,5 +42,7 @@ $TRANSLATIONS = array(
 		'Pending' => 'Afventer',
 		'Paid' => 'Betalt',
 		'Information on automatic payments' => 'Information om automatisk betaling',
+		'Account status has changed or a bill is <strong>pending</strong>' =>
+			'Din kontos status er ændret eller du har en ubetalt regning'
 );
 $PLURAL_FORMS = "nplurals=2; plural=(n != 1);";

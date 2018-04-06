@@ -68,6 +68,9 @@ class Bill_Activity implements IExtension {
 	 * @param string $languageCode
 	 * @return string|false
 	 */
+	private static function stripStrong($str){
+		return  preg_replace('|<strong>(.*)</strong>|', '$1', $str);
+	}
 	public function translate($app, $text, $params, $stripPath, $highlightParams, $languageCode) {
 		if ($app !== 'files_accounting') {
 			return false;
@@ -76,11 +79,11 @@ class Bill_Activity implements IExtension {
 			case 'new_invoice':
 				return isset($params['item_number'])?
 					(string) '<div class="unpaid_invoice" item_number="%2$s">' .
-										$this->l->t('You have a new invoice for: <strong>%1$s</strong>',
-										array($this->l->t($params['month']), $params['item_number'])).'</div>':
+										$this->l->t('You have a new invoice for: %1$s',
+												array('<strong>'.$this->l->t(self::stripStrong($params['month'])).'</strong>', $params['item_number'])).'</div>':
 					(string) '<div class="unpaid_invoice">' .
-					$this->l->t('You have a new invoice for: <strong>%1$s</strong>',
-					array($this->l->t($params[0]))) . '</div>';
+					$this->l->t('You have a new invoice for: %1$s',
+							array($this->l->t(self::stripStrong($params[0])))) . '</div>';
 			case 'payment_complete':
 				return (string) $this->l->t('You have successfully completed a payment for: <strong>%1$s</strong>',
 					array($this->l->t($params['month'])));
