@@ -131,11 +131,14 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$filesHome = (float)$monthlyUsageAverage['home']['files_usage'];
 		$filesBackup = (float)$monthlyUsageAverage['backup']['files_usage'];
 		$trash = (float)$monthlyUsageAverage['home']['trash_usage'];
-
+		
+		// kilobytes to gigabytes
+		$homeGB = round($filesHome/pow(1024, 3), 3);
+		$backupGB = round($filesBackup/pow(1024, 3), 3);
+		$trashGB = round($trash/pow(1024, 3), 3);
 		
 		if($freequotaBytes > 0 && $filesHome+$trash >= $freequotaBytes){
 			$homeAndTrashBilledGB = round(($filesHome+$trash-$freequotaBytes)/pow(1024, 3), 3);
-			$backupGB = round($filesBackup/pow(1024, 3), 3);
 			$homeDue = round($homeAndTrashBilledGB*$charge['charge_home'], 2);
 			$backupDue = round($backupGB*$charge['charge_backup'], 2);
 		}
@@ -151,10 +154,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			}
 		}
 		else{
-			// kilobytes to gigabytes
-			$homeGB = round($filesHome/pow(1024, 3), 3);
-			$trashGB = round($trash/pow(1024, 3), 3);
-			$backupGB = round($filesBackup/pow(1024, 3), 3);
 			$homeDue = round(($homeGB+$trashGB)*$charge['charge_home'], 2);
 			$backupDue = round($backupGB*$charge['charge_backup'], 2);
 		}
