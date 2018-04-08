@@ -677,6 +677,24 @@ class Storage_Lib {
 		$row = $result->fetchRow();
 		return $row;
 	}
+	
+	public static function dbGetBill($reference_id) {
+		$stmt = \OC_DB::prepare ( "SELECT * FROM `*PREFIX*files_accounting` WHERE `reference_id` = ?" );
+		$result = $stmt->execute ( array ($reference_id) );
+		$row = $result->fetchRow();
+		return $row;
+	}
+	
+	public static function getBill($reference_id) {
+		if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::isMaster()){
+			$result = self::dbGetBill($reference_id);
+		}
+		else{
+			$result = \OCA\FilesSharding\Lib::ws('getBill', array('reference_id'=>$reference_id),
+					false, true, null, 'files_accounting');
+		}
+		return $result;
+	}
 
 	public static function dbSetPreapprovalKey($user, $preapprovalKey, $expiration) {
 		$stmt = \OC_DB::prepare ( "SELECT `user` FROM `*PREFIX*files_accounting_adaptive_payments` WHERE `user` = ?" );

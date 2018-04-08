@@ -77,11 +77,13 @@ class Bill_Activity implements IExtension {
 		}
 		switch ($text) {
 			case 'new_invoice':
+				\OCP\Util::writeLog('Files_Accounting', 'PARAMS: '.serialize($params), \OCP\Util::DEBUG);
 				return isset($params['item_number'])?
-					(string) '<div class="unpaid_invoice" item_number="%2$s">' .
+					(string) '<div class="unpaid_invoice" item_number="'.$params['item_number'].'">' .
 										$this->l->t('You have a new invoice for: %1$s',
-												array('<strong>'.$this->l->t(self::stripStrong($params['month'])).'</strong>', $params['item_number'])).'</div>':
-					(string) '<div class="unpaid_invoice">' .
+												array('<strong>'.$this->l->t(self::stripStrong($params['month'])).'</strong>',
+														$params['item_number'])).'</div>':
+					(string) '<div class="unpaid_invoice" item_number="'.$params[2].'">' .
 					$this->l->t('You have a new invoice for: %1$s',
 							array($this->l->t(self::stripStrong($params[0])))) . '</div>';
 			case 'payment_complete':

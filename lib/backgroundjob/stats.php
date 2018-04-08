@@ -238,7 +238,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 
 		// Notify
 		ActivityHooks::invoiceCreate($user,
-			array('month'=>$this->billingMonthName, 'year'=>$this->billingYear, 'item_number'=>$reference_id));
+			array('month'=>$this->billingMonthName, 'year'=>$this->billingYear, 'item_number'=>$reference_id,
+					'priority'=>($totalSumDue==0?\OCA\UserNotification\Data::PRIORITY_MEDIUM:\OCA\UserNotification\Data::PRIORITY_VERYHIGH)
+			));
 		
 		// TODO: uncomment when this goes into production
 		//$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);

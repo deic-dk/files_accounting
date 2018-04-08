@@ -18,7 +18,7 @@ class ActivityHooks {
 
 	public static function invoiceCreate($user, $params) {
 		ActivityHooks::addNotificationsForAction($user, $params, \Bill_Activity::TYPE_INVOICE, 'new_invoice',
-			\OCA\UserNotification\Data::PRIORITY_VERYHIGH);
+			$params['priority']);
 	}
 	
 	public static function paymentComplete($user, $params) {
