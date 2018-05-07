@@ -43,6 +43,8 @@ $TRANSLATIONS = array(
 		'Paid' => 'Betalt',
 		'Information on automatic payments' => 'Information om automatisk betaling',
 		'Account status has changed or a bill is <strong>pending</strong>' =>
-			'Din kontos status er ændret eller du har en ubetalt regning'
+			'Din kontos status er ændret eller du har en ubetalt regning',
+		"You don't have any old bills." => "Du har ingen gamle regninger",
+		"You don't have any bills." => "Du har ingen regninger"
 );
 $PLURAL_FORMS = "nplurals=2; plural=(n != 1);";

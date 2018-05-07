@@ -9,9 +9,11 @@ function getBills($status=null, $year=null){
 	$bills = \OCA\Files_Accounting\Storage_Lib::getBills(OC_User::getUser (), $year, $status);
 	
 	if(empty($bills)){
-	  return "<tr><td class='empty' colspan=7>You don't have any ".
-	  (isset($status)&&$status==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID?"old ":"").
-	  "bills.</td></tr>";
+		$l = OC_L10N::get('files_accounting');
+	  return 
+	  (isset($status)&&$status==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID?
+	  		"<tr><td class='empty' colspan=7>".p($l->t("You don't have any old bills.")."</td></tr>":
+	  		"<tr><td class='empty' colspan=7>".p($l->t("You don't have any bills.")."</td></tr>");
 	}
 	$ret = "";
 	foreach(array_reverse($bills) as $bill){
