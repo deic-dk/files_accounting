@@ -230,9 +230,10 @@ class Storage_Lib {
 		$ret = self::getQuotas($userid);
 		$usage = self::getLocalUsage($userid, $trashbin, $group);
 		$valid_quota = empty($ret['quota']) || $ret['quota']==="default"?
-		$ret['default_quota']:$ret['quota'];
+			$ret['default_quota']:$ret['quota'];
 		$valid_freequota = empty($ret['freequota']) || $ret['freequota']==="default"?
 			$ret['default_freequota']:$ret['freequota'];
+			$ret['freequota'] = $valid_freequota;
 		// Bump up quota if smaller than freequota
 		$quota = !empty($valid_quota)?\OCP\Util::computerFileSize($valid_quota):INF;
 		$freequota = !empty($valid_freequota)?\OCP\Util::computerFileSize($valid_freequota):0;
