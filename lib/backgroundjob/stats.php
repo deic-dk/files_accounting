@@ -191,25 +191,28 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 
 		// Get current collected group usage for owned groups
 		// TODO: calculate averages here too...
-		$ownerGroups = \OC_User_Group_Admin_Util::getOwnerGroups($user, true);
-		$groupUsages = array();
-		$groupUsagesGB = array();
-		$groupCharges = array();
-		if(!empty($ownerGroups)){
-			foreach($ownerGroups as $group){
-				if(!empty($group['user_freequota'])){
-					$groupUsage = \OC_User_Group_Admin_Util::getGroupUsage($group['gid']);
-					if(!empty($groupUsage)){
-						$groupUsageGB = round($groupUsage/pow(1024, 3), 3);
-						$groupUsagesGB[$group['gid']] = $groupUsageGB;
-						$groupCharges[$group['gid']] = \OC_User_Group_Admin_Util::getGroupUsageCharge($group['gid']);
-						$totalSumDue += round((int)$groupCharges[$group['gid']], 2);
-						\OCP\Util::writeLog('Files_Accounting', 'Usage  of group: '.$group['gid'].
-								': '.$groupUsage.' : '.$groupUsagesGB[$group['gid']], \OCP\Util::WARN);
+		if(\OCP\App::isEnabled('user_group_admin')){
+			$ownerGroups = \OC_User_Group_Admin_Util::getOwnerGroups($user, true);
+			$groupUsages = array();
+			$groupUsagesGB = array();
+			$groupCharges = array();
+			if(!empty($ownerGroups)){
+				foreach($ownerGroups as $group){
+					if(!empty($group['user_freequota'])){
+						$groupUsage = \OC_User_Group_Admin_Util::getGroupUsage($group['gid']);
+						if(!empty($groupUsage)){
+							$groupUsageGB = round($groupUsage/pow(1024, 3), 3);
+							$groupUsagesGB[$group['gid']] = $groupUsageGB;
+							$groupCharges[$group['gid']] = \OC_User_Group_Admin_Util::getGroupUsageCharge($group['gid']);
+							$totalSumDue += round($groupCharges[$group['gid']], 2);
+							\OCP\Util::writeLog('Files_Accounting', 'Usage  of group: '.$group['gid'].
+									': '.$groupUsage.' : '.$groupUsagesGB[$group['gid']], \OCP\Util::WARN);
+						}
 					}
 				}
 			}
 		}
+
 		
 		if($totalSumDue==0){
 			\OCP\Util::writeLog('Files_Accounting', 'Usage charge 0 for user: '.$user, \OCP\Util::WARN);
