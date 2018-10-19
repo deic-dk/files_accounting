@@ -55,22 +55,22 @@ function printTable($user, $billStatus, $paypalAccount, $monthName, $amount, $in
         <td class='paypal_btn'>";
         if($billStatus==\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING){
                 $ret .= '<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-                        <input type="hidden" name="cmd" value="_xclick">
-                        <input type="hidden" name="business" value="'.$paypalAccount.'">
-                        <input type="hidden" name="item_name" value="Storage Use for '.$monthName.'">
-                        <input type="hidden" name="amount" value="'.$amount.'">
-                        <input type="hidden" name="item_number" value="'.substr($invoice, 0, -4).'">
-                        <input type="hidden" name="currency_code" value="'.$billingCurrency.'">
-                        <input type="hidden" name="button_subtype" value="services">
-                        <input type="hidden" name="no_note" value="0">
-                        <input type="hidden" name="cn" value="Add special instructions to the seller:">
-                        <input type="hidden" name="no_shipping" value="2">
-                        <input type="hidden" name="custom" value="'.$user.'">
-                        <input type="hidden" name="bn" value="PP-BuyNowBF:btn_paynow_SM.gif:NonHosted">
+                        <input type="hidden" name="cmd" value="_xclick" />
+                        <input type="hidden" name="business" value="'.$paypalAccount.'" />
+                        <input type="hidden" name="item_name" value="Storage Use for '.$monthName.'" />
+                        <input type="hidden" name="amount" value="'.$amount.'" />
+                        <input type="hidden" name="item_number" value="'.substr($invoice, 0, -4).'" />
+                        <input type="hidden" name="currency_code" value="'.$billingCurrency.'" />
+                        <input type="hidden" name="button_subtype" value="services" />
+                        <input type="hidden" name="no_note" value="0" />
+                        <input type="hidden" name="cn" value="Add special instructions to the seller:" />
+                        <input type="hidden" name="no_shipping" value="2" />
+                        <input type="hidden" name="custom" value="'.$user.'" />
+                        <input type="hidden" name="bn" value="PP-BuyNowBF:btn_paynow_SM.gif:NonHosted" />
                         <input type="image" src="https://www.paypalobjects.com/'.
                         ($l->getLanguageCode()=='da'?'da_DK':'en_US').
-                        '/i/btn/btn_paynow_LG.gif" border="0" name="submit" alt="PayPal">
-                        <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
+                        '/i/btn/btn_paynow_LG.gif" border="0" name="submit" alt="PayPal" />
+                        <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" />
                         </form>';
         }
         $ret .= "</td></tr>";	

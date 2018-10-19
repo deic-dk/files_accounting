@@ -121,7 +121,7 @@
 	<hr><div><label><?php p($l->t('Prepaid'));?>:</label><label><?php echo($prePaid." ".$billingCurrency);?></label></div>
 	<?php endif;?>
 	<hr><div>
-	<label><?php p($l->t('Gift code'));?>:</label><input type="text" id="giftCode" value="" placeholder="<?php p($l->t('Enter gift code'));?>">
+	<label><?php p($l->t('Gift code'));?>:</label><input type="text" id="giftCode" value="" placeholder="<?php p($l->t('Enter gift code'));?>" />
 		<div id="giftCodeRedeem" class="inlineblock button">
 			<?php p($l->t('Redeem'));?>
 		</div> 
