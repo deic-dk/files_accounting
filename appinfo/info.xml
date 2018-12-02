@@ -11,7 +11,7 @@
 		<type>filesystem</type>
 	</types>
 	<remote>
-		<bills>appinfo/remote.php</bills>
+		<usage>appinfo/remote.php</usage>
 	</remote>
 </info>
 
