@@ -6,7 +6,7 @@ if(!\OCP\App::isEnabled('files_sharding') || \OCA\FilesSharding\Lib::onServerFor
 	OCP\Util::addStyle('files_accounting', 'style');
 	OCP\Util::addScript('files_accounting', 'personalsettings');
 	//Billing Plots
-	OCP\Util::addScript('files_accounting', 'google-plot');
+	OCP\Util::addScript('files_accounting', 'loader');
 	OCP\Util::addScript('files_accounting', 'plot');
 	OCP\Util::addScript('files_accounting', 'files_accounting_notification');
 	

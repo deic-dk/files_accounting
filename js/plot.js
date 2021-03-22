@@ -1,5 +1,5 @@
-google.load("visualization", "1", {packages:["corechart"]});
-google.setOnLoadCallback(getData);
+google.charts.load('current', {packages: ['corechart']});
+google.charts.setOnLoadCallback(getData);
 
 var dataTable;
 var chart;
