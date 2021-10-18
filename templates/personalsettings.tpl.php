@@ -16,7 +16,7 @@
 	$prePaid = \OCA\Files_Accounting\Storage_Lib::getPrePaid($user);
 	$thisYear = date("Y");
 	foreach ($years as $year) {
-		echo "<option value=".$year.($year==$thisYear?"selected='selected'":"").">".$year."</option>";
+		echo "<option value='".$year."' ".($year==$thisYear?"selected='selected'":"").">".$year."</option>";
 	}
 	?>
 	</select>
@@ -76,7 +76,7 @@
 		</tbody>
 
 		<tbody>
-			<tr><td colspan="7" class="centertr"><div id="history" class="btn btn-primary btn-flat"><?php p($l->t('Load history'));?></div></td></tr>
+			<tr><td colspan="7" class="centertr"><div id="history" class="btn btn-primary btn-flat"><?php p($l->t('Show all'));?></div></td></tr>
 		</tbody>
 		
 	</table>

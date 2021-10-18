@@ -6,7 +6,7 @@ var chart;
 var options = {};
 
 function getData() {
-	var year = $('#storageSettings #list').val();
+	var year = $('#storageSettings #years').val();
 	$.ajax(OC.linkTo('files_accounting', 'ajax/getUsageData.php'), {
 		type: 'GET',
 		data: {
@@ -35,36 +35,36 @@ function drawGraph(data, year) {
 		usageUnit = Math.pow(1024, 3);
 		usageUnitStr = "GB";
 	}
-	options = {
-			title: t('files_accounting', 'Storage history'),
-			hAxis: {title: year,  titleTextStyle: {color: '#333'}, ticks:[]},
-			vAxis: {title: usageUnitStr+' \n\n',  titleTextStyle: {color: '#333'}},
-			//width:  '100%'
-			width: 0.9* $('#content').innerWidth()
-	};
+	ticks = [];
 	 dataTable = new google.visualization.DataTable();
 	dataTable.addColumn('string', 'dates');
 	dataTable.addColumn('number', t('files_accounting','files'));
 	dataTable.addColumn('number', t('files_accounting','trashbin'));
 	// We'll limit the number of ticks on the x-axis.
-	var divisor = Math.round(data.length/10*options.width/1200);
+	var divisor = Math.round(data.length/10*0.9* $('#content').innerWidth()/1200);
+	var formatDate = new google.visualization.DateFormat({
+    pattern: 'MMM d'
+  });
 	for (var i=0; i<data.length; i++) {
 		date = data[i]['day']+'-'+data[i]['month']+'-'+data[i]['year'];
+		dateShort = data[i]['day']+'-'+data[i]['month'];
+		dateFormatted = formatDate.formatValue(new Date(data[i]['year'], data[i]['month'], data[i]['day']));
 		files_usage = parseInt(data[i]['files_usage'])/usageUnit;
 		trash_usage = parseInt(data[i]['trash_usage'])/usageUnit;
-		//alert(i+'%'+divisor+'='+(i%divisor));
-		/*if(data[i]['day']==1){
-			dataTable.addRow([{v: date,  f: date}, files_usage, trash_usage]);
-		}
-		else */if(i%divisor===0){
-			dataTable.addRow([{v: date,  f: data[i]['day']+'-'+data[i]['month']}, files_usage, trash_usage]);
-		}
-		else{
-			dataTable.addRow([{v: date,  f: ''}, files_usage, trash_usage]);
+		//console.log(i+'%'+divisor+'='+(i%divisor));
+		dataTable.addRow([{v: dateShort,  f: dateFormatted}, files_usage, trash_usage]);
+		if(data[i]['day']=='1'){
+			ticks.push({v: dateShort,  f: dateFormatted});
 		}
 	}	
 	chart = new google.visualization.AreaChart(document.getElementById('chart_div'));
-	//alert(options.toSource());
+	options = {
+			title: t('files_accounting', 'Storage history'),
+			hAxis: {title: year,  titleTextStyle: {color: '#333'}, textStyle: {slantedText: true, slantedTextAngle: '40', fontSize: '12'}, ticks: ticks},
+			vAxis: {title: usageUnitStr+' \n\n',  titleTextStyle: {color: '#333'}, textStyle: {fontSize: '12'}},
+			//width:  '100%'
+			width: 0.9* $('#content').innerWidth(),
+	};
 	chart.draw(dataTable, options);
 }
 //create trigger to resizeEnd event     

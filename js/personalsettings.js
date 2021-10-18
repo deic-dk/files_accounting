@@ -62,11 +62,12 @@ $(document).ready(function() {
 			},
 			dataType:'json',
 			success: function(data){
+				$('.centertr').show();
 				if(data) {
 					$("#billingtable tr").not(':first').not(':last').remove();
 					$('#billingtable tr:first').after(data);
-					$('.centertr').hide();
 					add_download_links();
+					window.getData();
 				}
 			},
 			error: function(data) {

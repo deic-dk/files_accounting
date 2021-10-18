@@ -400,7 +400,7 @@ class Storage_Lib {
 			if (!empty($row) && $row[0] == $user) {
 				if ($row[1] == $year && (empty($month) || $row[2] == $month)) {
 					$dailyUsage[] = array('year'=>(int)$row[1], 'month'=>(int)$row[2], 'day'=>(int)$row[3],
-							'files_usage' => (int)$row[5], 'trash_usage' => (int)$row[6]);
+						'files_usage' => (int)$row[5], 'trash_usage' => (int)$row[6]);
 				}
 			}
 		}
