@@ -823,7 +823,7 @@ class Storage_Lib {
 	}
 	
 	public static function dbSetFreeQuota($user_id, $freeQuota){
-		if($freeQuota==='0' || $freeQuota==='' || $freeQuota==='none'){
+		if($freeQuota==='0' || $freeQuota===''){
 			return \OC_Preferences::deleteKey($user_id, 'files_accounting', 'freequota');
 		}
 		else{
