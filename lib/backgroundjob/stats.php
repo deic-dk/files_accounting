@@ -193,7 +193,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		// TODO: calculate averages here too...
 		if(\OCP\App::isEnabled('user_group_admin')){
 			$ownerGroups = \OC_User_Group_Admin_Util::getOwnerGroups($user, true);
-			$groupUsages = array();
 			$groupUsagesGB = array();
 			$groupCharges = array();
 			if(!empty($ownerGroups)){
@@ -205,7 +204,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 							$groupUsagesGB[$group['gid']] = $groupUsageGB;
 							$groupCharges[$group['gid']] = \OC_User_Group_Admin_Util::getGroupUsageCharge($group['gid']);
 							$totalSumDue += round($groupCharges[$group['gid']], 2);
-							\OCP\Util::writeLog('Files_Accounting', 'Usage  of group: '.$group['gid'].
+							\OCP\Util::writeLog('Files_Accounting', 'Usage of group: '.$group['gid'].
 									': '.$groupUsage.' : '.$groupUsagesGB[$group['gid']], \OCP\Util::WARN);
 						}
 					}

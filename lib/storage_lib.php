@@ -358,6 +358,7 @@ class Storage_Lib {
 			touch($usageFilePath);
 		}
 		$lines = file($usageFilePath);
+		$lastLine = "";
 		if(!empty($lines)){
 			while(empty($lastLine)){
 				$lastLine = array_pop($lines);
