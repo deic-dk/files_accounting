@@ -227,6 +227,7 @@ class Storage_Lib {
 	}
 
 	public static function personalStorage($userid, $trashbin=true, $group=null) {
+		session_write_close();
 		$ret = self::getQuotas($userid);
 		$usage = self::getLocalUsage($userid, $trashbin, $group);
 		$valid_quota = empty($ret['quota']) || $ret['quota']==="default"?
