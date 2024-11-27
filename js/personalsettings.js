@@ -118,12 +118,12 @@ $(document).ready(function() {
 		});
 	}); 
 	
-	$(document).click(function(e){
+	/*$(document).click(function(e){
 		if (!$(e.target).parents().filter('.oc-dialog').length && !$(e.target).filter('#pay-info').length ) {
 			$(".oc-dialog").remove();
 			$('.modalOverlay').remove();
 		}
-	});
+	});*/
 
 	add_download_links();
 
