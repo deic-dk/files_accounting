@@ -137,6 +137,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$backupGB = round($filesBackup/pow(1024, 3), 3);
 		$trashGB = round($trash/pow(1024, 3), 3);
 		
+		$remainingFreequotaBytes = $freequotaBytes;
 		if($freequotaBytes > 0 && $filesHome+$trash >= $freequotaBytes){
 			$homeAndTrashBilledGB = round(($filesHome+$trash-$freequotaBytes)/pow(1024, 3), 3);
 			$homeDue = round($homeAndTrashBilledGB*$charge['charge_home'], 2);
@@ -170,7 +171,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			$totalSumDue = $sumDue - $prePaid;
 		}
 		else{
-			$totalSumDue = $homeDue + $backupDue;
+			$totalSumDue = $sumDue;
 		}
 		if(isset($newPrePaid)){
 			\OCA\Files_Accounting\Storage_Lib::setPrePaid($user, $newPrePaid);
@@ -202,7 +203,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 						if(!empty($groupUsage)){
 							$groupUsageGB = round($groupUsage/pow(1024, 3), 3);
 							$groupUsagesGB[$group['gid']] = $groupUsageGB;
-							$groupCharges[$group['gid']] = \OC_User_Group_Admin_Util::getGroupUsageCharge($group['gid']);
+							$groupChargeArr = \OC_User_Group_Admin_Util::getGroupUsageCharge($group['gid'], $remainingFreequotaBytes);
+							$groupCharges[$group['gid']] = floatval($groupChargeArr['charge']);
+							$remainingFreequotaBytes = (int) $groupChargeArr['remaining_free_bytes'];
 							$totalSumDue += round($groupCharges[$group['gid']], 2);
 							\OCP\Util::writeLog('Files_Accounting', 'Usage of group: '.$group['gid'].
 									': '.$groupUsage.' : '.$groupUsagesGB[$group['gid']], \OCP\Util::WARN);
@@ -212,7 +215,9 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			}
 		}
 
-		
+		$podsUse = \OCA\Files_Accounting\Storage_Lib::getPodsMonthlyUse($user);
+		$totalSumDue += round($podsUse['total_charge'], 2);
+
 		if($totalSumDue==0){
 			\OCP\Util::writeLog('Files_Accounting', 'Usage charge 0 for user: '.$user, \OCP\Util::WARN);
 			//return; // Nope - Invoices of 0 could be needed by some - they will contain non-zero usage.
@@ -226,12 +231,13 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				$charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
 				$charge['site_backup'], $totalSumDue, $reference_id);
 		
-		// Create invoice and store locally. It can always be recreated from DB on master.
+		// Create invoice and store locally. It can always be recreated from DB on master (storage)
+		// and the files "files_accounting/pods/podsusage\_[year]\_[month].txt" on the home silo.
 		$filename = $this->invoice($user, $reference_id,
 				$homeGB+$trashGB, $backupGB, $totalSumDue,
 				$homeDue, $backupDue,
 				$charge['site_home'], $charge['site_backup'],
-				$groupUsagesGB, $groupCharges);
+				$groupUsagesGB, $groupCharges, $podsUse);
 
 		if(empty($filename)){
 			\OCP\Util::writeLog('Files_Accounting', 'ERROR: could not create invoice for '.$user.', '.$this->billingMonth.', '.$totalSumDue, \OCP\Util::ERROR);
@@ -257,7 +263,6 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		$url = \OCA\Files_Accounting\Storage_Lib::getBillingURL($user);
 		$path = \OCA\Files_Accounting\Storage_Lib::getInvoiceDir($user);
 		$file = $path . "/" . $filename;
-		$defaults = new \OCP\Defaults();
 		$senderEmail = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
 		$subject = "Invoice for ".$this->billingMonthName;
 		$message = "Dear ".$realName.",\n\nThe bill for ".$this->billingMonthName." is ".$amount." ".
@@ -268,7 +273,8 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	}
 
 	private function invoice($user, $reference, $homeGB, $backupGB, $totalAmountDue,
-			$homeAmountDue, $backupAmountDue, $homeSite, $backupSite, $groupUsagesGB, $groupCharges){
+			$homeAmountDue, $backupAmountDue, $homeSite, $backupSite, $groupUsagesGB,
+			$groupCharges, $podsUse){
 		
 		\OCP\Util::writeLog('Files_Accounting', 'Billing user: '.$user.' for '.$this->billingMonthName, \OCP\Util::WARN);
 
@@ -277,7 +283,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 						' at '.$homeSite, 'price'=>$homeAmountDue)
 		);
 		if(!empty($backupSite) && isset($backupGB)){
-			array_push($articles, array('item'=>$backupGB. ' GB cloud storage, '.$this->billingMonthName.
+			array_push($articles, array('item'=>$backupGB. ' GB cloud backup storage, '.$this->billingMonthName.
 				' - '.$this->billingYear.' at '.$backupSite, 'price'=>$backupAmountDue)
 			);
 		}
@@ -287,12 +293,19 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			'price'=>$groupCharges[$group])
 			);
 		}
+		foreach($podsUse['charges'] as $image=>$cost){
+			array_push($articles, array('item'=>'Pod image '.$image. '  '.$podsUse['seconds'][$image].
+					' seconds, '.$this->billingMonthName.' - '.$this->billingYear,
+					'price'=>$cost)
+					);
+		}
 		\OCP\Util::writeLog('Files_Accounting', 'HOME: '.$homeGB.' '.$homeAmountDue.' '.$homeSite, \OCP\Util::WARN);
 		\OCP\Util::writeLog('Files_Accounting', 'BACKUP: '.$backupGB.' '.$backupAmountDue.' '.$backupSite, \OCP\Util::WARN);
-		$total = 0;
+		\OCP\Util::writeLog('Files_Accounting', 'PODS: '.$podsUse['total_charge'], \OCP\Util::WARN);
+		/*$total = 0;
 		for ($i=0; $i<count($articles); $i++){
 			$total += $articles[$i]['price'];
-		}
+		}*/
 		$filename = $reference.'.pdf';
 		$userEmail = \OCP\Config::getUserValue($user, 'settings', 'email');
 		$userRealName = User::getDisplayName($user);

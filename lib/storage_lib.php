@@ -64,7 +64,7 @@ class Storage_Lib {
 		}
 		else{
 			if($fq){
-				$charge = getChargeForUserServers($userid);
+				$charge = getChargeForUserServers($user);
 				$homeServer = $charge['url_home'];
 			}
 			$url = $homeServer . "/index.php/settings/personal";
@@ -90,6 +90,58 @@ class Storage_Lib {
 
 	public static function getInvoiceDir($user){
 		return self::getAppDir($user)."/bills";
+	}
+	
+	public static function getPodsUsageFilePath($user, $year, $month){
+		$dir = getPodsUsageDir($user);
+		return $dir."/podsusage"."_".$year."_".$month.".txt";
+	}
+	
+	public static function getPodsUsageDir($user){
+		return self::getAppDir($user)."/pods";
+	}
+	
+	/**
+	 * Read lines in files_accounting/pods/[year]_[month].txt and
+	 * add running_seconds * pod_charge_per_second for each.
+	 * @param unknown $user
+	 */
+	public static function getPodsMonthlyUse($user, $year=null, $month=null){
+		$chargePatterns = \OCP\Config::getSystemValue('pod_charge_per_second', ['.*']);
+		$timestamp = time();
+		$year = empty($year)?date('Y', $timestamp):$year;
+		$month = empty($month)?date('n', $timestamp):$month;
+		$ret = ['total_charge'=>0, 'seconds'=>[], 'charges'=>[]];
+		$totalCharge = 0.0;
+		$usageFilePath = self::getPodsUsageFilePath($user, $year, $month);
+		if(!file_exists($usageFilePath)){
+			return false;
+		}
+		$lines = file($usageFilePath);
+		foreach ($lines as $line) {
+			$row = explode(" ", $line);
+			if(!empty($row) && $row[0] == $user){
+				$imageName = $row[3];
+				$runningSeconds = $row[8];
+				if(!empty($imageName) && !empty($runningSeconds)){
+					if(empty($ret['seconds'][$imageName])){
+						$ret['seconds'][$imageName] = 0;
+						$ret['charges'][$imageName] = 0.0;
+					}
+					$ret['seconds'][$imageName] += $runningSeconds;
+					foreach($chargePatterns as $pattern => $price){
+						if(preg_match($pattern, $imageName)){
+							$charge = ((float)$price) * $runningSeconds;
+							$ret['charges'][$imageName] += $charge;
+							$totalCharge += $charge;
+							break;
+						}
+					}
+				}
+			}
+		}
+		$ret['total_charge'] = $totalCharge;
+		return $ret;
 	}
 
 	public static function getChargeForUserServers($userid){
@@ -529,6 +581,27 @@ class Storage_Lib {
 		return $result;
 	}
 
+	/**
+	 * Update DB table with monthly average use
+	 * @param string $user
+	 * @param int $status
+	 * @param int $year
+	 * @param int $month
+	 * @param int $timestamp
+	 * @param int $timedue
+	 * @param int $average Average storage use in past month in GB
+	 * @param int $averageTrash Average storage use in past month in GB
+	 * @param int $averageBackup Average storage use in past month in GB
+	 * @param string $homeId 
+	 * @param string $backupId 
+	 * @param string $homeUrl 
+	 * @param string $backupUrl 
+	 * @param string $homeSite 
+	 * @param string $backupSite 
+	 * @param float $amountDue
+	 * @param string $referenceId
+	 * @return status of DB operation
+	 */
 	public static function updateMonth($user, $status, $year, $month, $timestamp, $timedue,
 			$average, $averageTrash, $averageBackup,
 			$homeId, $backupId, $homeUrl, $backupUrl, $homeSite, $backupSite,
