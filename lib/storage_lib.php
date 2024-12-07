@@ -107,7 +107,7 @@ class Storage_Lib {
 	 * @param unknown $user
 	 */
 	public static function getPodsMonthlyUse($user, $year=null, $month=null){
-		$chargePatterns = \OCP\Config::getSystemValue('pod_charge_per_second', ['.*']);
+		$chargePatterns = \OCP\Config::getSystemValue('pod_charge_per_second', ['.*'=>0.0]);
 		$timestamp = time();
 		$year = empty($year)?date('Y', $timestamp):$year;
 		$month = empty($month)?date('n', $timestamp):$month;
