@@ -108,10 +108,12 @@ class Storage_Lib {
 	 */
 	public static function getPodsMonthlyUse($user, $year=null, $month=null){
 		$chargePatterns = \OCP\Config::getSystemValue('pod_charge_per_second', ['.*'=>0.0]);
+		$freeSeconds = \OCP\Config::getSystemValue('pod_free_monthly_seconds', 0);
 		$timestamp = time();
 		$year = empty($year)?date('Y', $timestamp):$year;
 		$month = empty($month)?date('n', $timestamp):$month;
 		$ret = ['total_charge'=>0, 'seconds'=>[], 'charges'=>[]];
+		$totalSeconds = 0;
 		$totalCharge = 0.0;
 		$usageFilePath = self::getPodsUsageFilePath($user, $year, $month);
 		if(!file_exists($usageFilePath)){
@@ -131,9 +133,20 @@ class Storage_Lib {
 					$ret['seconds'][$imageName] += $runningSeconds;
 					foreach($chargePatterns as $pattern => $price){
 						if(preg_match($pattern, $imageName)){
-							$charge = ((float)$price) * $runningSeconds;
-							$ret['charges'][$imageName] += $charge;
-							$totalCharge += $charge;
+							if($totalSeconds>$freeSeconds){
+								$charge = ((float)$price) * $runningSeconds;
+								$ret['charges'][$imageName] += $charge;
+								$totalCharge += $charge;
+							}
+							elseif($totalSeconds+$runningSeconds>$freeSeconds){
+								$charge = ((float)$price) * ($runningSeconds-($freeSeconds-$totalSeconds));
+								$ret['charges'][$imageName] += $charge;
+								$totalCharge += $charge;
+							}
+							else{
+								// No charge
+							}
+							$totalSeconds += $runningSeconds;
 							break;
 						}
 					}
