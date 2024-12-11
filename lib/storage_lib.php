@@ -91,19 +91,20 @@ class Storage_Lib {
 	public static function getInvoiceDir($user){
 		return self::getAppDir($user)."/bills";
 	}
-	
-	public static function getPodsUsageFilePath($user, $year, $month){
-		$dir = getPodsUsageDir($user);
-		return $dir."/podsusage"."_".$year."_".$month.".txt";
-	}
-	
+
 	public static function getPodsUsageDir($user){
 		return self::getAppDir($user)."/pods";
+	}
+
+	public static function getPodsUsageFilePath($user, $year, $month){
+		$dir = self::getPodsUsageDir($user);
+		return $dir."/podsusage"."_".$year."_".$month.".txt";
 	}
 	
 	/**
 	 * Read lines in files_accounting/pods/[year]_[month].txt and
-	 * add running_seconds * pod_charge_per_second for each.
+	 * add running_seconds * pod_charge_per_second for each unique pod 
+	 * (last entry with timestamp before cycle_day).
 	 * @param unknown $user
 	 */
 	public static function getPodsMonthlyUse($user, $year=null, $month=null){
@@ -120,9 +121,17 @@ class Storage_Lib {
 			return false;
 		}
 		$lines = file($usageFilePath);
-		foreach ($lines as $line) {
-			$row = explode(" ", $line);
-			if(!empty($row) && $row[0] == $user){
+		// Iterate backwards, so we pick the last entry for a given pod and ignore previous
+		$accounted_pods = [];
+		$index = count($lines);
+		while($index) {
+			$line = $lines[--$index];
+			$row = explode("|", $line);
+			$podName = $row[4];
+			$cycle_day = $row[9];
+			$billingDateSeconds = mktime(0, 0, 0, $cycle_day, $month, $year);
+			$report_timestamp = $row[10];
+			if(!empty($row) && $row[0]==$user && empty($accounted_pods[$podName]) && $report_timestamp<$billingDateSeconds /*only count usage before, but as close as possible to 0:00 on billing day*/){
 				$imageName = $row[3];
 				$runningSeconds = $row[8];
 				if(!empty($imageName) && !empty($runningSeconds)){
@@ -131,13 +140,17 @@ class Storage_Lib {
 						$ret['charges'][$imageName] = 0.0;
 					}
 					$ret['seconds'][$imageName] += $runningSeconds;
+					$accounted_pods[$podName] = 1;
 					foreach($chargePatterns as $pattern => $price){
-						if(preg_match($pattern, $imageName)){
+						if(preg_match('|'.$pattern.'|', $imageName)){
+							// we've exceeded the free tier, charge all $runningSeconds
 							if($totalSeconds>$freeSeconds){
 								$charge = ((float)$price) * $runningSeconds;
 								$ret['charges'][$imageName] += $charge;
 								$totalCharge += $charge;
 							}
+							// We've not yet exceeded the free tier, but will with these $runningSeconds,
+							// charge the exceeded $runningSeconds
 							elseif($totalSeconds+$runningSeconds>$freeSeconds){
 								$charge = ((float)$price) * ($runningSeconds-($freeSeconds-$totalSeconds));
 								$ret['charges'][$imageName] += $charge;

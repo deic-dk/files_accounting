@@ -41,7 +41,17 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 	}
 
 	private function updateAndBill() {
-		$users = \OC_User::getUsers();
+		// If dryrunbillingusers is set in config.php, only calculate use for these,
+		// don't write to the DB and write bills with prefix 'test-'.
+		$dryrunusers = \OCP\Config::getSystemValue('dryrunbillingusers', '');
+		$dryrun = false;
+		if(!empty($dryrunusers)){
+			$users = $dryrunusers;
+			$dryrun = true;
+		}
+		else{
+			$users = \OC_User::getUsers();
+		}
 		foreach ($users as $user) {
 			// Add a line to usage-201*.txt locally.
 			// logDailyUsage checks if the line already exists and bails if so.
@@ -64,11 +74,15 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 				\OC_Log::write('files_accounting',"Not billing on non-home server for ".$user, \OC_Log::WARN);
 				continue;
 			}
-			$this->updateAndBillUser($user);
+			$this->updateAndBillUser($user, $dryrun);
 		}
 	}
 
-	private function updateAndBillUser($user){
+	/**
+	 * @param string $user
+	 * @param boolean $dryrun If true, calculate charges, don't write to DB, write bill with prefix 'test-'
+	 */
+	private function updateAndBillUser($user, $dryrun=false){
 		if(!\OC_User::userExists($user)){
 			\OC_Log::write('files_accounting',"ERROR: Cannot bill non-existing user. ".$user, \OC_Log::ERROR);
 			return;
@@ -95,7 +109,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 		
 		// Only run billing on the billing day
-		if(date("j", $this->timestamp) != $this->billingDay){
+		if(date("j", $this->timestamp) != $this->billingDay && !$dryrun){
 			\OCP\Util::writeLog('Files_Accounting', 'Not billing user: '.$user.' today', \OCP\Util::WARN);
 			return;
 		}
@@ -106,7 +120,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		// A user who has a not expired  preapproval key is charged.
 		$hasPreapprovalKey = \OCA\Files_Accounting\Storage_Lib::getPreapprovalKey($user, $this->billingMonth,
 				$this->billingYear);
-		if($hasPreapprovalKey){
+		if($hasPreapprovalKey && !$dryrun){
 			ActivityHooks::automaticPaymentComplete($user,
 			array('month'=>$this->billingMonthName, 'year'=>$this->billingYear, 'item_number'=>$reference_id));
 		}
@@ -118,12 +132,12 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 		$files = scandir($path);
 		$currentMonthFiles = preg_grep("/^".$this->billingYear."-".$this->billingMonth."-.*\.pdf$/", $files);
-		if(!empty($currentMonthFiles)){
+		if(!empty($currentMonthFiles) && !$dryrun){
 			\OCP\Util::writeLog('Files_Accounting', 'Already billed user: '.$user.' for '.$this->billingMonthName, \OCP\Util::WARN);
 			return;
 		}
 
-		// Log monthly average to DB on master
+		// Log monthly average to DB on master if not dryrunning
 		$charge = \OCA\Files_Accounting\Storage_Lib::getChargeForUserServers($user);
 		$monthlyUsageAverage = \OCA\Files_Accounting\Storage_Lib::currentUsageAverage(
 				$user, $this->billingYear, $this->billingMonth, $this->timestamp);
@@ -173,7 +187,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		else{
 			$totalSumDue = $sumDue;
 		}
-		if(isset($newPrePaid)){
+		if(isset($newPrePaid) && !$dryrun){
 			\OCA\Files_Accounting\Storage_Lib::setPrePaid($user, $newPrePaid);
 		}
 		
@@ -224,20 +238,22 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 		
 		// This goes to master
-		\OCA\Files_Accounting\Storage_Lib::updateMonth($user,
-				$hasPreapprovalKey||$totalSumDue==0?\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID:
-				\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
-				$this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
-				$charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
-				$charge['site_backup'], $totalSumDue, $reference_id);
-		
+		if(!$dryrun){
+			\OCA\Files_Accounting\Storage_Lib::updateMonth($user,
+					$hasPreapprovalKey||$totalSumDue==0?\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PAID:
+					\OCA\Files_Accounting\Storage_Lib::PAYMENT_STATUS_PENDING,
+					$this->billingYear, $this->billingMonth, $this->timestamp, $this->dueTimestamp, $homeGB, $backupGB, $trashGB,
+					$charge['id_home'], $charge['id_backup'], $charge['url_home'], $charge['url_backup'], $charge['site_home'],
+					$charge['site_backup'], $totalSumDue, $reference_id);
+		}
+
 		// Create invoice and store locally. It can always be recreated from DB on master (storage)
 		// and the files "files_accounting/pods/podsusage\_[year]\_[month].txt" on the home silo.
 		$filename = $this->invoice($user, $reference_id,
 				$homeGB+$trashGB, $backupGB, $totalSumDue,
 				$homeDue, $backupDue,
 				$charge['site_home'], $charge['site_backup'],
-				$groupUsagesGB, $groupCharges, $podsUse);
+				$groupUsagesGB, $groupCharges, $podsUse, $dryrun);
 
 		if(empty($filename)){
 			\OCP\Util::writeLog('Files_Accounting', 'ERROR: could not create invoice for '.$user.', '.$this->billingMonth.', '.$totalSumDue, \OCP\Util::ERROR);
@@ -245,13 +261,15 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		}
 
 		// Notify
-		ActivityHooks::invoiceCreate($user,
-			array('month'=>$this->billingMonthName, 'year'=>$this->billingYear, 'item_number'=>$reference_id,
-					'priority'=>($totalSumDue==0?\OCA\UserNotification\Data::PRIORITY_MEDIUM:\OCA\UserNotification\Data::PRIORITY_VERYHIGH)
-			));
-		
-		// TODO: uncomment when this goes into production
-		//$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
+		if(!$dryrun){
+			ActivityHooks::invoiceCreate($user,
+					array('month'=>$this->billingMonthName, 'year'=>$this->billingYear, 'item_number'=>$reference_id,
+							'priority'=>($totalSumDue==0?\OCA\UserNotification\Data::PRIORITY_MEDIUM:\OCA\UserNotification\Data::PRIORITY_VERYHIGH)
+					));
+			
+			// TODO: uncomment when this goes into production
+			//$this->sendNotificationMail($user, $totalSumDue, $filename, $charge['site_home']);
+		}
 	}
 
 	public function sendNotificationMail($user, $amount, $filename, $senderName) {
@@ -274,7 +292,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 
 	private function invoice($user, $reference, $homeGB, $backupGB, $totalAmountDue,
 			$homeAmountDue, $backupAmountDue, $homeSite, $backupSite, $groupUsagesGB,
-			$groupCharges, $podsUse){
+			$groupCharges, $podsUse, $dryrun=false){
 		
 		\OCP\Util::writeLog('Files_Accounting', 'Billing user: '.$user.' for '.$this->billingMonthName, \OCP\Util::WARN);
 
@@ -294,9 +312,8 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			);
 		}
 		foreach($podsUse['charges'] as $image=>$cost){
-			array_push($articles, array('item'=>'Pod image '.$image. '  '.$podsUse['seconds'][$image].
-					' seconds, '.$this->billingMonthName.' - '.$this->billingYear,
-					'price'=>$cost)
+			array_push($articles, array('item'=>preg_replace('|^sciencedata/|', '', $image). '  '.self::secondsToTime($podsUse['seconds'][$image]),
+					'price'=>round($cost, 2))
 					);
 		}
 		\OCP\Util::writeLog('Files_Accounting', 'HOME: '.$homeGB.' '.$homeAmountDue.' '.$homeSite, \OCP\Util::WARN);
@@ -306,7 +323,7 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 		for ($i=0; $i<count($articles); $i++){
 			$total += $articles[$i]['price'];
 		}*/
-		$filename = $reference.'.pdf';
+		$filename = ($dryrun?'test-':'').$reference.'.pdf';
 		$userEmail = \OCP\Config::getUserValue($user, 'settings', 'email');
 		$userRealName = User::getDisplayName($user);
 		$fromEmail = \OCA\Files_Accounting\Storage_Lib::getIssuerEmail();
@@ -386,6 +403,45 @@ class Stats extends \OC\BackgroundJob\TimedJob {
 			mkdir($path, 0777, false);
 		}
 		$pdf->Output($path.'/'.$filename, 'F');
+	}
+	
+	// https://stackoverflow.com/questions/8273804/convert-seconds-into-days-hours-minutes-and-seconds
+	private static function secondsToTime($inputSeconds) {
+		$secondsInAMinute = 60;
+		$secondsInAnHour = 60 * $secondsInAMinute;
+		$secondsInADay = 24 * $secondsInAnHour;
+		
+		// Extract days
+		$days = floor($inputSeconds / $secondsInADay);
+		
+		// Extract hours
+		$hourSeconds = $inputSeconds % $secondsInADay;
+		$hours = floor($hourSeconds / $secondsInAnHour);
+		
+		// Extract minutes
+		$minuteSeconds = $hourSeconds % $secondsInAnHour;
+		$minutes = floor($minuteSeconds / $secondsInAMinute);
+		
+		// Extract the remaining seconds
+		$remainingSeconds = $minuteSeconds % $secondsInAMinute;
+		$seconds = ceil($remainingSeconds);
+		
+		// Format and return
+		$timeParts = [];
+		$sections = [
+				'day' => (int)$days,
+				'hour' => (int)$hours,
+				'min' => (int)$minutes,
+				's' => (int)$seconds,
+		];
+		
+		foreach ($sections as $name => $value){
+			if ($value > 0){
+				$timeParts[] = $value. ' '.$name.($value == 1 || $name=='min' || $name=='s' ? '' : 's');
+			}
+		}
+		
+		return implode(', ', $timeParts);
 	}
 }
 
