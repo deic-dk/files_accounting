@@ -50,6 +50,6 @@ for($i=0; $i<3; ++$i){
 	sleep(1);
 }
 
-OCP\JSON::encodedPrint(['message'=>'Wrote file '.$filePath, 'status'=>$ret]);
+OCP\JSON::encodedPrint(['message'=>'Wrote to file '.$filePath, 'status'=>$ret]);
 
 
