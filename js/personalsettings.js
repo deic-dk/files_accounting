@@ -128,7 +128,7 @@ $(document).ready(function() {
 	add_download_links();
 
 	// Hide this from settings. User cannot modify stream/mail settings for billing.
-	$('td[data-select-group="invoice"]').parent().hide();
+	//$('td[data-select-group="invoice"]').parent().hide();
 	
 	// Gift codes - #userapps is theme-specific, but does not harm...
 	$('#storageSettings #giftCodeRedeem').click(function(ev){
