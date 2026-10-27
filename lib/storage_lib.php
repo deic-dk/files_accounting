@@ -129,7 +129,7 @@ class Storage_Lib {
 			$row = explode("|", $line);
 			$podName = $row[4];
 			$cycle_day = $row[9];
-			$billingDateSeconds = mktime(0, 0, 0, $cycle_day, $month, $year);
+			$billingDateSeconds = mktime(0, 0, 0, $month, $cycle_day, $year);
 			$report_timestamp = $row[10];
 			if(!empty($row) && $row[0]==$user && empty($accounted_pods[$podName]) && $report_timestamp<$billingDateSeconds /*only count usage before, but as close as possible to 0:00 on billing day*/){
 				$imageName = $row[3];
